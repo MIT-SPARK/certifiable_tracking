@@ -242,7 +242,7 @@ for l = 1:L-1
 end
 x_proj = [x_proj; full(dmsubs(p,x,x_est)); full(dmsubs(s,x,x_est))];
 obj_est = dmsubs(prob_obj,x,x_proj);
-gap = (obj_est - obj(1)) / obj_est;
+gap = obj_est - obj(1)
 
 
 % duality gap

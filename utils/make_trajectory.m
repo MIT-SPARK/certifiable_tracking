@@ -29,7 +29,7 @@ dR_gt = repmat(dR_gt,1,1,L);
 %% Quadratic motion (linear velocity)
 % fix acceleration
 % NOTE: this breaks it for large accelerations (e.g. 1.0)
-acc = [0.;0.;-0.1];
+acc = [0.;0.;-1];
 for  l = 1:L
     v_gt(:,:,l) = v_gt(:,:,l) + acc*problem.dt*(l-1);
 end
