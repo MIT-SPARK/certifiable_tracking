@@ -107,7 +107,7 @@ end
 % c regularization
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
 % p regularization
-% prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L)));
+prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L)));
 for l = 2:L
     % delta p
     delp = p(ib3(l)) - (p(ib3(l-1)) + v(ib3(l-1))*dt);

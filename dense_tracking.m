@@ -78,6 +78,7 @@ end
 
 %% Check solutions
 % eigenvalue plot
+L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 hold on
 slices = [1:(1+9*(3*L-1)),(1+9*(3*L-1)+3*L+1):(9*(3*L-1)+6*L)];
@@ -90,7 +91,6 @@ hold off
 x_err = norm(problem.x_gt - soln.x_est);
 
 % raw error excluding p
-L = problem.L;
 x_gt = problem.x_gt;
 x_est = soln.x_est;
 x_gt_no_p = [x_gt(1:(9*(3*L-1) + 1)); x_gt((9*(3*L-1) + 3*L + 1):end)];
