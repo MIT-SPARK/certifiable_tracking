@@ -11,6 +11,7 @@ clc; clear; close all; restoredefaultpath
 %% dependencies
 % Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
+gncpath = "../GNC-and-ADAPT";
 mosekpath   = 'C:/Program Files/Mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
 
@@ -21,6 +22,7 @@ manoptpath  = certifiablyrobustperceptionpath + '/manopt';
 addpath(certifiablyrobustperceptionpath + '/utils')
 addpath(genpath(spotpath)) % Use spotless for defining polynomials
 addpath(certifiablyrobustperceptionpath + '/SDPRelaxations') % implementations for SDP relaxation
+addpath(genpath(gncpath))
 
 % add internal paths
 addpath('./solvers')
@@ -36,7 +38,7 @@ problem.N_VAR = 11;
 problem.K = 3;
 problem.L = 10;
 
-problem.outlierRatio = 0.0; % TODO: no support for outliers
+problem.outlierRatio = 0.1; % TODO: no support for outliers
 problem.noiseSigma = 0.01;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
@@ -46,11 +48,11 @@ problem.dt = 2.0;
 problem.accelerationNoiseBound = 0.05;
 problem.rotationNoiseBound = pi/32; % rad
 
-% Override ground truths (for testing)
-% problem.dR_gt = repmat(eye(3),1,1,problem.L);
-% problem.R_gt = repmat(eye(3),1,1,problem.L);
-% problem.p_gt = zeros(3,1,problem.L);
-% problem.v_gt = zeros(3,1,problem.L);
+problem.N = problem.N_VAR*problem.L; % How many measurements this problem has
+problem.outliers = []; % outlier indicies
+problem.priors = [];
+% problem.dof = 3*problem.L; % 3 DOF for each time step (or should this be dim(x)?)
+problem.dof = 9*(3*problem.L - 1) + 2*3*problem.L;
 
 % Optional: use a specified velocity trajectory
 problem = make_trajectory(problem);
@@ -63,18 +65,19 @@ problem.lambda = lambda;
 problem.mosekpath = mosekpath;
 
 %% Solve!
-soln = solve_weighted_tracking(problem);
+epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigma;
+[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', epsilon,'MaxIterations',10);
 
-soln_pace = [];
-for l = 1:problem.L
-    pace_problem = problem;
-    pace_problem.weights = ones(problem.N_VAR,1);
-    pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);
-    [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, path, 'lambda',lambda);
-    s.R_est = R_est; s.p_est = t_est;
-    s.c_est = c_est; s.out = out;
-    soln_pace = [soln_pace; s];
-end
+% soln_pace = [];
+% for l = 1:problem.L
+%     pace_problem = problem;
+%     pace_problem.weights = ones(problem.N_VAR,1);
+%     pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);
+%     [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, path, 'lambda',lambda);
+%     s.R_est = R_est; s.p_est = t_est;
+%     s.c_est = c_est; s.out = out;
+%     soln_pace = [soln_pace; s];
+% end
 
 %% Check solutions
 % eigenvalue plot

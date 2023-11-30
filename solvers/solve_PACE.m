@@ -17,7 +17,7 @@ function soln = solve_PACE(problem,lambda,l)
 %% Process inputs
 mosekpath = problem.mosekpath;
 
-N = problem.N;
+N = problem.N_VAR;
 K = problem.K;
 
 B = problem.B; % 3*N x K matrix of b_i(k)

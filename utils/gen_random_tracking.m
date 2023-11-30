@@ -4,7 +4,7 @@ function problem = gen_random_tracking(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Problem variables
-N = problem.N;
+N = problem.N_VAR;
 K = problem.K;
 L = problem.L;
 
@@ -105,18 +105,26 @@ for l = 1:L
 end
 
 %% generate outliers
-% nrOutliers = round(N*outlierRatio);
-% if nrOutliers > 0
-%     fprintf('Category registration: generate %d outliers.\n',nrOutliers);
-%     outlierIDs = N-nrOutliers+1:N;
-%     outliers = randn(3,nrOutliers);
-%     scene(:,outlierIDs) = outliers;
-% else
-%     outlierIDs = [];
-% end
-% 
-% theta_gt = ones(N,1);
-% theta_gt(outlierIDs) = -1;
+nrOutliers = round(N*L*problem.outlierRatio);
+if nrOutliers > 0
+    fprintf('Tracking: generate %d outliers.\n',nrOutliers);
+
+    outlierIDs = randperm(N*L,nrOutliers);
+    outliers = randn(3,nrOutliers);
+    
+    curOutIdx = 1;
+    for id = outlierIDs
+        l = floor((id-1)/N) + 1;
+        i = id - (l-1)*N;
+        y(ib3(i),l) = outliers(curOutIdx);
+        curOutIdx = curOutIdx + 1;
+    end
+else
+    outlierIDs = [];
+end
+
+theta_gt = ones(N*L,1);
+theta_gt(outlierIDs) = -1;
 
 %% Save
 problem.type = 'tracking';
@@ -138,6 +146,8 @@ problem.cBound = 1.0;
 noiseBoundSq = max(4e-2, noiseSigma^2 * chi2inv(0.99,3));
 problem.noiseBoundSq = noiseBoundSq;
 problem.noiseBound = sqrt(problem.noiseBoundSq);
+
+problem.theta_gt = theta_gt;
 
 % also save a "ground truth vector" that we can quickly compare
 rh_gt = zeros(9*(L-1), 1);

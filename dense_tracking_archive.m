@@ -22,7 +22,7 @@ addpath(genpath('../spotless')) % Use spotless for defining polynomials
 addpath('../SDPRelaxations') % implementations for SDP relaxation
 
 %% Generate random tracking problem
-problem.N = 10;
+problem.N_VAR = 10;
 problem.K = 3;
 problem.L = 9;
 
@@ -48,7 +48,7 @@ lambda = 0.0;
 
 %% Define objective
 % constants shorthand
-N = problem.N;
+N = problem.N_VAR;
 K = problem.K;
 L = problem.L;
 

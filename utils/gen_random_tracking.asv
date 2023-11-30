@@ -1,5 +1,6 @@
-function problem = gen_random_tracking_old(problem)
+function problem = gen_random_tracking(problem)
 %% Generate tracking problem from random data
+% 
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Problem variables
@@ -13,11 +14,23 @@ translationBound = problem.translationBound;
 noiseSigma = problem.noiseSigma;
 dt = problem.dt;
 
+accNoiseBound = problem.accelerationNoiseBound;
+rotNoiseBound = problem.rotationNoiseBound;
+
 % TODO: INCORPORATE MAX POSITION BOUNDS
 % if (problem.velocityBound*L*dt >= problem.translationBound)
 %     warning("Object may leave translationBound during motion. " + ...
 %         "Please set velocityBound*L*dt <= translationBound.")
 % end
+
+% Weights!
+% TODO: make this more random?
+problem.weights = ones(N,L);
+% no support for different x,y,z weights (repeat each weight 3 times)
+problem.weights_position = ones(3*(L-1),1);
+problem.weights_velocity = ones(3*(L-1),1);
+problem.weights_rotation = ones(3*(L-1),1);
+problem.weights_rotrate  = ones(3*(L-1),1);
 
 %% generate a mean shape centered at zero
 mean_shape = randn(3,N);
@@ -39,28 +52,33 @@ else
 end
 
 if ~isfield(problem,'v_gt')
-    v_gt = randn(3,1);
-    v_gt = v_gt/norm(v_gt);
-    v_gt = velocityBound*rand*v_gt;
+    v_0 = randn(3,1);
+    v_0 = v_0/norm(v_0);
+    v_0 = velocityBound*rand*v_0;
+    v_gt = repmat(v_0,1,1,L);
 else
     v_gt = problem.v_gt;
 end
 
 if ~isfield(problem,'p_gt')
-    p_gt = randn(3,1);
-    p_gt = p_gt/norm(p_gt);
-    p_gt = translationBound*rand*p_gt;
+    p_gt = zeros(3,1,L);
+    p_0 = randn(3,1);
+    p_0 = p_0/norm(p_0);
+    p_0 = translationBound*rand*p_0;
+    p_gt(:,:,1) = p_0;
 else
     p_gt = problem.p_gt;
 end
 
 if ~isfield(problem,'R_gt')
-    R_gt = rand_rotation;
+    R_gt = zeros(3,3,L);
+    R_gt(:,:,1) = rand_rotation;
 else
     R_gt = problem.R_gt;
 end
 if ~isfield(problem,'dR_gt')
     dR_gt = rand_rotation;
+    dR_gt = repmat(dR_gt,1,1,L);
 else
     dR_gt = problem.dR_gt;
 end
@@ -69,29 +87,37 @@ end
 shape = reshape(B*c_gt,3,N);
 y = zeros(3*N,L);
 
-R = R_gt;
-p = p_gt;
 for l = 1:L
+    R = R_gt(:,:,l);
+    p = p_gt(:,:,l);
+
     scene = R * shape + p + noiseSigma * randn(3,N);
     y(:,l) = reshape(scene, 3*N, 1);
 
-    R = R * dR_gt;
-    p = p + v_gt * dt;
+    if (l < L)
+        % Apply random (bounded) acceleration (TODO: make actual bound)
+        dR_gt(:,:,l) = dR_gt(:,:,l) * rand_rotation('RotationBound',rotNoiseBound);
+        v_gt(:,:,l) = v_gt(:,:,l) + accNoiseBound*randn(3,1)*dt;
+
+        R_gt(:,:,l+1) = R * dR_gt(:,:,l);
+        p_gt(:,:,l+1) = p + v_gt(:,:,l) * dt;
+    end
 end
 
 %% generate outliers
-% nrOutliers = round(N*outlierRatio);
-% if nrOutliers > 0
-%     fprintf('Category registration: generate %d outliers.\n',nrOutliers);
-%     outlierIDs = N-nrOutliers+1:N;
-%     outliers = randn(3,nrOutliers);
-%     scene(:,outlierIDs) = outliers;
-% else
-%     outlierIDs = [];
-% end
-% 
-% theta_gt = ones(N,1);
-% theta_gt(outlierIDs) = -1;
+nrOutliers = round(N*L*outlierRatio);
+if nrOutliers > 0
+    fprintf('Tracking: generate %d outliers.\n',nrOutliers);
+    outlierIDs = N-nrOutliers+1:N;
+    outliers = randn(3,nrOutliers);
+    scene(:,outlierIDs) = outliers;
+    y(ib3(l))
+else
+    outlierIDs = [];
+end
+
+theta_gt = ones(N*L,1);
+theta_gt(outlierIDs) = -1;
 
 %% Save
 problem.type = 'tracking';
@@ -102,15 +128,37 @@ problem.y = y;
 % problem.outlierIDs = outlierIDs;
 % problem.theta_gt = theta_gt;
 problem.c_gt = c_gt;
+
 problem.p_gt = p_gt;
 problem.v_gt = v_gt;
 problem.R_gt = R_gt;
 problem.dR_gt = dR_gt;
+
 problem.cBound = 1.0;
 
 noiseBoundSq = max(4e-2, noiseSigma^2 * chi2inv(0.99,3));
 problem.noiseBoundSq = noiseBoundSq;
 problem.noiseBound = sqrt(problem.noiseBoundSq);
+
+problem.theta_gt = theta_gt;
+
+% also save a "ground truth vector" that we can quickly compare
+rh_gt = zeros(9*(L-1), 1);
+s_gt = zeros(3*L,1);
+for l = 1:L
+    R_cur = problem.R_gt(:,:,l);
+    dR_cur = problem.dR_gt(:,:,l);
+    if (l < L)
+        rh_gt((9*(l-1)+1):(9*l)) = reshape(R_cur * dR_cur,9,1);
+    end
+    s_gt((3*(l-1)+1):(3*l)) = R_cur' * problem.p_gt(:,:,l);
+end
+x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
+        reshape(problem.dR_gt,problem.L*9,1,1);
+        rh_gt; 
+        reshape(problem.p_gt,problem.L*3,1,1); 
+        s_gt];
+problem.x_gt = x_gt;
 
 end
 

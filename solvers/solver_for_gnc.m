@@ -1,10 +1,8 @@
-function soln = solve_nopos_tracking(problem)
-% Solves const. vel. optimization exactly via SDP.
-%   Analytically remove velocity & position & shape. SDP variables are
+function [fval, info] = solver_for_gnc(problem, varargin)
+% Non-minimal solver adjusted to run with GNC.
+%   Analytically remove velocity & shape. SDP variables are
 %   rotated position (s), rotation (R), rotation change (dR), and predicted
 %   rotation (Rh) for each time step.
-%
-%   WARNING: YOU JUST GET QUARTIC
 %
 % INPUTS:
 % - problem (struct): populated problem data
@@ -15,6 +13,21 @@ function soln = solve_nopos_tracking(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Process inputs
+% For GNC
+measurements =  1:problem.N;
+default_weights = ones(1, problem.N);
+params = inputParser;
+params.CaseSensitive = false;
+params.addParameter('Inliers', measurements, @(x) isnumeric(x) && all(floor(x)==x));
+params.addParameter('Weights', default_weights, @(x) isnumeric(x));
+params.addParameter('Estimate', [], @(x) isnumeric(x));
+params.parse(varargin{:});
+
+inliers = params.Results.Inliers(:)';
+w = params.Results.Weights(:);
+w = reshape(w,[problem.N_VAR,problem.L]);
+estimate = params.Results.Estimate;
+
 mosekpath = problem.mosekpath;
 
 N = problem.N_VAR;
@@ -27,14 +40,14 @@ dt = problem.dt;
 
 % Weights
 % TODO: SCALING MAY BE KEY TO TIGHTNESS (ALSO WHY DOES IT MESS v UP??)
-W = problem.weights;% / problem.noiseBoundSq; % N x L matrix of w_il
+W = w / problem.noiseBoundSq; % N x L matrix of w_il
 lambda = problem.lambda; % scalar
 Wp = problem.weights_position; % 3*(L-1) vector
 Wv = problem.weights_velocity; % 3*(L-1) vector
 Wr = problem.weights_rotation; % 3*(L-1) vector
 Wd = problem.weights_rotrate;  % 3*(L-1) vector
-lambda_p = 1.0; % TODO: FIX
 % TODO: SCALE WEIGHTS by noisebound??
+lambda_p = 0.005; % TODO: BETTER
 
 pBound = problem.translationBound;
 vBound = problem.velocityBound;
@@ -47,14 +60,15 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(3*L - 1) + 3*L; % 3L - 1 rotations, 3L rotated positions, 3L positions
+d = 9*(3*L - 1) + 3*L + 3*L; % 3L - 1 rotations, 3L rotated positions, 3L positions
 x = msspoly('x',d);
 
 % pull out individual variables
 r  = x(1:(9*L));
 dr = x((9*L + 1):(9*L + 9*L));
 rh = x((18*L + 1):(18*L + 9*(L-1)));
-s = x((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L));
+p = x((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L));
+s = x((30*L - 9 + 1):(30*L - 9 + 3*L));
 
 % convert to useful form
 R  = reshape(r ,3,3*L)';
@@ -95,41 +109,7 @@ eye3LL = [zeros(3*(L-1),3), eye(3*(L-1))];
 eye3LR = [eye(3*(L-1)), zeros(3*(L-1),3)];
 Av = dt*dt*(eye3LR'*diag(Wp)*eye3LR) + ((eye3LL-eye3LR)'*diag(Wv)*(eye3LL-eye3LR));
 
-% v = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR) * p);
-v_coeff = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR));
-
-% POSITION
-Ap = 2*((eye3LL-eye3LR)'*diag(Wp)*(eye3LL-eye3LR)) ...
-    -2*dt*(eye3LL-eye3LR)'*diag(Wp)*eye3LR*v_coeff ...
-    +0;
-%     +2*(lambda_p*eye(3*L));
-diagR = msspoly(zeros(3*L,3*L));
-for l = 1:L
-    diagR(ib3(l),ib3(l)) = R(ib3(l),:);
-end
-
-% M = [Ap, diagR';
-%      diagR, zeros(3*L,3*L)];
-% invert M using the Schur complement rule
-% Sinv = -diagR*Ap*diagR'; % M/Ap
-% ApInv = inv(Ap);
-% invM = [eye(3*L), -ApInv*diagR';
-%         zeros(3*L,3*L), eye(3*L)] * ...
-%        [ApInv, zeros(3*L,3*L);
-%         zeros(3*L,3*L), Sinv] * ...
-%        [eye(3*L), zeros(3*L,3*L);
-%         -diagR*ApInv, eye(3*L)];
-% b = [zeros(3*L,1); s];
-% p_full = invM * b;
-% p = p_full(1:(end-3*L),:);
-% p = -ApInv*diagR'*Sinv*s;
-% p = ApInv*Ap*diagR'*s;
-p = diagR'*s;
-% Great.
-
-% FINALIZE VELOCITY
-v = v_coeff * p;
-
+v = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR) * p);
 
 % MAIN OPTIMIZATION
 prob_obj = 0;
@@ -139,7 +119,10 @@ for l = 1:L
         prob_obj = prob_obj + W(i,l) * (obj2' * obj2);
     end
 end
+% c regularization
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
+% p regularization
+prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L)));
 for l = 2:L
     % delta p
     delp = p(ib3(l)) - (p(ib3(l-1)) + v(ib3(l-1))*dt);
@@ -153,6 +136,25 @@ for l = 2:L
     % dR
     deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
     prob_obj = prob_obj + Wd(3*(l-2)+1)*(deldR'*deldR);
+end
+
+% if GNC wants estimate, give it.
+if ~isempty(estimate)
+    fval = dmsubs(prob_obj,x,estimate);
+
+    rs = estimate(1:(9*L));
+    Rs = projectRList(rs);
+    c_est = dmsubs(c,x,estimate);
+    s_est = full(dmsubs(s,x,estimate));
+
+    residuals = zeros(1,problem.N);
+    for l = 1:L
+        for i = 1:N
+            temp = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est - s_est(l);
+            residuals(i + (l-1)) = norm(temp)^2;
+        end
+    end
+    return
 end
 
 %% Define constraints
@@ -294,7 +296,18 @@ soln.R_est = Rs;
 soln.dR_est = dRs;
 soln.Rh_est = Rhs;
 
-% soln.gap = gap;
+% save values for GNC
+fval = dmsubs(prob_obj, x, x_est);
+residuals = zeros(1,problem.N);
+for l = 1:L
+    for i = 1:N
+        temp = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est - s_est(:,:,l);
+        residuals(i + (l-1)) = norm(temp,'fro')^2;
+    end
+end
+info.soln = soln;
+info.x = x_est;
+info.residuals = residuals;
 
 end
 
@@ -304,7 +317,7 @@ function Rs = projectRList(r)
 N = length(r)/9;
 temp_R  = reshape(r ,3, 3*N)';
 Rs = zeros(3,3,N);
-for i = 1:N
-    Rs(:,:,i) = project2SO3(temp_R(ib3(i),:)');
+for ii = 1:N
+    Rs(:,:,ii) = project2SO3(temp_R(ib3(ii),:)');
 end
 end

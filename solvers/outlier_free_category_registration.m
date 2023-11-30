@@ -7,7 +7,7 @@ params.addParameter('lambda',0.1, @(x) isscalar(x));
 params.parse(varargin{:});
 lambda         = params.Results.lambda;
 
-N              = problem.N;
+N              = problem.N_VAR;
 K              = problem.K;
 scene          = problem.scene;
 shapes         = problem.shapes;

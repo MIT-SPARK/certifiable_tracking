@@ -16,7 +16,7 @@ function soln = solve_full_tracking(problem,lambda)
 %% Process inputs
 mosekpath = problem.mosekpath;
 
-N = problem.N;
+N = problem.N_VAR;
 K = problem.K;
 L = problem.L;
 
