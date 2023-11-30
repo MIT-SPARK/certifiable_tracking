@@ -13,7 +13,7 @@
 clc; clear; close all; restoredefaultpath
 
 %% Load variables
-load("demo_data.mat")
+load("data/demo_data.mat")
 
 % add internal paths
 addpath('./visualization')
