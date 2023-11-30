@@ -79,7 +79,12 @@ end
 %% Check solutions
 % eigenvalue plot
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
+hold on
+slices = [1:(1+9*(3*L-1)),(1+9*(3*L-1)+3*L+1):(9*(3*L-1)+6*L)];
+Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
+bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
 title("Eigenvalues of Relaxed Solution")
+hold off
 
 % raw error
 x_err = norm(problem.x_gt - soln.x_est);
