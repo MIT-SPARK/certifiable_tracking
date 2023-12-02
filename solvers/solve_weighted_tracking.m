@@ -25,7 +25,7 @@ dt = problem.dt;
 
 % Weights
 % TODO: SCALING MAY BE KEY TO TIGHTNESS (ALSO WHY DOES IT MESS v UP??)
-W = problem.weights / problem.noiseBoundSq; % N x L matrix of w_il
+W = problem.weights / problem.noiseBoundSq; % N x L matrix of w_il 
 lambda = problem.lambda; % scalar
 Wp = problem.weights_position; % 3*(L-1) vector
 Wv = problem.weights_velocity; % 3*(L-1) vector
@@ -46,6 +46,7 @@ end
 %% Define objective
 % optimization vector
 d = 9*(3*L - 1) + 3*L + 3*L; % 3L - 1 rotations, 3L rotated positions, 3L positions
+% 3L - 1 rotations: L rotations, L-1 delta rotations, L(?) redundant rotations
 x = msspoly('x',d);
 
 % pull out individual variables
@@ -107,7 +108,7 @@ end
 % c regularization
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
 % p regularization
-prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L)));
+prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L))); % LC: don't think we need this
 for l = 2:L
     % delta p
     delp = p(ib3(l)) - (p(ib3(l-1)) + v(ib3(l-1))*dt);
@@ -157,7 +158,7 @@ end
 
 % INEQUALITY
 % p,s in range for just first time (p'*p<=pBoundSq)
-% TODO: enforce in range for ALL time steps
+% TODO: enforce in range for ALL time steps - LC: agreed
 pBoundSq = pBound^2;
 g_p_first = pBoundSq*L - p(ib3(1))'*p(ib3(1));
 g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));

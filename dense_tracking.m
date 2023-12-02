@@ -32,13 +32,13 @@ path.mosekpath  = mosekpath;
 path.manoptpath = manoptpath;
 
 %% Generate random tracking problem
-problem.N_VAR = 11;
-problem.K = 3;
-problem.L = 10;
+problem.N_VAR = 11; % nr of keypoints
+problem.K = 3; % nr of shapes
+problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigma = 0.01;
-problem.intraRadius = 0.2;
+problem.noiseSigma = 0.01; % [m]
+problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 2.0;
