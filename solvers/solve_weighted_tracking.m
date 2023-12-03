@@ -45,6 +45,7 @@ end
 %% Define objective
 % optimization vector
 d = 9*(3*L - 1) + 3*L + 3*L; % 3L - 1 rotations, 3L rotated positions, 3L positions
+% 3L - 1 rotations: L rotations, L-1 delta rotations, L(?) redundant rotations
 x = msspoly('x',d);
 
 % pull out individual variables
@@ -156,7 +157,7 @@ end
 
 % INEQUALITY
 % p,s in range for just first time (p'*p<=pBoundSq)
-% TODO: enforce in range for ALL time steps
+% TODO: enforce in range for ALL time steps - LC: agreed
 pBoundSq = pBound^2;
 g_p_first = pBoundSq*L - p(ib3(1))'*p(ib3(1));
 g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
