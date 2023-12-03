@@ -37,23 +37,23 @@ problem.K = 3;
 problem.L = 10;
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigma = 0.01;
+problem.noiseSigma = 0.05;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
-problem.dt = 2.0;
+problem.dt = 1.0;
 
-problem.accelerationNoiseBound = 0.05;
-problem.rotationNoiseBound = pi/32; % rad
+problem.accelerationNoiseBound = 0.01;
+problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % Override ground truths (for testing)
-% problem.dR_gt = repmat(eye(3),1,1,problem.L);
+problem.dR_gt = repmat(eye(3),1,1,problem.L);
 % problem.R_gt = repmat(eye(3),1,1,problem.L);
 % problem.p_gt = zeros(3,1,problem.L);
 % problem.v_gt = zeros(3,1,problem.L);
 
 % Optional: use a specified velocity trajectory
-problem = make_trajectory(problem);
+% problem = make_trajectory(problem);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
@@ -65,16 +65,10 @@ problem.mosekpath = mosekpath;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 
-soln_pace = [];
-for l = 1:problem.L
-    pace_problem = problem;
-    pace_problem.weights = ones(problem.N_VAR,1);
-    pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);
-    [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, path, 'lambda',lambda);
-    s.R_est = R_est; s.p_est = t_est;
-    s.c_est = c_est; s.out = out;
-    soln_pace = [soln_pace; s];
-end
+soln_pace = pace_with_EKF(problem, path);
+
+% soln = solve_full_tracking(problem,lambda);
+% Ap = solve_nopos_tracking(problem);
 
 %% Check solutions
 % eigenvalue plot
@@ -119,5 +113,10 @@ end
 % shape error
 c_err = norm(problem.c_gt - soln.c_est);
 
+% PACE errors
+norm(problem.p_gt - soln_pace.p_raw,'fro')
+norm(problem.p_gt - soln_pace.p_smoothed,'fro')
+norm(problem.p_gt - soln.p_est,'fro')
+
 % Plot trajectory!
-plot_trajectory(problem,soln, soln_pace)
+plot_trajectory(problem,soln)

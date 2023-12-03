@@ -1,8 +1,5 @@
-function soln = solve_weighted_tracking(problem)
-% Solves const. vel. optimization exactly via SDP.
-%   Analytically remove velocity & shape. SDP variables are
-%   rotated position (s), rotation (R), rotation change (dR), and predicted
-%   rotation (Rh) for each time step.
+function soln = force_to_nullspace(problem)
+% Super experimental script that forces the solution to a different optima.
 %
 % INPUTS:
 % - problem (struct): populated problem data
@@ -24,7 +21,8 @@ y = problem.y; % 3*N x L matrix of y_i(t_l)
 dt = problem.dt;
 
 % Weights
-W = problem.weights; %/ problem.noiseBoundSq; % N x L matrix of w_il
+% TODO: SCALING MAY BE KEY TO TIGHTNESS (ALSO WHY DOES IT MESS v UP??)
+W = problem.weights / problem.noiseBoundSq; % N x L matrix of w_il
 lambda = problem.lambda; % scalar
 Wp = problem.weights_position; % 3*(L-1) vector
 Wv = problem.weights_velocity; % 3*(L-1) vector
@@ -44,7 +42,7 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(3*L - 1) + 3*L + 3*L; % 3L - 1 rotations, 3L rotated positions, 3L positions
+d = 9*(3*L - 1) + 3*L + 3*L + 1; % 3L - 1 rotations, 3L rotated positions, 3L positions
 x = msspoly('x',d);
 
 % pull out individual variables
@@ -53,6 +51,7 @@ dr = x((9*L + 1):(9*L + 9*L));
 rh = x((18*L + 1):(18*L + 9*(L-1)));
 p = x((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L));
 s = x((30*L - 9 + 1):(30*L - 9 + 3*L));
+kk = x(end);
 
 % convert to useful form
 R  = reshape(r ,3,3*L)';
@@ -95,6 +94,12 @@ Av = dt*dt*(eye3LR'*diag(Wp)*eye3LR) + ((eye3LL-eye3LR)'*diag(Wv)*(eye3LL-eye3LR
 
 v = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR) * p);
 
+% for testing
+v_coeff = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR));
+Ap = 2*((eye3LL-eye3LR)'*diag(Wp)*(eye3LL-eye3LR)) ...
+    -2*dt*(eye3LL-eye3LR)'*diag(Wp)*eye3LR*v_coeff;
+p_null = null(Ap);
+
 % MAIN OPTIMIZATION
 prob_obj = 0;
 for l = 1:L
@@ -107,6 +112,7 @@ end
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
 % p regularization
 % prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L)));
+prob_obj = prob_obj + 1*((p - kk*p_null(:,1))'*(p - kk*p_null(:,1)));
 for l = 2:L
     % delta p
     delp = p(ib3(l)) - (p(ib3(l-1)) + v(ib3(l-1))*dt);
@@ -215,7 +221,7 @@ rhs = x_est((18*L+1):(27*L-9));
 Rhs = projectRList(rhs);
 
 s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
-v_est_raw = reshape(full(dmsubs(v,x,x_est)),[3,1,L]);
+v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L]);
 p_est_raw = reshape(full(dmsubs(p,x,x_est)),[3,1,L]);
 c_est = full(dmsubs(c,x,x_est));
 
@@ -224,10 +230,6 @@ p_est = zeros(3,1,L);
 for l = 1:L
     p_est(:,:,l) = Rs(:,:,l)*s_est(:,:,l);
 end
-x_est_from_s = x_est;
-x_est_from_s((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L)) = reshape(p_est,[3*L,1,1]);
-v_est = reshape(full(dmsubs(v,x,x_est_from_s)),[3,1,L]);
-
 
 % suboptimality gap
 x_proj = [];
@@ -243,7 +245,7 @@ for l = 1:L-1
     r_temp = reshape(Rhs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
-x_proj = [x_proj; reshape(p_est,[3*L,1,1]); reshape(s_est,[3*L,1,1])];
+x_proj = [x_proj; full(dmsubs(p,x,x_est)); full(dmsubs(s,x,x_est)); full(x_est(end))];
 obj_est = dmsubs(prob_obj,x,x_proj);
 gap = (obj_est - obj(1)) / obj_est;
 
@@ -263,6 +265,12 @@ gap = (obj_est - obj(1)) / obj_est;
 % obj_est = dmsubs(prob_obj,x,x_est)
 % obj_gt = dmsubs(prob_obj,x,problem.x_gt)
 
+% For experimental distance vector
+a = reshape(squeeze(soln.p_est_raw),30,1);
+b = null(Ap);
+b = b(:,1);
+cos_dist = (b'*a)/(norm(b)*norm(a));
+
 %% Pack into struct
 % raw SDP/MOSEK data
 soln.raw.Xopt = Xopt;
@@ -279,7 +287,6 @@ soln.p_est = p_est;
 soln.v_est = v_est;
 soln.s_est = s_est;
 soln.p_est_raw = p_est_raw;
-soln.v_est_raw = v_est_raw;
 
 soln.R_est = Rs;
 soln.dR_est = dRs;
@@ -288,6 +295,8 @@ soln.Rh_est = Rhs;
 soln.gap = gap;
 soln.x_proj = x_proj;
 soln.obj_est = obj_est;
+
+soln.cos_dist = cos_dist;
 
 end
 

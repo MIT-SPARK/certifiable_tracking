@@ -102,6 +102,11 @@ v_coeff = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR));
 Ap = 2*((eye3LL-eye3LR)'*diag(Wp)*(eye3LL-eye3LR)) ...
     -2*dt*(eye3LL-eye3LR)'*diag(Wp)*eye3LR*v_coeff ...
     +0;
+
+soln = Ap;
+return;
+
+
 %     +2*(lambda_p*eye(3*L));
 diagR = msspoly(zeros(3*L,3*L));
 for l = 1:L
