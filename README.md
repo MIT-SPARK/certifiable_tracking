@@ -9,4 +9,4 @@ You can play with a limited set of results without installing dependencies. To r
 You may set the paths to these dependencies in [dense_tracking.m](dense_tracking.m).
 
 ## Example (no dependencies required)
-Sample results are given in [demo_data.mat](data/demo_data.mat). The script [luca_demo.m](luca_demo.m) serves as an example of working with these results.
+Sample results are given in [demo_data.mat](data/demo_data.mat). The script [demo.m](demo.m) serves as an example of working with these results.

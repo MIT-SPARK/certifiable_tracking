@@ -100,6 +100,7 @@ for l = 1:L
         v_gt(:,:,l) = v_gt(:,:,l) + accNoiseBound*randn(3,1)*dt;
 
         R_gt(:,:,l+1) = R * dR_gt(:,:,l);
+%         R_gt(:,:,l+1) = dR_gt(:,:,l) * R;
         p_gt(:,:,l+1) = p + v_gt(:,:,l) * dt;
     end
 end

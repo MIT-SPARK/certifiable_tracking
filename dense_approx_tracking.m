@@ -7,18 +7,27 @@ clc; clear; close all; restoredefaultpath
 % rng("default")
 
 %% dependencies
-spotpath    = '../spotless';
+% Change paths here
+certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 mosekpath   = 'C:/Program Files/Mosek/10.1/toolbox/r2017a';
-stridepath  = '../STRIDE';
-manoptpath  = '../manopt';
-sdpnalpath  = '../../SDPNALv1.0';
+sdpnalpath  = '../SDPNALv1.0';
+
+% add external paths
+spotpath    = certifiablyrobustperceptionpath + '/spotless';
+stridepath  = certifiablyrobustperceptionpath + '/STRIDE';
+manoptpath  = certifiablyrobustperceptionpath + '/manopt';
+addpath(certifiablyrobustperceptionpath + '/utils')
+addpath(genpath(spotpath)) % Use spotless for defining polynomials
+addpath(certifiablyrobustperceptionpath + '/SDPRelaxations') % implementations for SDP relaxation
+
+% add internal paths
+addpath('./solvers')
+addpath('./visualization')
+addpath('./utils')
+
 path.stridepath = stridepath;
 path.mosekpath  = mosekpath;
 path.manoptpath = manoptpath;
-addpath('../utils')
-addpath('./solvers')
-addpath(genpath('../spotless')) % Use spotless for defining polynomials
-addpath('../SDPRelaxations') % implementations for SDP relaxation
 
 %% Generate random tracking problem
 problem.N_VAR = 10;
@@ -38,7 +47,7 @@ problem.dt = 1.0;
 % problem.p_gt = zeros(3,1);
 % problem.v_gt = zeros(3,1);
 % problem.R_gt = eye(3); % arbitrary R does not cause issues
-% problem.dR_gt = eye(3);
+problem.dR_gt = eye(3);
 
 % Diagnosis: 
 % A) nonzero p/v causing issues -> error in p/v formulation
