@@ -35,9 +35,11 @@ prior_vel = (p(:,2)-p(:,1))/problem.dt;
 prior_state = reshape([prior_pos'; prior_vel'],6,1);
 
 % Linear velocity EKF
-EKF = trackingEKF(@constvel,@cvmeas,prior_state, ...
+EKF_lin = trackingEKF(@constvel,@cvmeas,prior_state, ...
     'StateTransitionJacobianFcn',@constveljac, ...
     'MeasurementJacobianFcn',@cvmeasjac);
+
+% 
 
 % Smooth measurements with EKF
 p_smoothed = zeros(3,1,L);
@@ -47,9 +49,9 @@ v_smoothed = zeros(3,1,L);
 v_smoothed(:,:,2) = prior_vel;
 for l = 3:L
     % prediction
-    [xpred, Ppred] = predict(EKF,problem.dt);
+    [xpred, Ppred] = predict(EKF_lin,problem.dt);
     % correction
-    [xcorr, Pcorr] = correct(EKF,p(:,l));
+    [xcorr, Pcorr] = correct(EKF_lin,p(:,l));
 
     % save
     xcorr = reshape(xcorr,2,3);

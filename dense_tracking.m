@@ -37,17 +37,17 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigma = 0.01; % [m]
+problem.noiseSigma = 0.05; % [m]
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
 problem.accelerationNoiseBound = 0.01;
-problem.rotationNoiseBound = 0;%pi/32; % rad
+problem.rotationNoiseBound = pi/32; % rad
 
 % Override ground truths (for testing)
-problem.dR_gt = repmat(eye(3),1,1,problem.L);
+% problem.dR_gt = repmat(eye(3),1,1,problem.L-1);
 % problem.R_gt = repmat(eye(3),1,1,problem.L);
 % problem.p_gt = zeros(3,1,problem.L);
 % problem.v_gt = zeros(3,1,problem.L);
@@ -75,7 +75,7 @@ soln_pace = pace_with_EKF(problem, path);
 L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 hold on
-slices = [1:(1+9*(3*L-1)),(1+9*(3*L-1)+3*L+1):(9*(3*L-1)+6*L)];
+slices = [1:(1+9*(3*L-2)),(1+9*(3*L-2)+3*L+1):(9*(3*L-2)+6*L)];
 Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
 bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
 title("Eigenvalues of Relaxed Solution")
@@ -87,13 +87,13 @@ x_err = norm(problem.x_gt - soln.x_est);
 % raw error excluding p
 x_gt = problem.x_gt;
 x_est = soln.x_est;
-x_gt_no_p = [x_gt(1:(9*(3*L-1) + 1)); x_gt((9*(3*L-1) + 3*L + 1):end)];
-x_est_no_p = [x_est(1:(9*(3*L-1) + 1)); x_est((9*(3*L-1) + 3*L + 1):end)];
+x_gt_no_p = [x_gt(1:(9*(3*L-2) + 1)); x_gt((9*(3*L-2) + 3*L + 1):end)];
+x_est_no_p = [x_est(1:(9*(3*L-2) + 1)); x_est((9*(3*L-2) + 3*L + 1):end)];
 x_err_no_p = norm(x_gt_no_p - x_est_no_p);
 
 % projected errors
 R_err = zeros(L,1);
-dR_err = zeros(L,1);
+dR_err = zeros(L-1,1);
 p_err = zeros(L,1);
 v_err = zeros(L,1);
 p_err_bad = zeros(L,1);
@@ -101,7 +101,9 @@ for l = 1:L
     % R
     R_err(l) = getAngularError(problem.R_gt(:,:,l), soln.R_est(:,:,l));
     % dR
-    dR_err(l) = getAngularError(problem.dR_gt(:,:,l), soln.dR_est(:,:,l));
+    if (l < L)
+        dR_err(l) = getAngularError(problem.dR_gt(:,:,l), soln.dR_est(:,:,l));
+    end
     % p
     p_err(l) = norm(problem.p_gt(:,:,l) - soln.p_est(:,:,l));
     % v

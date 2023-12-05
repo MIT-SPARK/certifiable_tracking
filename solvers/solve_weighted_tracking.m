@@ -44,25 +44,25 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(3*L - 1) + 3*L + 3*L; % 3L - 1 rotations, 3L rotated positions, 3L positions
+d = 9*(3*L - 2) + 3*L + 3*L; % 3L - 2 rotations, 3L rotated positions, 3L positions
 % 3L - 1 rotations: L rotations, L-1 delta rotations, L(?) redundant rotations
 x = msspoly('x',d);
 
 % pull out individual variables
 r  = x(1:(9*L));
-dr = x((9*L + 1):(9*L + 9*L));
-rh = x((18*L + 1):(18*L + 9*(L-1)));
-p = x((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L));
-s = x((30*L - 9 + 1):(30*L - 9 + 3*L));
+dr = x((9*L + 1):(9*L + 9*(L-1)));
+rh = x((18*L - 9 + 1):(18*L - 9 + 9*(L-1)));
+p = x((27*L - 18 + 1):(27*L - 18 + 3*L));
+s = x((30*L - 18 + 1):(30*L - 18 + 3*L));
 
 % convert to useful form
 R  = reshape(r ,3,3*L)';
-dR = reshape(dr,3,3*L)';
+dR = reshape(dr,3,3*(L-1))';
 Rh = reshape(rh,3,3*(L-1))';
 for l = 1:L
     R(ib3(l),:) =  R(ib3(l),:)';
-   dR(ib3(l),:) = dR(ib3(l),:)';
     if (l < L)
+       dR(ib3(l),:) = dR(ib3(l),:)';
         Rh(ib3(l),:) = Rh(ib3(l),:)';
     end
 end
@@ -119,8 +119,10 @@ for l = 2:L
     delR = reshape(R(ib3(l),:) - Rh(ib3(l-1),:),9,1);
     prob_obj = prob_obj + Wr(3*(l-2)+1)*(delR'*delR);
     % dR
-    deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
-    prob_obj = prob_obj + Wd(3*(l-2)+1)*(deldR'*deldR);
+    if (l ~= L)
+        deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
+        prob_obj = prob_obj + Wd(3*(l-2)+1)*(deldR'*deldR);
+    end
 end
 
 %% Define constraints
@@ -130,12 +132,12 @@ h = [];
 % SO(3) constraints
 for l = 1:L
     c1 = so3_constraints( R(ib3(l),:));
-    c2 = so3_constraints(dR(ib3(l),:));
     if (l < L)
+        c2 = so3_constraints(dR(ib3(l),:));
         c3 = so3_constraints(Rh(ib3(l),:));
         h = [h; c1; c2; c3];
     else
-        h = [h; c1; c2];
+        h = [h; c1];
     end
 end
 
@@ -210,9 +212,9 @@ x_est = vecmax_normed(2:end);
 % Project to SO(3) and extract results
 rs = x_est(1:(9*L));
 Rs = projectRList(rs);
-drs = x_est((9*L+1):(18*L));
+drs = x_est((9*L+1):(18*L-9));
 dRs = projectRList(drs);
-rhs = x_est((18*L+1):(27*L-9));
+rhs = x_est((18*L-9+1):(27*L-18));
 Rhs = projectRList(rhs);
 
 s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
@@ -226,7 +228,7 @@ for l = 1:L
     p_est(:,:,l) = Rs(:,:,l)*s_est(:,:,l);
 end
 x_est_from_s = x_est;
-x_est_from_s((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L)) = reshape(p_est,[3*L,1,1]);
+x_est_from_s((27*L - 18 + 1):(27*L - 18 + 3*L)) = reshape(p_est,[3*L,1,1]);
 v_est = reshape(full(dmsubs(v,x,x_est_from_s)),[3,1,L]);
 
 
@@ -236,7 +238,7 @@ for l = 1:L
     r_temp = reshape(Rs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
-for l = 1:L
+for l = 1:L-1
     r_temp = reshape(dRs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end

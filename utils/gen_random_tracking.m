@@ -78,7 +78,7 @@ else
 end
 if ~isfield(problem,'dR_gt')
     dR_gt = rand_rotation;
-    dR_gt = repmat(dR_gt,1,1,L);
+    dR_gt = repmat(dR_gt,1,1,L-1);
 else
     dR_gt = problem.dR_gt;
 end
@@ -100,7 +100,6 @@ for l = 1:L
         v_gt(:,:,l) = v_gt(:,:,l) + accNoiseBound*randn(3,1)*dt;
 
         R_gt(:,:,l+1) = R * dR_gt(:,:,l);
-%         R_gt(:,:,l+1) = dR_gt(:,:,l) * R;
         p_gt(:,:,l+1) = p + v_gt(:,:,l) * dt;
     end
 end
@@ -155,14 +154,14 @@ rh_gt = zeros(9*(L-1), 1);
 s_gt = zeros(3*L,1);
 for l = 1:L
     R_cur = problem.R_gt(:,:,l);
-    dR_cur = problem.dR_gt(:,:,l);
     if (l < L)
+        dR_cur = problem.dR_gt(:,:,l);
         rh_gt((9*(l-1)+1):(9*l)) = reshape(R_cur * dR_cur,9,1);
     end
     s_gt((3*(l-1)+1):(3*l)) = R_cur' * problem.p_gt(:,:,l);
 end
 x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
-        reshape(problem.dR_gt,problem.L*9,1,1);
+        reshape(problem.dR_gt,(problem.L-1)*9,1,1);
         rh_gt; 
         reshape(problem.p_gt,problem.L*3,1,1); 
         s_gt];
