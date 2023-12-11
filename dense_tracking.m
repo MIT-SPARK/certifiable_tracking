@@ -1,7 +1,6 @@
 %% Dense SDP relaxation for certifiable tracking
-% 
-% PUMO:
-% Pose estimation Using Multiple Observations
+%  Generic, tunable script to run one iteration of dense tracking.
+%    Operates on random data with no outlier support.
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -43,14 +42,12 @@ problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
+% problem.velprior = "body";       % constant body frame velocity
+problem.velprior = "world";      % constant world frame velocity
+% problem.velprior = "grav-world"; % add gravity in z direction
+
 problem.accelerationNoiseBound = 0.01;
 problem.rotationNoiseBound = pi/32; % rad
-
-% Override ground truths (for testing)
-% problem.dR_gt = repmat(eye(3),1,1,problem.L-1);
-% problem.R_gt = repmat(eye(3),1,1,problem.L);
-% problem.p_gt = zeros(3,1,problem.L);
-% problem.v_gt = zeros(3,1,problem.L);
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -96,7 +93,6 @@ R_err = zeros(L,1);
 dR_err = zeros(L-1,1);
 p_err = zeros(L,1);
 v_err = zeros(L,1);
-p_err_bad = zeros(L,1);
 for l = 1:L
     % R
     R_err(l) = getAngularError(problem.R_gt(:,:,l), soln.R_est(:,:,l));
@@ -108,8 +104,6 @@ for l = 1:L
     p_err(l) = norm(problem.p_gt(:,:,l) - soln.p_est(:,:,l));
     % v
     v_err(l) = norm(problem.v_gt(:,:,l) - soln.v_est(:,:,l));
-    % bad p
-    p_err_bad(l) = norm(problem.p_gt(:,:,l) - soln.p_est_raw(:,:,l));
 end
 
 % shape error

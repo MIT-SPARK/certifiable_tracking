@@ -24,23 +24,32 @@ rotNoiseBound = problem.rotationNoiseBound;
 % end
 
 % Weights!
-% TODO: make this more random?
+% TODO: support for simulating occulsions with weights?
 problem.weights = ones(N,L);
 % no support for different x,y,z weights (repeat each weight 3 times)
+% TODO: update to match dev branch
 problem.weights_position = ones(3*(L-1),1);
 problem.weights_velocity = ones(3*(L-1),1);
 problem.weights_rotation = ones(3*(L-1),1);
 problem.weights_rotrate  = ones(3*(L-1),1);
 
 %% generate a mean shape centered at zero
-mean_shape = randn(3,N);
-mean_shape = mean_shape - mean(mean_shape,2);
+% allow override by specifying in problem struct
+if ~isfield(problem,'B')
 
-shapes = zeros(3,N,K);
-for k = 1:K
-    shapes(:,:,k) = mean_shape + intraRadius * randn(3,N);
+    mean_shape = randn(3,N);
+    mean_shape = mean_shape - mean(mean_shape,2);
+    
+    shapes = zeros(3,N,K);
+    for k = 1:K
+        shapes(:,:,k) = mean_shape + intraRadius * randn(3,N);
+    end
+    B = reshape(shapes, 3*N, K);
+
+else
+    B = problem.B;
+    shapes = problem.shapes;
 end
-B = reshape(shapes, 3*N, K);
 
 %% ground truth c, v, p, R, dR
 % allow override by specifying in problem struct
@@ -84,6 +93,7 @@ else
 end
 
 %% generate noise-y measurements
+% TODO: update to include priors
 shape = reshape(B*c_gt,3,N);
 y = zeros(3*N,L);
 
@@ -150,6 +160,7 @@ problem.noiseBound = sqrt(problem.noiseBoundSq);
 problem.theta_gt = theta_gt;
 
 % also save a "ground truth vector" that we can quickly compare
+% TODO: update for priors
 rh_gt = zeros(9*(L-1), 1);
 s_gt = zeros(3*L,1);
 for l = 1:L

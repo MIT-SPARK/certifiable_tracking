@@ -1,5 +1,13 @@
-function soln = force_to_nullspace(problem)
-% Super experimental script that forces the solution to a different optima.
+function soln = solve_tracking_body(problem)
+% Solves const. vel. (body frame) optimization exactly via SDP
+%   Assume the *body frame* velocity is constant and object is spinning.
+%   Result: spiral trajectory.
+%   Analytically remove velocity & shape. SDP variables are
+%   * rotated position (s)
+%   * last rotated position (sh)
+%   * rotation (R)
+%   * rotation change (dR)
+%   * predicted rotation (Rh)
 %
 % INPUTS:
 % - problem (struct): populated problem data
@@ -21,15 +29,15 @@ y = problem.y; % 3*N x L matrix of y_i(t_l)
 dt = problem.dt;
 
 % Weights
-% TODO: SCALING MAY BE KEY TO TIGHTNESS (ALSO WHY DOES IT MESS v UP??)
-W = problem.weights / problem.noiseBoundSq; % N x L matrix of w_il
+% TODO: scale weights/covars by noisebound?
+W = problem.covar_measure.^(-1); % N x L matrix of w_il
 lambda = problem.lambda; % scalar
-Wp = problem.weights_position; % 3*(L-1) vector
-Wv = problem.weights_velocity; % 3*(L-1) vector
-Wr = problem.weights_rotation; % 3*(L-1) vector
-Wd = problem.weights_rotrate;  % 3*(L-1) vector
-% TODO: SCALE WEIGHTS by noisebound??
-lambda_p = 0.005; % TODO: BETTER
+wp = problem.covar_position.^(-1); % L-1 vector
+Wp = diag(reshape(repmat(wp',3,1),3*(L-1),1));
+wv = problem.covar_velocity.^(-1); % L-2 vector
+Wv = diag(reshape(repmat(wv',3,1),3*(L-2),1));
+wr = problem.kappa_rotation; % L-1 vector
+wd = problem.kappa_rotrate;  % L-1 vector
 
 pBound = problem.translationBound;
 vBound = problem.velocityBound;
@@ -42,25 +50,25 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(3*L - 1) + 3*L + 3*L + 1; % 3L - 1 rotations, 3L rotated positions, 3L positions
+d = 9*(3*L - 2) + 3*L + 3*(L-1); % 3L - 2 rotations, 3L rotated positions, 3L-1 time-varying rotated positions
+% 3L - 2 rotations: L rotations, L-1 delta rotations, L-1 redundant rotations
 x = msspoly('x',d);
 
 % pull out individual variables
 r  = x(1:(9*L));
-dr = x((9*L + 1):(9*L + 9*L));
-rh = x((18*L + 1):(18*L + 9*(L-1)));
-p = x((18*L + 9*(L-1) + 1):(27*L - 9 + 3*L));
-s = x((30*L - 9 + 1):(30*L - 9 + 3*L));
-kk = x(end);
+dr = x((9*L + 1):(9*L + 9*(L-1)));
+rh = x((18*L - 9 + 1):(18*L - 9 + 9*(L-1)));
+s  = x((27*L - 18 + 1):(27*L - 18 + 3*L));
+sh = x((30*L - 18 + 1):(30*L - 18 + 3*(L-1)));
 
 % convert to useful form
 R  = reshape(r ,3,3*L)';
-dR = reshape(dr,3,3*L)';
+dR = reshape(dr,3,3*(L-1))';
 Rh = reshape(rh,3,3*(L-1))';
 for l = 1:L
     R(ib3(l),:) =  R(ib3(l),:)';
-   dR(ib3(l),:) = dR(ib3(l),:)';
     if (l < L)
+       dR(ib3(l),:) = dR(ib3(l),:)';
         Rh(ib3(l),:) = Rh(ib3(l),:)';
     end
 end
@@ -90,15 +98,14 @@ c = invH(1:(end-1),:);
 % VELOCITY
 eye3LL = [zeros(3*(L-1),3), eye(3*(L-1))];
 eye3LR = [eye(3*(L-1)), zeros(3*(L-1),3)];
-Av = dt*dt*(eye3LR'*diag(Wp)*eye3LR) + ((eye3LL-eye3LR)'*diag(Wv)*(eye3LL-eye3LR));
 
-v = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR) * p);
+eye3Lm3 = eye(3*(L-1));
+eye3Lm3L = [zeros(3*(L-2),3), eye(3*(L-2))];
+eye3Lm3R = [eye(3*(L-2)), zeros(3*(L-2),3)];
 
-% for testing
-v_coeff = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR));
-Ap = 2*((eye3LL-eye3LR)'*diag(Wp)*(eye3LL-eye3LR)) ...
-    -2*dt*(eye3LL-eye3LR)'*diag(Wp)*eye3LR*v_coeff;
-p_null = null(Ap);
+Av = dt*dt*(eye3Lm3'*Wp*eye3Lm3) + ((eye3Lm3L-eye3Lm3R)'*Wv*(eye3Lm3L-eye3Lm3R));
+
+v = Av \ (dt*eye3Lm3'*Wp*(sh - eye3LR*s));
 
 % MAIN OPTIMIZATION
 prob_obj = 0;
@@ -112,20 +119,23 @@ end
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
 % p regularization
 % prob_obj = prob_obj + lambda_p*(p(ib3(1))'*p(ib3(1)) + p(ib3(L))'*p(ib3(L)));
-prob_obj = prob_obj + 1*((p - kk*p_null(:,1))'*(p - kk*p_null(:,1)));
 for l = 2:L
-    % delta p
-    delp = p(ib3(l)) - (p(ib3(l-1)) + v(ib3(l-1))*dt);
-    prob_obj = prob_obj + Wp(3*(l-2)+1)*(delp'*delp);
+    % delta "p"
+    delp = sh(ib3(l-1)) - (s(ib3(l-1)) + v(ib3(l-1))*dt);
+    prob_obj = prob_obj + wp(l-1)*(delp'*delp);
     % delta v
-    delv = v(ib3(l)) - v(ib3(l-1));
-    prob_obj = prob_obj + Wv(3*(l-2)+1)*(delv'*delv);
+    if (l < L)
+        delv = v(ib3(l)) - v(ib3(l-1));
+        prob_obj = prob_obj + wv(l-1)*(delv'*delv);
+    end
     % delta R
     delR = reshape(R(ib3(l),:) - Rh(ib3(l-1),:),9,1);
-    prob_obj = prob_obj + Wr(3*(l-2)+1)*(delR'*delR);
+    prob_obj = prob_obj + wr(l-1)*(delR'*delR);
     % dR
-    deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
-    prob_obj = prob_obj + Wd(3*(l-2)+1)*(deldR'*deldR);
+    if (l < L)
+        deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
+        prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
+    end
 end
 
 %% Define constraints
@@ -135,12 +145,12 @@ h = [];
 % SO(3) constraints
 for l = 1:L
     c1 = so3_constraints( R(ib3(l),:));
-    c2 = so3_constraints(dR(ib3(l),:));
     if (l < L)
+        c2 = so3_constraints(dR(ib3(l),:));
         c3 = so3_constraints(Rh(ib3(l),:));
         h = [h; c1; c2; c3];
     else
-        h = [h; c1; c2];
+        h = [h; c1];
     end
 end
 
@@ -153,18 +163,21 @@ for l = 2:L
 %     h = [h; reshape(R(ib3(l-1),:)'*Rh(ib3(l-1),:) - dR(ib3(l-1),:),9,1)];
 end
 
-% s = R' p constraint
-for l = 1:L
-    % explictly saying R' = R^{-1} helps the solution converge
-    h = [h; s(ib3(l)) - R(ib3(l),:)'*p(ib3(l))];
-    h = [h; R(ib3(l),:)*s(ib3(l)) - p(ib3(l))]; % this constraint more important
+% sh(l) = R'(l-1)*R(l)*s(l) constraint
+% sh(l) = dR(l-1)*s(l)
+for l = 2:L
+    % dR version
+    h = [h; sh(ib3(l-1)) - dR(ib3(l-1),:)*s(ib3(l))];
+    h = [h; dR(ib3(l-1),:)'*sh(ib3(l-1)) - s(ib3(l))];
+    % Long version (adding significantly slows solve time)
+    % h = [h; R(ib3(l-1),:)*sh(ib3(l-1)) - R(ib3(l),:)*s(ib3(l))];
 end
 
 % INEQUALITY
 % p,s in range for just first time (p'*p<=pBoundSq)
-% TODO: enforce in range for ALL time steps
+% TODO: enforce in range for ALL time steps - LC: agreed
+% TODO: add in sh
 pBoundSq = pBound^2;
-g_p_first = pBoundSq*L - p(ib3(1))'*p(ib3(1));
 g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
 
 % v bound (v'*v<=vBoundSq)
@@ -177,13 +190,13 @@ g_c = [cBoundSq - c'*c;c];
 
 % g = [g_c];
 % g = [g_c;g_v];
-g = [g_s_first; g_p_first; g_v; g_c];
+g = [g_s_first; g_v; g_c];
 
 %% Complete problem definition
 problem.vars = x;
 problem.objective = prob_obj;
 problem.equality = h; % equality
-problem.inequality = g; % inequsality
+problem.inequality = g; % inequality
 
 %% Relax!
 kappa = 1; % relaxation order
@@ -215,20 +228,27 @@ x_est = vecmax_normed(2:end);
 % Project to SO(3) and extract results
 rs = x_est(1:(9*L));
 Rs = projectRList(rs);
-drs = x_est((9*L+1):(18*L));
+drs = x_est((9*L+1):(18*L-9));
 dRs = projectRList(drs);
-rhs = x_est((18*L+1):(27*L-9));
+rhs = x_est((18*L-9+1):(27*L-18));
 Rhs = projectRList(rhs);
 
 s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
-v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L]);
-p_est_raw = reshape(full(dmsubs(p,x,x_est)),[3,1,L]);
+v_est_raw = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
 c_est = full(dmsubs(c,x,x_est));
+sh_est_raw = reshape(full(dmsubs(sh,x,x_est)),[3,1,L-1]);
 
 % estimate p from s
 p_est = zeros(3,1,L);
 for l = 1:L
     p_est(:,:,l) = Rs(:,:,l)*s_est(:,:,l);
+end
+
+% estimate sh from s
+sh_est = zeros(3,1,L-1);
+for l = 2:L
+    sh_est(:,:,l-1) = Rs(:,:,l-1)'*Rs(:,:,l)*s_est(:,:,l);
+%     sh_est(:,:,l-1) = dRs(:,:,l-1)'*s_est(:,:,l);
 end
 
 % suboptimality gap
@@ -237,39 +257,23 @@ for l = 1:L
     r_temp = reshape(Rs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
-for l = 1:L
+for l = 1:L-1
     r_temp = reshape(dRs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
 for l = 1:L-1
-    r_temp = reshape(Rhs(:,:,l),9,1);
+    % r_temp = reshape(Rhs(:,:,l),9,1);
+    r_temp = reshape(Rs(:,:,l)*dRs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
-x_proj = [x_proj; full(dmsubs(p,x,x_est)); full(dmsubs(s,x,x_est)); full(x_est(end))];
+x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(sh_est,[3*L-3,1,1])];
+
+% compute gap
 obj_est = dmsubs(prob_obj,x,x_proj);
 gap = (obj_est - obj(1)) / obj_est;
 
-
-% duality gap
-% obj_est = dmsubs(prob_obj,x,x_est);
-% obj_gt = dmsubs(prob_obj,x,problem.x_gt);
-% gap = abs(obj_est - obj_gt)/(1+abs(obj_est)+abs(obj_gt));
-
-% FOR TESTING
-% x_gt = x_gt(2:end);
-% c_gt = dmsubs(c,x,x_gt); % will not match gt with noise
-% p_gt = dmsubs(p,x,x_gt);
-% v_gt = dmsubs(v,x,x_gt);
-
-% can also test objective->0 in noise-free case
-% obj_est = dmsubs(prob_obj,x,x_est)
-% obj_gt = dmsubs(prob_obj,x,problem.x_gt)
-
-% For experimental distance vector
-a = reshape(squeeze(soln.p_est_raw),30,1);
-b = null(Ap);
-b = b(:,1);
-cos_dist = (b'*a)/(norm(b)*norm(a));
+% estimate v from projected version
+v_est = reshape(full(dmsubs(v,x,x_proj)),[3,1,L-1]);
 
 %% Pack into struct
 % raw SDP/MOSEK data
@@ -285,8 +289,10 @@ soln.x_est = x_est;
 soln.c_est = c_est;
 soln.p_est = p_est;
 soln.v_est = v_est;
+soln.v_est_raw = v_est_raw;
 soln.s_est = s_est;
-soln.p_est_raw = p_est_raw;
+soln.sh_est = sh_est;
+soln.sh_est_raw = sh_est_raw;
 
 soln.R_est = Rs;
 soln.dR_est = dRs;
@@ -296,17 +302,4 @@ soln.gap = gap;
 soln.x_proj = x_proj;
 soln.obj_est = obj_est;
 
-soln.cos_dist = cos_dist;
-
-end
-
-function Rs = projectRList(r)
-% project list of Rs into SO(3) conveniently
-
-N = length(r)/9;
-temp_R  = reshape(r ,3, 3*N)';
-Rs = zeros(3,3,N);
-for i = 1:N
-    Rs(:,:,i) = project2SO3(temp_R(ib3(i),:)');
-end
 end
