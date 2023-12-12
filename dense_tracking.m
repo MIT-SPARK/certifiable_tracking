@@ -47,8 +47,8 @@ problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
-% problem.velprior = "body";       % constant body frame velocity
-problem.velprior = "world";      % constant world frame velocity
+problem.velprior = "body";       % constant body frame velocity
+% problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 problem.accelerationNoiseBoundSqrt = 0.01;
