@@ -23,40 +23,80 @@ L = problem.L;
 dt = problem.dt;
 
 interval_pts = 50.0;
-t = linspace(0,dt*L,interval_pts*L+1);
+t = linspace(0,dt*L,interval_pts*(L-1)+1);
 
 %% Extract ground truth trajectory
-traj_gt = zeros(3,L*interval_pts);
+traj_gt = zeros(3,(L-1)*interval_pts);
 
-for l = 1:L
+for l = 1:L-1
     ran = (interval_pts*(l-1) + 1):(interval_pts*l);
-    if l == L
-        % add last point to last interval
-        ran = [ran,ran(end)+1];
+
+    if strcmp(problem.velprior, "body")
+        R = problem.R_gt(:,:,l);
+        dR = problem.dR_gt(:,:,l);
+        v = problem.v_gt(:,:,l);
+        p = problem.p_gt(:,:,l);
+    
+        % spiral to next
+        pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
+    
+        traj_gt(:, ran) = pts(:,1:end-1);
+        if (l == (L-1))
+            traj_gt(:,end+1) = pts(:,end);
+        end
+    elseif strcmp(problem.velprior, "world")
+        if l == (L-1)
+            % add last point to last interval
+            ran = [ran,ran(end)+1];
+        end
+    
+        t_cur = t(ran);
+        v_cur = problem.v_gt(:,:,l) * (t_cur - t_cur(1));
+        p_cur = problem.p_gt(:,:,l) + v_cur;
+    
+        traj_gt(:,ran) = p_cur;
+    elseif strcmp(problem.velprior, "grav-world")
+        error("Selected prior is not implemented")
+    else
+        error("Selected prior is not implemented")
     end
-
-    t_cur = t(ran);
-    v_cur = problem.v_gt(:,:,l) * (t_cur - t_cur(1));
-    p_cur = problem.p_gt(:,:,l) + v_cur;
-
-    traj_gt(:,ran) = p_cur;
 end
 
 %% Extract estimated trajectory
-traj_est = zeros(3,L*interval_pts+1);
+traj_est = zeros(3,(L-1)*interval_pts);
 
-for l = 1:L
+for l = 1:L-1
     ran = (interval_pts*(l-1) + 1):(interval_pts*l);
-    if l == L
-        % add final point to last interval
-        ran = [ran,ran(end)+1];
+
+    if strcmp(problem.velprior, "body")
+        R = soln.R_est(:,:,l);
+        dR = soln.dR_est(:,:,l);
+        v = soln.v_est(:,:,l);
+        p = soln.p_est(:,:,l);
+    
+        % spiral to next
+        pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
+    
+        traj_est(:, ran) = pts(:,1:end-1);
+        if (l == (L-1))
+            traj_est(:,end+1) = pts(:,end);
+        end
+    elseif strcmp(problem.velprior, "world")
+        if l == (L-1)
+            % add final point to last interval
+            ran = [ran,ran(end)+1];
+        end
+    
+        t_cur = t(ran);
+        v_cur = soln.v_est(:,:,l) * (t_cur - t_cur(1));
+        p_cur = soln.p_est(:,:,l) + v_cur;
+    
+        traj_est(:,ran) = p_cur;
+    elseif strcmp(problem.velprior, "grav-world")
+        error("Selected prior is not implemented")
+    else
+        error("Selected prior is not implemented")
     end
-
-    t_cur = t(ran);
-    v_cur = soln.v_est(:,:,l) * (t_cur - t_cur(1));
-    p_cur = soln.p_est(:,:,l) + v_cur;
-
-    traj_est(:,ran) = p_cur;
 end
 
 %% Plot!
@@ -74,6 +114,7 @@ end
 
 title("3D Trajectories")
 legend('Location','ne')
+axis equal
 
 % Explicit x, y, z comparison
 figure

@@ -4,6 +4,11 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
+% TODOS:
+% 1) selector for PACE
+% 2) selector for data checking (below)
+% 3) selector for viz
+
 clc; clear; close all; restoredefaultpath
 % rng("default")
 
@@ -42,8 +47,8 @@ problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
-problem.velprior = "body";       % constant body frame velocity
-% problem.velprior = "world";      % constant world frame velocity
+% problem.velprior = "body";       % constant body frame velocity
+problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 problem.accelerationNoiseBoundSqrt = 0.01;
@@ -72,21 +77,26 @@ soln_pace = pace_with_EKF(problem, path);
 L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 hold on
-slices = [1:(1+9*(3*L-2)),(1+9*(3*L-2)+3*L+1):(9*(3*L-2)+6*L)];
-Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
-bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
-title("Eigenvalues of Relaxed Solution")
+
+if strcmp(problem.velprior, "body")
+    slices = 1:(1+9*(3*L-2)+3*L);
+    Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
+    bar([zeros(3*(L-1),1);eig(Xopt_pRemoved)]);
+    title("Eigenvalues of Relaxed Solution")
+elseif strcmp(problem.velprior, "world")
+    slices = [1:(1+9*(3*L-2)),(1+9*(3*L-2)+3*L+1):(9*(3*L-2)+6*L)];
+    Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
+    bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
+    title("Eigenvalues of Relaxed Solution")
+elseif strcmp(problem.velprior, "grav-world")
+    error("Selected prior is not implemented")
+else
+    error("Selected prior is not implemented")
+end
 hold off
 
 % raw error
 x_err = norm(problem.x_gt - soln.x_est);
-
-% raw error excluding p
-x_gt = problem.x_gt;
-x_est = soln.x_est;
-x_gt_no_p = [x_gt(1:(9*(3*L-2) + 1)); x_gt((9*(3*L-2) + 3*L + 1):end)];
-x_est_no_p = [x_est(1:(9*(3*L-2) + 1)); x_est((9*(3*L-2) + 3*L + 1):end)];
-x_err_no_p = norm(x_gt_no_p - x_est_no_p);
 
 % projected errors
 R_err = zeros(L,1);

@@ -11,6 +11,8 @@ function soln = pace_with_EKF(problem, path)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
+% TODO: SPIRAL VERSION!!
+
 %% Define covariances and noise
 % state covariance
 covar_position = problem.covar_position';

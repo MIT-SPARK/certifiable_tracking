@@ -27,8 +27,8 @@ rotNoiseBound = problem.rotationNoiseBound;
 % TODO: make this more random?
 % TODO: scale by noisebound?
 problem.covar_measure = ones(N,L);
-problem.covar_position = ones(L-1,1);
 problem.covar_velocity = ones(L-2,1);
+problem.covar_position = (1/dt^2)*[1.0; problem.covar_velocity];
 problem.kappa_rotation = ones(L-1,1);
 problem.kappa_rotrate  = ones(L-1,1);
 
