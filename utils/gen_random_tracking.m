@@ -11,10 +11,10 @@ L = problem.L;
 intraRadius = problem.intraRadius;
 velocityBound = problem.velocityBound;
 translationBound = problem.translationBound;
-noiseSigma = problem.noiseSigma;
+noiseSigmaSqrt = problem.noiseSigmaSqrt;
 dt = problem.dt;
 
-accNoiseBound = problem.accelerationNoiseBound;
+accNoiseSigmaSqrt = problem.accelerationNoiseBoundSqrt;
 rotNoiseBound = problem.rotationNoiseBound;
 
 % TODO: INCORPORATE MAX POSITION BOUNDS
@@ -24,14 +24,13 @@ rotNoiseBound = problem.rotationNoiseBound;
 % end
 
 % Weights!
-% TODO: support for simulating occulsions with weights?
-problem.weights = ones(N,L);
-% no support for different x,y,z weights (repeat each weight 3 times)
-% TODO: update to match dev branch
-problem.weights_position = ones(3*(L-1),1);
-problem.weights_velocity = ones(3*(L-1),1);
-problem.weights_rotation = ones(3*(L-1),1);
-problem.weights_rotrate  = ones(3*(L-1),1);
+% TODO: make this more random?
+% TODO: scale by noisebound?
+problem.covar_measure = ones(N,L);
+problem.covar_position = ones(L-1,1);
+problem.covar_velocity = ones(L-2,1);
+problem.kappa_rotation = ones(L-1,1);
+problem.kappa_rotrate  = ones(L-1,1);
 
 %% generate a mean shape centered at zero
 % allow override by specifying in problem struct
@@ -64,7 +63,7 @@ if ~isfield(problem,'v_gt')
     v_0 = randn(3,1);
     v_0 = v_0/norm(v_0);
     v_0 = velocityBound*rand*v_0;
-    v_gt = repmat(v_0,1,1,L);
+    v_gt = repmat(v_0,1,1,L-1);
 else
     v_gt = problem.v_gt;
 end
@@ -91,9 +90,7 @@ if ~isfield(problem,'dR_gt')
 else
     dR_gt = problem.dR_gt;
 end
-
 %% generate noise-y measurements
-% TODO: update to include priors
 shape = reshape(B*c_gt,3,N);
 y = zeros(3*N,L);
 
@@ -101,16 +98,32 @@ for l = 1:L
     R = R_gt(:,:,l);
     p = p_gt(:,:,l);
 
-    scene = R * shape + p + noiseSigma * randn(3,N);
+    scene = R * shape + p + noiseSigmaSqrt * randn(3,N);
     y(:,l) = reshape(scene, 3*N, 1);
 
     if (l < L)
         % Apply random (bounded) acceleration (TODO: make actual bound)
         dR_gt(:,:,l) = dR_gt(:,:,l) * rand_rotation('RotationBound',rotNoiseBound);
-        v_gt(:,:,l) = v_gt(:,:,l) + accNoiseBound*randn(3,1)*dt;
+        v_gt(:,:,l) = v_gt(:,:,l) + accNoiseSigmaSqrt*randn(3,1)*dt;
 
-        R_gt(:,:,l+1) = R * dR_gt(:,:,l);
-        p_gt(:,:,l+1) = p + v_gt(:,:,l) * dt;
+        if strcmp(problem.velprior, "body")
+            dR = dR_gt(:,:,l);
+            v = v_gt(:,:,l);
+            p = p_gt(:,:,l);
+        
+            % spiral to next
+            pts = get_spiral_pts(R, dR, v, p, dt, 2);
+            
+            p_gt(:,:,l+1) = pts(:,end);
+            R_gt(:,:,l+1) = R * dR_gt(:,:,l);
+        elseif strcmp(problem.velprior, "world")
+            R_gt(:,:,l+1) = R * dR_gt(:,:,l);
+            p_gt(:,:,l+1) = p + v_gt(:,:,l) * dt;
+        elseif strcmp(problem.velprior, "grav-world")
+            error("Selected prior is not implemented")
+        else
+            error("Selected prior is not implemented")
+        end
     end
 end
 
@@ -137,6 +150,19 @@ theta_gt = ones(N*L,1);
 theta_gt(outlierIDs) = -1;
 
 %% Save
+if strcmp(problem.velprior, "body")
+    % convert p to s, sh for saving
+    s_gt  = zeros(3,1,L);
+    sh_gt = zeros(3,1,L-1);
+    for l = 1:L
+        s_gt(:,:,l) = R_gt(:,:,l)'*p_gt(:,:,l);
+        if (l > 1)
+            sh_gt(:,:,l-1) = dR_gt(:,:,l-1)*s_gt(:,:,l);
+        end
+    end
+    problem.s_gt = s_gt;
+    problem.sh_gt = sh_gt;
+end
 problem.type = 'tracking';
 problem.B = B;
 problem.shapes = shapes;
@@ -153,30 +179,50 @@ problem.dR_gt = dR_gt;
 
 problem.cBound = 1.0;
 
-noiseBoundSq = max(4e-2, noiseSigma^2 * chi2inv(0.99,3));
+noiseBoundSq = max(4e-2, noiseSigmaSqrt^2 * chi2inv(0.99,3));
 problem.noiseBoundSq = noiseBoundSq;
 problem.noiseBound = sqrt(problem.noiseBoundSq);
 
 problem.theta_gt = theta_gt;
 
 % also save a "ground truth vector" that we can quickly compare
-% TODO: update for priors
-rh_gt = zeros(9*(L-1), 1);
-s_gt = zeros(3*L,1);
-for l = 1:L
-    R_cur = problem.R_gt(:,:,l);
-    if (l < L)
-        dR_cur = problem.dR_gt(:,:,l);
-        rh_gt((9*(l-1)+1):(9*l)) = reshape(R_cur * dR_cur,9,1);
+if strcmp(problem.velprior, "body")
+    rh_gt = zeros(9*(L-1), 1);
+    for l = 1:L
+        R_cur = problem.R_gt(:,:,l);
+        if (l < L)
+            dR_cur = problem.dR_gt(:,:,l);
+            rh_gt((9*(l-1)+1):(9*l)) = reshape(R_cur * dR_cur,9,1);
+        end
     end
-    s_gt((3*(l-1)+1):(3*l)) = R_cur' * problem.p_gt(:,:,l);
+    x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
+            reshape(problem.dR_gt,(problem.L-1)*9,1,1);
+            rh_gt; 
+            reshape(problem.s_gt,problem.L*3,1,1); 
+            reshape(problem.sh_gt,(problem.L-1)*3,1,1)];
+    problem.x_gt = x_gt;
+elseif strcmp(problem.velprior, "world")
+    rh_gt = zeros(9*(L-1), 1);
+    s_gt = zeros(3*L,1);
+    for l = 1:L
+        R_cur = problem.R_gt(:,:,l);
+        if (l < L)
+            dR_cur = problem.dR_gt(:,:,l);
+            rh_gt((9*(l-1)+1):(9*l)) = reshape(R_cur * dR_cur,9,1);
+        end
+        s_gt((3*(l-1)+1):(3*l)) = R_cur' * problem.p_gt(:,:,l);
+    end
+    x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
+            reshape(problem.dR_gt,(problem.L-1)*9,1,1);
+            rh_gt; 
+            reshape(problem.p_gt,problem.L*3,1,1); 
+            s_gt];
+    problem.x_gt = x_gt;
+elseif strcmp(problem.velprior, "grav-world")
+    error("Selected prior is not implemented")
+else
+    error("Selected prior is not implemented")
 end
-x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
-        reshape(problem.dR_gt,(problem.L-1)*9,1,1);
-        rh_gt; 
-        reshape(problem.p_gt,problem.L*3,1,1); 
-        s_gt];
-problem.x_gt = x_gt;
 
 end
 

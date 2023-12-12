@@ -29,14 +29,16 @@ y = problem.y; % 3*N x L matrix of y_i(t_l)
 dt = problem.dt;
 
 % Weights
-W = problem.weights; %/ problem.noiseBoundSq; % N x L matrix of w_il
+% TODO: scale weights/covars by noisebound?
+W = problem.covar_measure.^(-1); % N x L matrix of w_il
 lambda = problem.lambda; % scalar
-Wp = problem.weights_position; % 3*(L-1) vector
-Wv = problem.weights_velocity; % 3*(L-1) vector
-Wr = problem.weights_rotation; % 3*(L-1) vector
-Wd = problem.weights_rotrate;  % 3*(L-1) vector
-% TODO: SCALE WEIGHTS by noisebound??
-lambda_p = 0.005; % TODO: BETTER
+wp = problem.covar_position.^(-1); % L-1 vector
+Wp = diag(reshape(repmat(wp',3,1),3*(L-1),1));
+wv = problem.covar_velocity.^(-1); % L-2 vector
+Wv = diag(reshape(repmat(wv',3,1),3*(L-2),1));
+wr = problem.kappa_rotation; % L-1 vector
+wd = problem.kappa_rotrate;  % L-1 vector
+% lambda_p = 0.005; % TODO: BETTER
 
 pBound = problem.translationBound;
 vBound = problem.velocityBound;
@@ -97,9 +99,14 @@ c = invH(1:(end-1),:);
 % VELOCITY
 eye3LL = [zeros(3*(L-1),3), eye(3*(L-1))];
 eye3LR = [eye(3*(L-1)), zeros(3*(L-1),3)];
-Av = dt*dt*(eye3LR'*diag(Wp)*eye3LR) + ((eye3LL-eye3LR)'*diag(Wv)*(eye3LL-eye3LR));
 
-v = Av \ (dt*eye3LR'*diag(Wp)*(eye3LL-eye3LR) * p);
+eye3Lm3 = eye(3*(L-1));
+eye3Lm3L = [zeros(3*(L-2),3), eye(3*(L-2))];
+eye3Lm3R = [eye(3*(L-2)), zeros(3*(L-2),3)];
+
+Av = dt*dt*(eye3Lm3'*Wp*eye3Lm3) + ((eye3Lm3L-eye3Lm3R)'*Wv*(eye3Lm3L-eye3Lm3R));
+
+v = Av \ (dt*eye3Lm3'*Wp*(eye3LL-eye3LR) * p);
 
 % MAIN OPTIMIZATION
 prob_obj = 0;
@@ -116,17 +123,19 @@ prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
 for l = 2:L
     % delta p
     delp = p(ib3(l)) - (p(ib3(l-1)) + v(ib3(l-1))*dt);
-    prob_obj = prob_obj + Wp(3*(l-2)+1)*(delp'*delp);
+    prob_obj = prob_obj + wp(l-1)*(delp'*delp);
     % delta v
-    delv = v(ib3(l)) - v(ib3(l-1));
-    prob_obj = prob_obj + Wv(3*(l-2)+1)*(delv'*delv);
+    if (l < L)
+        delv = v(ib3(l)) - v(ib3(l-1));
+        prob_obj = prob_obj + wv(l-1)*(delv'*delv);
+    end
     % delta R
     delR = reshape(R(ib3(l),:) - Rh(ib3(l-1),:),9,1);
-    prob_obj = prob_obj + Wr(3*(l-2)+1)*(delR'*delR);
+    prob_obj = prob_obj + wr(l-1)*(delR'*delR);
     % dR
-    if (l ~= L)
+    if (l < L)
         deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
-        prob_obj = prob_obj + Wd(3*(l-2)+1)*(deldR'*deldR);
+        prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
     end
 end
 
@@ -223,7 +232,7 @@ rhs = x_est((18*L-9+1):(27*L-18));
 Rhs = projectRList(rhs);
 
 s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
-v_est_raw = reshape(full(dmsubs(v,x,x_est)),[3,1,L]);
+v_est_raw = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
 p_est_raw = reshape(full(dmsubs(p,x,x_est)),[3,1,L]);
 c_est = full(dmsubs(c,x,x_est));
 
@@ -234,7 +243,7 @@ for l = 1:L
 end
 x_est_from_s = x_est;
 x_est_from_s((27*L - 18 + 1):(27*L - 18 + 3*L)) = reshape(p_est,[3*L,1,1]);
-v_est = reshape(full(dmsubs(v,x,x_est_from_s)),[3,1,L]);
+v_est = reshape(full(dmsubs(v,x,x_est_from_s)),[3,1,L-1]);
 
 
 % suboptimality gap
@@ -255,21 +264,6 @@ x_proj = [x_proj; reshape(p_est,[3*L,1,1]); reshape(s_est,[3*L,1,1])];
 obj_est = dmsubs(prob_obj,x,x_proj);
 gap = (obj_est - obj(1)) / obj_est;
 
-
-% duality gap
-% obj_est = dmsubs(prob_obj,x,x_est);
-% obj_gt = dmsubs(prob_obj,x,problem.x_gt);
-% gap = abs(obj_est - obj_gt)/(1+abs(obj_est)+abs(obj_gt));
-
-% FOR TESTING
-% x_gt = x_gt(2:end);
-% c_gt = dmsubs(c,x,x_gt); % will not match gt with noise
-% p_gt = dmsubs(p,x,x_gt);
-% v_gt = dmsubs(v,x,x_gt);
-
-% can also test objective->0 in noise-free case
-% obj_est = dmsubs(prob_obj,x,x_est)
-% obj_gt = dmsubs(prob_obj,x,problem.x_gt)
 
 %% Pack into struct
 % raw SDP/MOSEK data

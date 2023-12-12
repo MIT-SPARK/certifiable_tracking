@@ -36,17 +36,17 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigma = 0.05; % [m]
+problem.noiseSigmaSqrt = 0.01; % [m]
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
-% problem.velprior = "body";       % constant body frame velocity
-problem.velprior = "world";      % constant world frame velocity
+problem.velprior = "body";       % constant body frame velocity
+% problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBound = 0.01;
+problem.accelerationNoiseBoundSqrt = 0.01;
 problem.rotationNoiseBound = pi/32; % rad
 
 % Optional: use a specified velocity trajectory
@@ -92,7 +92,7 @@ x_err_no_p = norm(x_gt_no_p - x_est_no_p);
 R_err = zeros(L,1);
 dR_err = zeros(L-1,1);
 p_err = zeros(L,1);
-v_err = zeros(L,1);
+v_err = zeros(L-1,1);
 for l = 1:L
     % R
     R_err(l) = getAngularError(problem.R_gt(:,:,l), soln.R_est(:,:,l));
@@ -103,7 +103,9 @@ for l = 1:L
     % p
     p_err(l) = norm(problem.p_gt(:,:,l) - soln.p_est(:,:,l));
     % v
-    v_err(l) = norm(problem.v_gt(:,:,l) - soln.v_est(:,:,l));
+    if (l < L)
+        v_err(l) = norm(problem.v_gt(:,:,l) - soln.v_est(:,:,l));
+    end
 end
 
 % shape error
