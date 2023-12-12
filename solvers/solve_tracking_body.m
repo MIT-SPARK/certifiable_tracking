@@ -247,8 +247,8 @@ end
 % estimate sh from s
 sh_est = zeros(3,1,L-1);
 for l = 2:L
-    sh_est(:,:,l-1) = Rs(:,:,l-1)'*Rs(:,:,l)*s_est(:,:,l);
-%     sh_est(:,:,l-1) = dRs(:,:,l-1)'*s_est(:,:,l);
+    % sh_est(:,:,l-1) = Rs(:,:,l-1)'*Rs(:,:,l)*s_est(:,:,l);
+    sh_est(:,:,l-1) = dRs(:,:,l-1)*s_est(:,:,l);
 end
 
 % suboptimality gap
