@@ -10,7 +10,7 @@ end
 
 % redirect to appropriate solver
 if strcmp(problem.velprior, "body")
-    soln = solve_tracking_body3(problem);
+    soln = solve_tracking_body4(problem);
 elseif strcmp(problem.velprior, "world")
     soln = solve_tracking_world(problem);
 elseif strcmp(problem.velprior, "grav-world")

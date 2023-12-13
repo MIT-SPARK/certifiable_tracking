@@ -78,25 +78,25 @@ L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 hold on
 
-if strcmp(problem.velprior, "body")
-    slices = 1:(1+9*(3*L-2)+3*L);
-    Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
-    bar([zeros(3*(L-1),1);eig(Xopt_pRemoved)]);
-    title("Eigenvalues of Relaxed Solution")
-elseif strcmp(problem.velprior, "world")
-    slices = [1:(1+9*(3*L-2)),(1+9*(3*L-2)+3*L+1):(9*(3*L-2)+6*L)];
-    Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
-    bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
-    title("Eigenvalues of Relaxed Solution")
-elseif strcmp(problem.velprior, "grav-world")
-    error("Selected prior is not implemented")
-else
-    error("Selected prior is not implemented")
-end
+% if strcmp(problem.velprior, "body")
+%     slices = 1:(1+9*(3*L-2)+3*L);
+%     Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
+%     bar([zeros(3*(L-1),1);eig(Xopt_pRemoved)]);
+%     title("Eigenvalues of Relaxed Solution")
+% elseif strcmp(problem.velprior, "world")
+%     slices = [1:(1+9*(3*L-2)),(1+9*(3*L-2)+3*L+1):(9*(3*L-2)+6*L)];
+%     Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
+%     bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
+%     title("Eigenvalues of Relaxed Solution")
+% elseif strcmp(problem.velprior, "grav-world")
+%     error("Selected prior is not implemented")
+% else
+%     error("Selected prior is not implemented")
+% end
 hold off
 
 % raw error
-x_err = norm(problem.x_gt - soln.x_est);
+% x_err = norm(problem.x_gt - soln.x_est);
 
 % projected errors
 R_err = zeros(L,1);

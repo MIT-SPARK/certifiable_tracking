@@ -1,10 +1,10 @@
-function soln = solve_tracking_body3(problem)
+function soln = solve_tracking_body4(problem)
 % Solves const. vel. (body frame) optimization exactly via SDP
 %   Assume the *body frame* velocity is constant and object is spinning.
 %   Result: spiral trajectory.
 %   Analytically remove velocity & shape. SDP variables are
 %   * rotated position (s)
-%   * last rotated position (sh)
+%   * body velocity (v)
 %   * rotation (R)
 %   * rotation change (dR)
 %   VERSION WITH RH AND P MOVED INTO CONSTRAINTS
@@ -47,7 +47,7 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(2*L - 1) + 3*L + 3*(L-1); % 2L - 1 rotations, 3L rotated positions, 3L-1 time-varying rotated positions
+d = 9*(2*L - 1) + 3*L + 3*(L-1); % 2L - 1 rotations, 3L rotated positions, 3L-1 body velocities
 % 2L - 1 rotations: L rotations, L-1 delta rotations
 x = msspoly('x',d);
 
@@ -55,7 +55,7 @@ x = msspoly('x',d);
 r  = x(1:(9*L));
 dr = x((9*L + 1):(9*L + 9*(L-1)));
 s  = x((18*L - 9 + 1):(18*L - 9 + 3*L));
-sh = x((21*L - 9 + 1):(21*L - 9 + 3*(L-1)));
+v = x((21*L - 9 + 1):(21*L - 9 + 3*(L-1)));
 
 % convert to useful form
 R  = reshape(r ,3,3*L)';
@@ -88,22 +88,6 @@ b = [2*B'*sumh + 2*lambda*cbar; 1];
 invH = H \ b;
 
 c = invH(1:(end-1),:);
-
-% VELOCITY
-eye3LL = [zeros(3*(L-1),3), eye(3*(L-1))];
-eye3LR = [eye(3*(L-1)), zeros(3*(L-1),3)];
-
-eye3Lm3 = eye(3*(L-1));
-eye3Lm3L = [zeros(3*(L-2),3), eye(3*(L-2))];
-eye3Lm3R = [eye(3*(L-2)), zeros(3*(L-2),3)];
-
-% Av = dt*dt*(eye3Lm3'*Wp*eye3Lm3) + ((eye3Lm3L-eye3Lm3R)'*Wv*(eye3Lm3L-eye3Lm3R));
-Av = [(eye3Lm3L-eye3Lm3R)'*Wv*(eye3Lm3L-eye3Lm3R), dt*eye3Lm3;
-      dt*eye3Lm3, zeros(3*(L-1))];
-
-bv = [zeros(3*(L-1),1); sh - eye3LR*s];
-v_full = Av \ bv;
-v = v_full(1:(3*(L-1)),:);
 
 % MAIN OPTIMIZATION
 prob_obj = 0;
@@ -149,13 +133,6 @@ for l = 2:L
     % dR version
     h = [h; dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) - v(ib3(l-1))*dt];
     h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
-end
-
-% sh(l) = dR(l-1)*s(l) constraint
-for l = 2:L
-    % dR version
-    h = [h; sh(ib3(l-1)) - dR(ib3(l-1),:)*s(ib3(l))];
-    h = [h; dR(ib3(l-1),:)'*sh(ib3(l-1)) - s(ib3(l))];
 end
 
 % INEQUALITY
@@ -217,21 +194,13 @@ drs = x_est((9*L+1):(18*L-9));
 dRs = projectRList(drs);
 
 s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
-v_est_raw = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
+v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
 c_est = full(dmsubs(c,x,x_est));
-sh_est_raw = reshape(full(dmsubs(sh,x,x_est)),[3,1,L-1]);
 
 % estimate p from s
 p_est = zeros(3,1,L);
 for l = 1:L
     p_est(:,:,l) = Rs(:,:,l)*s_est(:,:,l);
-end
-
-% estimate sh from s
-sh_est = zeros(3,1,L-1);
-for l = 2:L
-    % sh_est(:,:,l-1) = Rs(:,:,l-1)'*Rs(:,:,l)*s_est(:,:,l);
-    sh_est(:,:,l-1) = dRs(:,:,l-1)*s_est(:,:,l);
 end
 
 % suboptimality gap
@@ -244,14 +213,11 @@ for l = 1:L-1
     r_temp = reshape(dRs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
-x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(sh_est,[3*L-3,1,1])];
+x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
 
 % compute gap (THIS TAKES FOREVER)
 obj_est = dmsubs(prob_obj,x,x_proj);
 gap = (obj_est - obj(1)) / obj_est;
-
-% estimate v from projected version
-v_est = reshape(full(dmsubs(v,x,x_proj)),[3,1,L-1]);
 
 %% Pack into struct
 % raw SDP/MOSEK data
@@ -267,10 +233,7 @@ soln.x_est = x_est;
 soln.c_est = c_est;
 soln.p_est = p_est;
 soln.v_est = v_est;
-soln.v_est_raw = v_est_raw;
 soln.s_est = s_est;
-soln.sh_est = sh_est;
-soln.sh_est_raw = sh_est_raw;
 
 soln.R_est = Rs;
 soln.dR_est = dRs;
