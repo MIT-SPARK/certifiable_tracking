@@ -1,4 +1,8 @@
-function pts = sim_dynamics(R, dR, v, p0, dt, num_pts)
+function pts = sim_dynamics(R, dR, v, p0, dt, num_pts, use_v_true)
+%% Simulate the dynamics of motion using a small time approximation.
+% use_v_true: generates a trajectory based on the true velocity of the
+% particle or instead based on the estimated velocity, which has straight
+% lines between points.
 
 %% Preliminaries
 % Extract angular speed
@@ -23,7 +27,9 @@ for i = 2:tot_num_pts
     % get next point
     pts(:,:,i) = pts(:,:,i-1) + last_R*pv_cur;
 
-    last_R = last_R*dR_cur;
+    if (use_v_true)
+        last_R = last_R*dR_cur;
+    end
 end
 
 %% Finalize

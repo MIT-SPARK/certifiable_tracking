@@ -1,6 +1,6 @@
 function pts = get_spiral_pts(R, dR, v, p0, dt, num_pts)
     %% Produces points in a spiral shape.
-    %    NOTE: THERE IS STILL SOMETHING WRONG WITH HOW V IS USED
+    %    NOTE: VERIFIED USING SIM DYNAMICS!
     %
     %    R = w^R_l (rotation of frame l in world frame)
     %   dR = (l)^R_(l+1) (rotation of next frame in prev frame)

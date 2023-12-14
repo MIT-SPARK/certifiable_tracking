@@ -112,8 +112,8 @@ for l = 1:L
             p = p_gt(:,:,l);
         
             % spiral to next
-%             pts = get_spiral_pts(R, dR, v, p, dt, 2);
-            pts = sim_dynamics(R, dR, v, p, dt, 20);
+            pts = get_spiral_pts(R, dR, v, p, dt, 2);
+%             pts = sim_dynamics(R, dR, v, p, dt, 20, use_v_true=false);
             
             p_gt(:,:,l+1) = pts(:,end);
             R_gt(:,:,l+1) = R * dR_gt(:,:,l);
