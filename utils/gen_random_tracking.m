@@ -149,6 +149,13 @@ end
 
 theta_gt = ones(N*L,1);
 theta_gt(outlierIDs) = -1;
+outliers_gt = outlierIDs;
+inliers_gt = [];
+for i = 1:(N*L)
+    if ~ismember(i,outliers_gt)
+        inliers_gt(end+1) = i;
+    end
+end
 
 %% Save
 if strcmp(problem.velprior, "body")
@@ -185,6 +192,8 @@ problem.noiseBoundSq = noiseBoundSq;
 problem.noiseBound = sqrt(problem.noiseBoundSq);
 
 problem.theta_gt = theta_gt;
+problem.inliers_gt = inliers_gt;
+problem.outliers_gt = outliers_gt;
 
 % also save a "ground truth vector" that we can quickly compare
 if strcmp(problem.velprior, "body")

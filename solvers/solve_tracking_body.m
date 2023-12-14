@@ -33,7 +33,6 @@ dt = problem.dt;
 W = problem.covar_measure.^(-1); % N x L matrix of w_il
 lambda = problem.lambda; % scalar
 wv = problem.covar_velocity.^(-1); % L-2 vector
-Wv = diag(reshape(repmat(wv',3,1),3*(L-2),1));
 wd = problem.kappa_rotrate;  % L-1 vector
 
 pBound = problem.translationBound;
@@ -172,7 +171,9 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
 addpath(genpath(mosekpath))
-[~,res] = mosekopt('minimize info',prob);
+param = struct();
+param.MSK_IPAR_LOG = 0;
+[~,res] = mosekopt('minimize info',prob,param);
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
 rmpath(genpath(mosekpath))
 soln.solvetime = toc;
@@ -216,8 +217,17 @@ end
 x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
 
 % compute gap (THIS TAKES FOREVER)
-obj_est = dmsubs(prob_obj,x,x_proj);
-gap = (obj_est - obj(1)) / obj_est;
+% obj_est = dmsubs(prob_obj,x,x_proj);
+% gap = (obj_est - obj(1)) / obj_est;
+
+% compute residuals (TODO: USE WHOLE OBJECTIVE?)
+residuals = zeros(N, L);
+for i = 1:N
+    for l = 1:L
+        residue = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est - s_est(:,:,l);
+        residuals(i,l) = residue'*residue;
+    end
+end
 
 %% Pack into struct
 % raw SDP/MOSEK data
@@ -238,8 +248,10 @@ soln.s_est = s_est;
 soln.R_est = Rs;
 soln.dR_est = dRs;
 
-soln.gap = gap;
-soln.x_proj = x_proj;
-soln.obj_est = obj_est;
+% soln.gap = gap;
+% soln.x_proj = x_proj;
+% soln.obj_est = obj_est;
+
+soln.residuals = residuals;
 
 end

@@ -1,7 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-% 
-% PUMO:
-% Pose estimation Using Multiple Observations
+%  Version with outlier rejection through GNC
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -34,28 +32,31 @@ path.mosekpath  = mosekpath;
 path.manoptpath = manoptpath;
 
 %% Generate random tracking problem
-problem.N_VAR = 11;
-problem.K = 3;
-problem.L = 10;
+problem.N_VAR = 11; % nr of keypoints
+problem.K = 3; % nr of shapes
+problem.L = 10; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.1; % TODO: no support for outliers
-problem.noiseSigma = 0.01;
+problem.outlierRatio = 0.1;
+problem.noiseSigmaSqrt = 0.01; % [m]
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
-problem.dt = 2.0;
+problem.dt = 1.0;
 
-problem.accelerationNoiseBound = 0.05;
-problem.rotationNoiseBound = pi/32; % rad
+problem.velprior = "body";       % constant body frame velocity
+% problem.velprior = "world";      % constant world frame velocity
+% problem.velprior = "grav-world"; % add gravity in z direction
+
+problem.accelerationNoiseBoundSqrt = 0.0;%0.01;
+problem.rotationNoiseBound = 0;%pi/32; % rad
 
 problem.N = problem.N_VAR*problem.L; % How many measurements this problem has
 problem.outliers = []; % outlier indicies
 problem.priors = [];
-% problem.dof = 3*problem.L; % 3 DOF for each time step (or should this be dim(x)?)
-problem.dof = 9*(3*problem.L - 1) + 2*3*problem.L;
+problem.dof = 3;
 
 % Optional: use a specified velocity trajectory
-problem = make_trajectory(problem);
+% problem = make_trajectory(problem);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
@@ -65,57 +66,17 @@ problem.lambda = lambda;
 problem.mosekpath = mosekpath;
 
 %% Solve!
-epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigma;
-[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', epsilon,'MaxIterations',10);
+epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigmaSqrt;
+[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', epsilon,'MaxIterations',20,'Debug',false);
 
-% soln_pace = [];
-% for l = 1:problem.L
-%     pace_problem = problem;
-%     pace_problem.weights = ones(problem.N_VAR,1);
-%     pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);
-%     [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, path, 'lambda',lambda);
-%     s.R_est = R_est; s.p_est = t_est;
-%     s.c_est = c_est; s.out = out;
-%     soln_pace = [soln_pace; s];
-% end
 
 %% Check solutions
-% eigenvalue plot
-figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
-title("Eigenvalues of Relaxed Solution")
-
-% raw error
-x_err = norm(problem.x_gt - soln.x_est);
-
-% raw error excluding p
-L = problem.L;
-x_gt = problem.x_gt;
-x_est = soln.x_est;
-x_gt_no_p = [x_gt(1:(9*(3*L-1) + 1)); x_gt((9*(3*L-1) + 3*L + 1):end)];
-x_est_no_p = [x_est(1:(9*(3*L-1) + 1)); x_est((9*(3*L-1) + 3*L + 1):end)];
-x_err_no_p = norm(x_gt_no_p - x_est_no_p);
-
-% projected errors
-R_err = zeros(L,1);
-dR_err = zeros(L,1);
-p_err = zeros(L,1);
-v_err = zeros(L,1);
-p_err_bad = zeros(L,1);
-for l = 1:L
-    % R
-    R_err(l) = getAngularError(problem.R_gt(:,:,l), soln.R_est(:,:,l));
-    % dR
-    dR_err(l) = getAngularError(problem.dR_gt(:,:,l), soln.dR_est(:,:,l));
-    % p
-    p_err(l) = norm(problem.p_gt(:,:,l) - soln.p_est(:,:,l));
-    % v
-    v_err(l) = norm(problem.v_gt(:,:,l) - soln.v_est(:,:,l));
-    % bad p
-    p_err_bad(l) = norm(problem.p_gt(:,:,l) - soln.p_est_raw(:,:,l));
+if isequal(problem.inliers_gt,inliers)
+    disp("Correct inliers found after " + string(info.Iterations) + " iterations.");
+else
+    disp("Inliers not found after " + string(info.Iterations) + " iterations.");
 end
 
-% shape error
-c_err = norm(problem.c_gt - soln.c_est);
-
-% Plot trajectory!
-plot_trajectory(problem,soln, soln_pace)
+% play done sound
+load handel.mat
+sound(y,2*Fs);
