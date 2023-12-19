@@ -67,7 +67,7 @@ problem.mosekpath = mosekpath;
 
 %% Solve!
 epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigmaSqrt;
-[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', epsilon,'MaxIterations',20,'Debug',false);
+[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', epsilon,'MaxIterations',100,'Debug',false);
 
 
 %% Check solutions

@@ -228,6 +228,7 @@ for i = 1:N
         residuals(i,l) = residue'*residue;
     end
 end
+% residuals = residuals / (problem.noiseSigmaSqrt.^2);
 
 %% Pack into struct
 % raw SDP/MOSEK data

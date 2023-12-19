@@ -60,8 +60,8 @@ prior_state = reshape([prior_pos'; prior_vel'],6,1);
 %     'MeasurementJacobianFcn',@cvmeasjac);
 
 EKF = trackingEKF(State=prior_state,StateCovariance=covar_state, ...
-        StateTransitionFcn=@constvw,ProcessNoise=processNoise, ...
-        MeasurementFcn=@measureModel,MeasurementNoise=measureNoise);
+        StateTransitionFcn=@constv,ProcessNoise=processNoise, ...
+        MeasurementFcn=@measureModel_v,MeasurementNoise=measureNoise);
 
 % Smooth measurements with EKF
 p_smoothed = zeros(3,1,L);
@@ -88,10 +88,10 @@ soln.p_raw = reshape(p,[3,1,L]);
 
 end
 
-%% EKF State Functions
+%% EKF State Functions--linear only
 % compute next state from current state
-function stateNext = constvw(state,dt)
-    % No noise constant velocity and turn rate
+function stateNext = constv(state,dt)
+    % No noise constant velocity
     % State: [x, vx, y, vy, z]
     F = [1 dt 0  0 0  0; 
             0  1 0  0 0  0;
@@ -103,7 +103,28 @@ function stateNext = constvw(state,dt)
 end
 
 % Compute nominal measurement from state
-function z = measureModel(state)
+function z = measureModel_v(state)
+    % Measurement is just x, y, z position
+    z = [state(1), state(3), state(5)];
+end
+
+%% EKF State Functions--Linear and Angular
+% compute next state from current state
+function stateNext = constvw(state,dt)
+    % No noise constant velocity and turn rate
+    % State: [x, vx, y, vy, z, vz,...
+    %         qx, qy, qz, qw, 
+    F = [1 dt 0  0 0  0; 
+            0  1 0  0 0  0;
+            0  0 1 dt 0  0;
+            0  0 0  1 0  0;
+            0  0 0  0 1 dt;
+            0  0 0  0 0  1;];
+    stateNext = F*state;
+end
+
+% Compute nominal measurement from state
+function z = measureModel_vw(state)
     % Measurement is just x, y, z position
     z = [state(1), state(3), state(5)];
 end
