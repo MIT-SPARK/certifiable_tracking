@@ -65,9 +65,7 @@ problem.lambda = lambda;
 problem.mosekpath = mosekpath;
 
 %% Solve!
-tic
 soln = solve_weighted_tracking(problem);
-
 
 soln_pace = pace_with_EKF(problem, path);
 
