@@ -53,6 +53,7 @@ problem.velprior = "body";       % constant body frame velocity
 
 problem.accelerationNoiseBoundSqrt = 0.01;
 problem.rotationNoiseBound = pi/32; % rad
+problem.genconstraints = false; % regenerate if pbound or vbound change
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -65,7 +66,9 @@ problem.lambda = lambda;
 problem.mosekpath = mosekpath;
 
 %% Solve!
+p1 = tic;
 soln = solve_weighted_tracking(problem);
+toc(p1)
 
 soln_pace = pace_with_EKF(problem, path);
 

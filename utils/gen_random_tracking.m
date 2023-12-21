@@ -30,7 +30,7 @@ problem.covar_measure = ones(N,L);
 problem.covar_velocity = ones(L-2,1);
 problem.covar_position = (1/dt^2)*[1.0; problem.covar_velocity];
 problem.kappa_rotation = ones(L-1,1);
-problem.kappa_rotrate  = ones(L-1,1);
+problem.kappa_rotrate  = ones(L-2,1);
 
 %% generate a mean shape centered at zero
 % allow override by specifying in problem struct
@@ -197,19 +197,16 @@ problem.outliers_gt = outliers_gt;
 
 % also save a "ground truth vector" that we can quickly compare
 if strcmp(problem.velprior, "body")
-    rh_gt = zeros(9*(L-1), 1);
     for l = 1:L
         R_cur = problem.R_gt(:,:,l);
         if (l < L)
             dR_cur = problem.dR_gt(:,:,l);
-            rh_gt((9*(l-1)+1):(9*l)) = reshape(R_cur * dR_cur,9,1);
         end
     end
     x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
-            reshape(problem.dR_gt,(problem.L-1)*9,1,1);
-            rh_gt; 
+            reshape(problem.dR_gt,(problem.L-1)*9,1,1); 
             reshape(problem.s_gt,problem.L*3,1,1); 
-            reshape(problem.sh_gt,(problem.L-1)*3,1,1)];
+            reshape(problem.v_gt,(problem.L-1)*3,1,1)];
     problem.x_gt = x_gt;
 elseif strcmp(problem.velprior, "world")
     rh_gt = zeros(9*(L-1), 1);

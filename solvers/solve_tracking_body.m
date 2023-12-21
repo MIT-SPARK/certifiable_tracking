@@ -46,8 +46,8 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(2*L - 1) + 3*L + 3*(L-1); % 2L - 1 rotations, 3L rotated positions, 3L-1 body velocities
-% 2L - 1 rotations: L rotations, L-1 delta rotations
+d = 9*(2*L - 1) + 3*L + 3*(L-1); % 2L - 1 rotations, L rotated positions, L-1 body velocities
+% 2L-1 rotations: L rotations, L-1 delta rotations
 x = msspoly('x',d);
 
 % pull out individual variables
@@ -66,51 +66,153 @@ for l = 1:L
     end
 end
 
-% define eliminated variables
-% SHAPE
+% % define eliminated variables
+% % SHAPE
+% cbar = ones(K,1) / K;
+% sumh = msspoly(zeros(3*N,1));
+% sumW = zeros(N,1);
+% for l = 1:L
+%     for i = 1:N
+%         sumh(ib3(i), :) = sumh(ib3(i), :) + W(i,l)*( ...
+%                           R(ib3(l),:)'*y(ib3(i),l) ...
+%                           - s(ib3(l)));
+% 
+%         sumW(i) = sumW(i) + W(i,l);
+%     end
+% end
+% sumW = diag(reshape(repmat(sumW,1,3)',3*N,1));
+% H = [2*((B'*sumW*B) + lambda*eye(K)), ones(K,1);
+%      ones(1,K), 0];
+% b = [2*B'*sumh + 2*lambda*cbar; 1];
+% invH = H \ b;
+% 
+% c = invH(1:(end-1),:);
+% 
+% % MAIN OPTIMIZATION
+% prob_obj = 0;
+% for l = 1:L
+%     for i = 1:N
+%         obj2 = R(ib3(l),:)'*y(ib3(i),l) - B(ib3(i),:)*c - s(ib3(l));
+%         prob_obj = prob_obj + W(i,l) * (obj2' * obj2);
+%     end
+% end
+% % c regularization
+% prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
+% for l = 2:L-1
+%     % delta v
+%     delv = v(ib3(l)) - v(ib3(l-1));
+%     prob_obj = prob_obj + wv(l-1)*(delv'*delv);
+%     % dR
+%     deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
+%     prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
+% end
+
+%% Symbol-free version
+Y = reshape(y,[3,N,L]);
+P = kron(eye(L),vecRt_r);
+
+% SHAPE (VERIFIED)
 cbar = ones(K,1) / K;
-sumh = msspoly(zeros(3*N,1));
+
+% schur complement inverse
 sumW = zeros(N,1);
 for l = 1:L
     for i = 1:N
-        sumh(ib3(i), :) = sumh(ib3(i), :) + W(i,l)*( ...
-                          R(ib3(l),:)'*y(ib3(i),l) ...
-                          - s(ib3(l)));
-
         sumW(i) = sumW(i) + W(i,l);
     end
 end
 sumW = diag(reshape(repmat(sumW,1,3)',3*N,1));
-H = [2*((B'*sumW*B) + lambda*eye(K)), ones(K,1);
-     ones(1,K), 0];
-b = [2*B'*sumh + 2*lambda*cbar; 1];
-invH = H \ b;
+H11 = 2*((B'*sumW*B) + lambda*eye(K));
+invH11 = inv(H11);
+H12 = ones(K,1);
+invS = inv(-H12'*invH11*H12);
+G = invH11 + invH11*H12*invS*H12'*invH11;
+g = -invH11*H12*invS;
+% test:
+% c2 = G*(2*B'*sumh + 2*lambda*cbar) + g;
 
-c = invH(1:(end-1),:);
-
-% MAIN OPTIMIZATION
-prob_obj = 0;
+% simplify shape
+ycr_coeff = zeros(3*N,9*L);
+ycs_coeff = kron(W,eye(3));
 for l = 1:L
-    for i = 1:N
-        obj2 = R(ib3(l),:)'*y(ib3(i),l) - B(ib3(i),:)*c - s(ib3(l));
-        prob_obj = prob_obj + W(i,l) * (obj2' * obj2);
-    end
+    dw = reshape(repmat(W(:,l)',3,1),3*N,1);
+    ycr_coeff(:,(9*(l-1)+1):(9*l)) = diag(dw)*kron(Y(:,:,l)',eye(3));
 end
-% c regularization
-prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
-for l = 2:L-1
-    % delta v
-    delv = v(ib3(l)) - v(ib3(l-1));
-    prob_obj = prob_obj + wv(l-1)*(delv'*delv);
-    % dR
-    deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
-    prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
+
+Cr = 2*G*B'*ycr_coeff*P;
+Cs = 2*G*B'*ycs_coeff;
+gbar = 2*lambda*G*cbar+g;
+% test:
+% c = Cr*r - Cs*s + gbar;
+
+% MEASUREMENT TERM (VERIFIED)
+rar_coeff = zeros(3*N*L,3*L);
+car_coeff = zeros(3*N*L,K);
+sas_coeff = zeros(3*N*L,3*L);
+for l = 1:L
+    dw = reshape(repmat(W(:,l)',3,1),3*N,1).^(1/2);
+
+    rar_coeff((3*N*(l-1)+1):(3*N*l),(9*(l-1)+1):(9*l)) = ...
+           diag(dw)*kron(Y(:,:,l)',eye(3));
+
+    car_coeff((3*N*(l-1)+1):(3*N*l),:) = diag(dw)*B;
+
+    sas_coeff((3*N*(l-1)+1):(3*N*l),(3*(l-1)+1):(3*l)) = ...
+        ycs_coeff(:,(3*(l-1)+1):(3*l));
 end
+
+Ar = rar_coeff*P - car_coeff*Cr;
+As = -(sas_coeff - car_coeff*Cs);
+Ag = -car_coeff*gbar;
+% test
+% meas_term = (Ar*r + As*s + Ag)'*(Ar*r + As*s + Ag);
+
+% SHAPE REGULARIZATION TERM
+if (lambda > 0)
+    Ar = [Ar;  sqrt(lambda)*Cr];
+    As = [As; -sqrt(lambda)*Cs];
+    Ag = [Ag;  sqrt(lambda)*(gbar - cbar)];
+end
+
+% VELOCITY TERM
+dwv = reshape(repmat(wv',3,1),3*(L-2),1).^(1/2);
+eye3LL = [zeros(3*(L-2),3), eye(3*(L-2))];
+eye3LR = [eye(3*(L-2)), zeros(3*(L-2),3)];
+
+Av = diag(dwv)*(eye3LL - eye3LR);
+
+% ROTATION RATE TERM
+dwd = reshape(repmat(wd',9,1),9*(L-2),1).^(1/2);
+eye9LL = [zeros(9*(L-2),9), eye(9*(L-2))];
+eye9LR = [eye(9*(L-2)), zeros(9*(L-2),9)];
+
+Ad = diag(dwd)*(eye9LL - eye9LR);
+
+% ALL TOGETHER (VERIFIED)
+Q = zeros(size(Ag,1) + size(Ad,1) + size(Av,1),d+1);
+% measurements
+Q(1:size(Ag,1),1:(1+9*L+9*(L-1)+3*L)) = ...
+    [Ag, Ar, zeros(size(Ag,1),9*(L-1)), As];
+% rotation rate
+Q((size(Ag,1) + 1):(size(Ag,1)+size(Ad,1)),...
+  (1+9*L+1):(1+9*L+9*(L-1))) = ...
+    Ad;
+% velocity
+Q((size(Ag,1)+size(Ad,1) + 1):(size(Ag,1)+size(Ad,1) + size(Av,1)),...
+  (1+9*L+9*(L-1)+3*L+1):(1+21*L-9+3*(L-1))) = ...
+    Av;
+prob_obj = [1;x]'*(Q'*Q)*[1;x];
+c = Cr*r - Cs*s + gbar;
 
 %% Define constraints
+if ~problem.genconstraints
+    % this runs much faster
+    load data/constraints.mat h g
+else
+% regenerate constraints
+
 % EQUALITY
 h = [];
-
 % SO(3) constraints
 for l = 1:L
     c1 = so3_constraints( R(ib3(l),:));
@@ -152,6 +254,11 @@ g_c = [cBoundSq - c'*c;c];
 % g = [g_c];
 % g = [g_c;g_v];
 g = [g_s_first; g_v; g_c];
+
+save("data/constraints.mat","g","h");
+end
+
+
 
 %% Complete problem definition
 problem.vars = x;
