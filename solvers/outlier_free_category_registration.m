@@ -1,4 +1,4 @@
-function [R_est,t_est,c_est,out] = outlier_free_category_registration(problem,path,varargin)
+function [R_est,t_est,c_est,out] = outlier_free_category_registration(problem,varargin)
 %% Solve outlier-free category registration problem as weighted least squares
 %% Using a small SDP relaxation of fixed size
 params = inputParser;
@@ -44,22 +44,22 @@ C              = [1,zeros(1,9);
                   zeros(9,1),Q];
 
 %% Standard SDP data in SDPT3 format
-addpath(genpath(path.stridepath))
+% addpath(genpath(path.stridepath))
 C              = {sparse(C)};
 Acell          = get_Amap;
 blk{1,1}       = 's';
 blk{1,2}       = 10;
 At             = svec(blk,Acell);
 b              = sparse(1,1,1,length(Acell),1);
-rmpath(genpath(path.stridepath))
+% rmpath(genpath(path.stridepath))
 %% Solve using MOSEK
-addpath(genpath(path.stridepath))
+% addpath(genpath(path.stridepath))
 [At,b,c,K] = SDPT3data_SEDUMIdata(blk,At,C,b);
-rmpath(genpath(path.stridepath))
+% rmpath(genpath(path.stridepath))
 prob       = convert_sedumi2mosek(At, b, c, K);
-addpath(genpath(path.mosekpath))
+% addpath(genpath(path.mosekpath))
 [~,res]    = mosekopt('minimize info echo(0)',prob);
-rmpath(genpath(path.mosekpath))
+% rmpath(genpath(path.mosekpath))
 [Xopt,~,~,obj] = recover_mosek_sol_blk(res,blk);
 
 Xopt           = Xopt{1,1};

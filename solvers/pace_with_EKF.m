@@ -1,4 +1,4 @@
-function soln = pace_with_EKF(problem, path)
+function soln = pace_with_EKF(problem)
 % A "classic" approach to tracking using PACE and an EKF for smoothing.
 %    Estimate the position of the object using PACE at each time step and
 %    incorporate linear priors/smoothing using an EKF.
@@ -36,7 +36,7 @@ for l = 1:problem.L
     pace_problem = problem;
     pace_problem.weights = ones(problem.N_VAR,1);
     pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);
-    [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, path, 'lambda',problem.lambda);
+    [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, 'lambda',problem.lambda);
     s.R_est = R_est; s.p_est = t_est;
     s.c_est = c_est; s.out = out;
     soln_pace = [soln_pace; s];

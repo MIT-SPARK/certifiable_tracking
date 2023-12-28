@@ -1,5 +1,6 @@
 %% Dense SDP relaxation for certifiable tracking
 %  Version with outlier rejection through GNC
+%  TODO: THIS NEEDS TO BE UPDATED / REMOVED
 %
 % Lorenzo Shaikewitz for SPARK Lab
 

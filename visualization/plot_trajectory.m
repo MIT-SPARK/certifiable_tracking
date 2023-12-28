@@ -38,10 +38,10 @@ for l = 1:L-1
         p = problem.p_gt(:,:,l);
     
         % spiral to next
-%         pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
-        pts = sim_dynamics(R, dR, v, p, dt, interval_pts, true);
+        pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
+%         pts = sim_dynamics(R, dR, v, p, dt, interval_pts, true);
     
-        traj_gt(:, ran) = pts(:,:,1:end-1);%pts(:,1:end-1);
+        traj_gt(:, ran) = pts(:,1:end-1);%pts(:,:,1:end-1);
         if (l == (L-1))
             traj_gt(:,end+1) = pts(:,end);
         end
@@ -76,10 +76,10 @@ for l = 1:L-1
         p = soln.p_est(:,:,l);
     
         % spiral to next
-%         pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
-        pts = sim_dynamics(R, dR, v, p, dt, interval_pts, false);
+        pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
+%         pts = sim_dynamics(R, dR, v, p, dt, interval_pts, false);
     
-        traj_est(:, ran) = pts(:,:,1:end-1);%pts(:,1:end-1);
+        traj_est(:, ran) = pts(:,1:end-1);%pts(:,:,1:end-1);
         if (l == (L-1))
             traj_est(:,end+1) = pts(:,end);
         end

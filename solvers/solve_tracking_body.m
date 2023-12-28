@@ -18,7 +18,7 @@ function soln = solve_tracking_body(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Process inputs
-mosekpath = problem.mosekpath;
+% mosekpath = problem.mosekpath;
 
 N = problem.N_VAR;
 K = problem.K;
@@ -202,13 +202,10 @@ Q((size(Ag,1)+size(Ad,1) + 1):(size(Ag,1)+size(Ad,1) + size(Av,1)),...
   (1+9*L+9*(L-1)+3*L+1):(1+21*L-9+3*(L-1))) = ...
     Av;
 prob_obj = [1;x]'*(Q'*Q)*[1;x];
-c = Cr*r - Cs*s + gbar;
+% c = Cr*r - Cs*s + gbar;
 
 %% Define constraints
-if ~problem.genconstraints
-    % this runs much faster
-    load data/constraints.mat h g
-else
+if problem.regen_sdp
 % regenerate constraints
 
 % EQUALITY
@@ -251,30 +248,37 @@ g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
 vBoundSq = vBound^2;
 g_v = vBoundSq*L - v'*v;
 
-% c bound (0<=c<=1)
-cBoundSq = 1.0; % should just be 1
-g_c = [cBoundSq - c'*c;c]; % includes measurements
+% c bound (0<=c<=1) (if using, uncomment c def)
+% cBoundSq = 1.0; % should just be 1
+% g_c = [cBoundSq - c'*c;c]; % includes measurements
 
 % g = [g_c];
 % g = [g_c;g_v];
 % g = [g_s_first; g_v; g_c]; % only use if regenerating each time.
 g = [g_s_first; g_v];
 
-save("data/constraints.mat","g","h");
+% save("data/constraints.mat","g","h");
+% else
+    % this runs much faster
+    % load data/sdp_data.mat g h
 end
-
 
 
 %% Complete problem definition
 problem.vars = x;
 problem.objective = prob_obj;
-problem.equality = h; % equality
-problem.inequality = g; % inequality
+if ~problem.regen_sdp
+    load data/sdpdata.mat sdpdata
+else
+    sdpdata = [];
+    problem.equality = h; % equality
+    problem.inequality = g; % inequality
+end
 
 %% Relax!
 kappa = 1; % relaxation order
-[SDP,info] = dense_sdp_relax(problem,kappa);
-% [SDP,info] = simple_sdp_relax(problem,kappa);
+% [SDP,info] = dense_sdp_relax(problem,kappa);
+[SDP,info,sdpdata] = fast_sdp_relax(problem,kappa,sdpdata);
 
 %% Solve using MOSEK
 tic
@@ -282,10 +286,10 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.b,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
-addpath(genpath(mosekpath))
+% addpath(genpath(mosekpath))
 [~,res] = mosekopt('minimize info echo(0)',prob);
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
-rmpath(genpath(mosekpath))
+% rmpath(genpath(mosekpath))
 soln.solvetime = toc;
 
 % figure; bar(eig(Xopt{1})); % if rank = 1, then relaxation is exact/tight
@@ -369,5 +373,10 @@ soln.x_proj = x_proj;
 soln.obj_est = obj_est;
 
 soln.residuals = residuals;
+
+%% Save SDP data
+if problem.regen_sdp
+    save("data/sdpdata.mat","sdpdata");
+end
 
 end

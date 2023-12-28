@@ -1,39 +1,13 @@
 %% Dense SDP relaxation for certifiable tracking
 %  Generic, tunable script to run one iteration of dense tracking.
 %    Operates on random data with no outlier support.
+%    Run setup.m once to set up paths.
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-% TODOS:
-% 1) selector for PACE
-% 2) selector for data checking (below)
-% 3) selector for viz
-
-clc; clear; close all; restoredefaultpath
+clc; clear; close all
+% restoredefaultpath
 % rng("default")
-
-%% dependencies
-% Change paths here
-certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
-mosekpath   = 'C:/Program Files/Mosek/10.1/toolbox/r2017a';
-sdpnalpath  = '../SDPNALv1.0';
-
-% add external paths
-spotpath    = certifiablyrobustperceptionpath + '/spotless';
-stridepath  = certifiablyrobustperceptionpath + '/STRIDE';
-manoptpath  = certifiablyrobustperceptionpath + '/manopt';
-addpath(certifiablyrobustperceptionpath + '/utils')
-addpath(genpath(spotpath)) % Use spotless for defining polynomials
-addpath(certifiablyrobustperceptionpath + '/SDPRelaxations') % implementations for SDP relaxation
-
-% add internal paths
-addpath('./solvers')
-addpath('./visualization')
-addpath('./utils')
-
-path.stridepath = stridepath;
-path.mosekpath  = mosekpath;
-path.manoptpath = manoptpath;
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
@@ -53,7 +27,9 @@ problem.velprior = "body";       % constant body frame velocity
 
 problem.accelerationNoiseBoundSqrt = 0.01;
 problem.rotationNoiseBound = pi/32; % rad
-problem.genconstraints = false; % regenerate if pbound or vbound change
+
+% regen if pbound, vbound, N, L, K change.
+problem.regen_sdp = false; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -63,14 +39,12 @@ problem = gen_random_tracking(problem);
 lambda = 0.0;
 problem.lambda = lambda;
 
-problem.mosekpath = mosekpath;
+% problem.mosekpath = mosekpath;
 
 %% Solve!
-p1 = tic;
 soln = solve_weighted_tracking(problem);
-toc(p1)
 
-soln_pace = pace_with_EKF(problem, path);
+soln_pace = pace_with_EKF(problem);
 
 % soln = solve_full_tracking(problem,lambda);
 % Ap = solve_nopos_tracking(problem);
