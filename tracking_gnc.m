@@ -6,7 +6,7 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
@@ -45,7 +45,7 @@ problem.lambda = lambda;
 
 %% Solve!
 epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigmaSqrt;
-[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', epsilon,'MaxIterations',100,'Debug',false);
+[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'Debug',true);
 
 
 %% Check solutions

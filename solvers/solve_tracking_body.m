@@ -339,15 +339,15 @@ x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
 obj_est = x_proj'*(Q'*Q)*x_proj;
 gap = (obj_est - obj(1)) / obj_est;
 
-% compute residuals (TODO: USE WHOLE OBJECTIVE?)
+% compute residuals
 residuals = zeros(N, L);
 for i = 1:N
     for l = 1:L
         residue = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est - s_est(:,:,l);
-        residuals(i,l) = residue'*residue;
+        residuals(i,l) = (residue'*residue);
     end
 end
-% residuals = residuals / (problem.noiseSigmaSqrt.^2);
+residuals = residuals ./ (problem.noiseBoundSq);
 
 %% Pack into struct
 % raw SDP/MOSEK data
