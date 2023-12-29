@@ -98,6 +98,7 @@ end
 % end
 % % c regularization
 % prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
+% prob_obj2 = prob_obj;
 % for l = 2:L-1
 %     % delta v
 %     delv = v(ib3(l)) - v(ib3(l-1));
@@ -158,7 +159,7 @@ for l = 1:L
     car_coeff((3*N*(l-1)+1):(3*N*l),:) = diag(dw)*B;
 
     sas_coeff((3*N*(l-1)+1):(3*N*l),(3*(l-1)+1):(3*l)) = ...
-        ycs_coeff(:,(3*(l-1)+1):(3*l));
+        ycs_coeff(:,(3*(l-1)+1):(3*l)).^(1/2);
 end
 
 Ar = rar_coeff*P - car_coeff*Cr;
@@ -347,7 +348,7 @@ for i = 1:N
         residuals(i,l) = (residue'*residue);
     end
 end
-residuals = residuals ./ (problem.noiseBoundSq);
+% residuals = residuals ./ (problem.noiseBoundSq);
 
 %% Pack into struct
 % raw SDP/MOSEK data
