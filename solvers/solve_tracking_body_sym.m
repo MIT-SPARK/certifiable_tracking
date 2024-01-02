@@ -7,7 +7,7 @@ function soln = solve_tracking_body_sym(problem)
 %   * body velocity (v)
 %   * rotation (R)
 %   * rotation change (dR)
-%   VERSION WITH RH AND P MOVED INTO CONSTRAINTS
+%   VERSION WITH RH AND P MOVED INTO CONSTRAINTS, FULLY SYMBOLIC
 %
 % INPUTS:
 % - problem (struct): populated problem data

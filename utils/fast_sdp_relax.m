@@ -5,6 +5,7 @@ if nargin < 2; kappa_user = 0; end
 if ~isfield(problem,'vars'); error('Please provide variables of the POP.'); end
 if ~isfield(problem,'objective'); error('Please provide objective function.'); end
 
+% only regenerate SDP data if requested to (this is slow)
 if problem.regen_sdp
     
     if ~isfield(problem,'equality'); problem.equality = []; end
