@@ -29,7 +29,7 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = false; % when in doubt, set to true
 
-problem.N = problem.N_VAR*problem.L; % How many measurements this problem has
+problem.N = problem.N_VAR*problem.L; % How many measurements this problem has (updated by ROBIN)
 problem.outliers = []; % outlier indicies
 problem.priors = [];
 problem.dof = 3;
@@ -48,6 +48,8 @@ problem = robin_prune(problem);
 
 % run GNC
 [inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'FixPriorOutliers',true);
+% convert to true inliers
+inliers = problem.priorinliers(inliers);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)
@@ -55,7 +57,3 @@ if isequal(problem.inliers_gt,inliers)
 else
     disp("Inliers not found after " + string(info.Iterations) + " iterations.");
 end
-
-% play done sound
-load handel.mat
-sound(y,2*Fs);

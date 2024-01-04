@@ -14,7 +14,18 @@ params.addParameter('Weights', default_weights, @(x) isnumeric(x));
 params.parse(varargin{:});
 assert(numel(params.Results.Weights) == problem.N, 'The weights should be a 1xN vector');
 
-problem.covar_measure = reshape(params.Results.Weights.^(-1),[problem.N_VAR, problem.L]);
+%% Convert to weights--ignore ROBIN outliers
+w = params.Results.Weights;
+if isfield(problem,'prioroutliers')
+    % add ROBIN priors to weights
+    w = params.Results.Weights;
+
+    for i = 1:length(problem.prioroutliers)
+        o = problem.prioroutliers(i);
+        w = [w(1:o-1),0.0,w(o:end)];
+    end
+end
+problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
 
 %% Redirect
 % default to body frame
@@ -46,5 +57,10 @@ end
 % info must have:
 % - residuals
 info.residuals = reshape(soln.residuals, problem.N_VAR*problem.L,1);
+
+% for ROBIN: remove ROBIN outliers from residuals
+if isfield(problem,'prioroutliers')
+    info.residuals(problem.prioroutliers) = [];
+end
 
 end
