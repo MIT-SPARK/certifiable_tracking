@@ -5,7 +5,7 @@ You can play with a limited set of results without installing dependencies. To r
 - [CertifiablyRobustPerception](https://github.com/MIT-SPARK/CertifiablyRobustPerception/tree/master) (you need to run SPOTLESS install script)
 - [MOSEK](https://www.mosek.com/)
 - [SDPNAL+](https://blog.nus.edu.sg/mattohkc/softwares/sdpnalplus/)
-- [GNC](https://github.com/MIT-SPARK/GNC-and-ADAPT) (only for tracking with outliers)
+- [GNC](https://github.com/MIT-SPARK/GNC-and-ADAPT) (only for tracking with outliers): TODO: CHANGE TO MY FORK OF GNC
 - [ROBIN](https://github.com/MIT-SPARK/ROBIN) (only for robust outlier rejection)
 
 You may set the paths to these dependencies in [setup.m](setup.m).

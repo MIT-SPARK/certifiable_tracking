@@ -1,5 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-%  Version with outlier rejection through GNC
+%  Version with outlier rejection through ROBIN+GNC
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -43,9 +43,11 @@ lambda = 0.0;
 problem.lambda = lambda;
 
 %% Solve!
-epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigmaSqrt;
-[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'Debug',true);
+% prune outliers with ROBIN
+problem = robin_prune(problem);
 
+% run GNC
+[inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'FixPriorOutliers',true);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)
