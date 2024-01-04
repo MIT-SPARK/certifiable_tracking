@@ -11,7 +11,7 @@ clc; clear; close all
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
-problem.K = 3; % nr of shapes
+problem.K = 4; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers

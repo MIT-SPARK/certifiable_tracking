@@ -9,13 +9,18 @@ Adapted from code written by Jingnan Shi.
 '''
 
 import numpy as np
+import cvxpy as cp
 
 import robin_py
+
 
 def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='maxclique'):
     '''
     First form a compatibility graph and then 
     Use robin to select inliers
+
+    tgt is 3 x N (all keypoints at given time)
+    get cad_dist min and max from helper functions
     '''
     N = tgt.shape[1]
     si, sj = np.meshgrid(np.arange(N), np.arange(N))
@@ -60,6 +65,65 @@ def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='m
 
     return inlier_indices, comp_mat
 
+
+'''
+Helper functions for min and max distances
+'''
+def compute_min_max_distances(cad_kpts):
+    '''
+    cad_kpts is K x 3 x N
+    '''
+    print('Computing upper and lower bounds in cad pairwise distances...')
+
+    K = cad_kpts.shape[0]
+    N = cad_kpts.shape[2]
+    si, sj = np.meshgrid(np.arange(N), np.arange(N))
+    mask_uppertri = (sj > si)
+    si = si[mask_uppertri]
+    sj = sj[mask_uppertri]
+
+    cad_TIMs_ij = cad_kpts[:, :, sj] - cad_kpts[:, :, si]  # shape K by 3 by (n-1)_tri
+
+    # compute max distances
+    cad_dist_k_ij = np.linalg.norm(cad_TIMs_ij, axis=1)  # shape K by (n-1)_tri
+    cad_dist_max_ij = np.max(cad_dist_k_ij, axis=0)
+
+    # compute min distances
+    cad_dist_min_ij = []
+    num_pairs = cad_TIMs_ij.shape[2]
+    one_tenth = num_pairs / 10
+    for i in range(num_pairs):
+        tmp = cad_TIMs_ij[:, :, i].T
+        min_dist = minimum_distance_to_convex_hull(tmp)
+        cad_dist_min_ij.append(min_dist)
+        if i % one_tenth == 1:
+            print(f'{i}/{num_pairs}.')
+
+    cad_dist_min_ij = np.array(cad_dist_min_ij)
+
+    print('Done')
+
+    return cad_dist_min_ij, cad_dist_max_ij
+
+def minimum_distance_to_convex_hull(A):
+    '''
+    A is shape 3 by K, compute the minimum distance from the origin to the convex hull of A
+    '''
+    K = A.shape[1]
+    P = A.T @ A
+    one = np.ones((K, 1))
+    # Use CVXPY to solve
+    x = cp.Variable(K)
+    prob = cp.Problem(cp.Minimize(cp.quad_form(x, P)),
+                      [x >= 0,
+                       one.T @ x == 1])
+    prob.solve(solver='ECOS', verbose=False)
+    x_val = x.value
+    min_distance = np.linalg.norm(A @ x_val)
+    return min_distance
+
+
+
 def test():
     # test ROBIN
     # creating a Graph in robin
@@ -69,6 +133,8 @@ def test():
         g.AddVertex(i)
         g.AddVertex(i+10)
         g.AddEdge(i, i+10)
+    g.AddEdge(0,11)
+    g.AddEdge(10,11)
 
     # find the corresponding inlier structures
     max_core_indices = robin_py.FindInlierStructure(
@@ -78,3 +144,9 @@ def test():
         g, robin_py.InlierGraphStructure.MAX_CLIQUE
     )
     print(max_core_indices)
+    print(max_clique_indices)
+    
+    return max_core_indices, max_clique_indices
+
+if __name__ == '__main__':
+    test()
