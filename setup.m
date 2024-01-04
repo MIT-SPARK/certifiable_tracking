@@ -6,7 +6,7 @@ clc; clear; close all; restoredefaultpath
 % Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
-mosekpath   = 'C:/Program Files/Mosek/10.1/toolbox/r2017a';
+mosekpath   = '../mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
 
 % add external paths

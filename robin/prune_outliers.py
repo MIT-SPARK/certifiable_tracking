@@ -10,6 +10,8 @@ Adapted from code written by Jingnan Shi.
 
 import numpy as np
 
+import robin_py
+
 def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='maxclique'):
     '''
     First form a compatibility graph and then 
@@ -57,3 +59,22 @@ def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='m
     # adj_mat = g.GetAdjMat()
 
     return inlier_indices, comp_mat
+
+def test():
+    # test ROBIN
+    # creating a Graph in robin
+    g = robin_py.AdjListGraph()
+
+    for i in range(10):
+        g.AddVertex(i)
+        g.AddVertex(i+10)
+        g.AddEdge(i, i+10)
+
+    # find the corresponding inlier structures
+    max_core_indices = robin_py.FindInlierStructure(
+        g, robin_py.InlierGraphStructure.MAX_CORE
+    )
+    max_clique_indices = robin_py.FindInlierStructure(
+        g, robin_py.InlierGraphStructure.MAX_CLIQUE
+    )
+    print(max_core_indices)
