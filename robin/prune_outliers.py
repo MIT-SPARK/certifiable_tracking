@@ -66,6 +66,52 @@ def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='m
     return inlier_indices, comp_mat
 
 
+
+def update_robin_graph(g, lidx, tgt, cad_dist_min, cad_dist_max, noise_bound):
+    N = tgt.shape[1]
+    si, sj = np.meshgrid(np.arange(N), np.arange(N))
+    mask_uppertri = (sj > si)
+    si = si[mask_uppertri]
+    sj = sj[mask_uppertri]
+
+    # distances || tgt_j - tgt_i ||
+    tgt_dist_ij = np.linalg.norm(
+        tgt[:, sj] - tgt[:, si], axis=0)  # shape (n-1)_tri
+
+    allEdges = np.arange(si.shape[0])
+    check1 = tgt_dist_ij >= (cad_dist_min - 2 * noise_bound)
+    check2 = tgt_dist_ij <= (cad_dist_max + 2 * noise_bound)
+    mask_compatible = check1 & check2
+    validEdges = allEdges[mask_compatible]
+    sdata = np.zeros_like(si)
+    sdata[mask_compatible] = 1
+
+    comp_mat = np.zeros((N, N))
+    comp_mat[si, sj] = sdata
+
+    # creating a Graph in robin
+    for i in range(N):
+        g.AddVertex(i + lidx)
+
+    for edge_idx in validEdges:
+        # print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
+        g.AddEdge(si[edge_idx] + lidx, sj[edge_idx] + lidx)
+
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound):
+    '''
+    Compute an approximate inlier set using ROBIN
+    '''
+    N = y.shape[0]/3
+    L = y.shape[1]
+
+    # build graph for each time
+    g = robin_py.AdjListGraph()
+    for l in range(L):
+        yl = y[:,l].reshape([3,N])
+        update_robin_graph(g, l*N, yl, cad_dist_min, cad_dist_max, noise_bound)
+
+    # check compatability across times (TODO)
+
 '''
 Helper functions for min and max distances
 '''

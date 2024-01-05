@@ -26,3 +26,7 @@ addpath('./solvers')
 addpath('./visualization')
 addpath('./utils')
 addpath('./robin')
+
+% Setup for ROBIN
+flag = int32(bitor(2, 8));
+py.sys.setdlopenflags(flag);

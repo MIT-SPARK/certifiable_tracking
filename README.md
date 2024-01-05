@@ -24,8 +24,7 @@ py.sys.setdlopenflags(flag);
 ```
 Now you should be all set!
 
-NOTE: I'm doing something rather strange with ROBIN. Instead of compiling the MATLAB binaries and using those directly, I am using MATLAB's python interface. This is mainly due to the availability of already-written python code and not for any good reason.
-
+As an aside, I'm using the python implementation of ROBIN because of pre-existing code. You can port the code over to MATLAB and use the native MATLAB binaries if you'd like; however, you run into essentially the same class of issues.
 
 ## Organization
 There are two main scripts:

@@ -44,7 +44,7 @@ problem.lambda = lambda;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 
-% soln_pace = pace_with_EKF(problem);
+soln_pace = pace_with_EKF(problem);
 
 % soln = solve_full_tracking(problem,lambda);
 % Ap = solve_nopos_tracking(problem);
@@ -99,9 +99,9 @@ end
 c_err = norm(problem.c_gt - soln.c_est);
 
 % PACE errors
-% norm(problem.p_gt - soln_pace.p_raw,'fro')
-% norm(problem.p_gt - soln_pace.p_smoothed,'fro')
-% norm(problem.p_gt - soln.p_est,'fro')
+norm(problem.p_gt - soln_pace.p_raw,'fro')
+norm(problem.p_gt - soln_pace.p_smoothed,'fro')
+norm(problem.p_gt - soln.p_est,'fro')
 
 % Plot trajectory!
 plot_trajectory(problem,soln)
