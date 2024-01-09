@@ -8,10 +8,10 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem based on PASCAL
-problem.category = 'aeroplane';
+problem.category = "aeroplane";
 problem.L = 10; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.6;
+problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.01; % [m]
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
@@ -26,7 +26,7 @@ problem.accelerationNoiseBoundSqrt = 0.0;%0.01;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);

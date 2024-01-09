@@ -4,8 +4,13 @@ function problem = gen_pascal_tracking(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Problem variables
-% pull out N, K from category (TODO!!!)
+% pull out N, K from category
+cat = problem.category;
+c = load(cat + '.mat', cat);
+c = getfield(c,cat);
 
+problem.K = length(c);
+problem.N_VAR = length({c.pnames});
 
 N = problem.N_VAR;
 K = problem.K;
@@ -36,7 +41,17 @@ problem.kappa_rotation = ones(L-1,1);
 problem.kappa_rotrate  = ones(L-2,1);
 
 %% load PASCAL CAD library
-% TODO: populate B, shapes
+% populate B, shapes
+shapes = zeros(3,N,K);
+pnames = c.pnames;
+for i = 1:N
+    for k = 1:K
+        p = pnames(k);
+        coord = getfield(c(i),p{1});
+        shapes(:,i,k) = coord;
+    end
+end
+B = reshape(shapes, 3*N, K);
 
 %% ground truth c, v, p, R, dR
 % allow override by specifying in problem struct

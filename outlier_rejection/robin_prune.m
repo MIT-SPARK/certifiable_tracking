@@ -35,7 +35,7 @@ for l = 1:problem.L
     prioroutliers = [prioroutliers, (l-1)*N + outliers];
 end
 
-out = py.outlier_rejection.prune_outliers.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, problem.noiseBound, 'maxclique');
+% out = py.outlier_rejection.prune_outliers.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, problem.noiseBound, 'maxclique');
 
 % save
 problem.prioroutliers = sort(prioroutliers);
