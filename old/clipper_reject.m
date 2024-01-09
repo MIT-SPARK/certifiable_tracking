@@ -21,7 +21,8 @@ for l = 1:problem.L
     M = A_list(:,:,l) + eye(problem.N_VAR);
     C = C_list(:,:,l);
 
-    [u, idx, ~] = clipper(M, C);
+    u = py.outlier_rejection.run_clipper.run_clipper(py.numpy.array(M), py.numpy.array(C));
+    idx = double(u)+1
 
     % TODO: SAVE INLIER + OUTLIER LIST
 end

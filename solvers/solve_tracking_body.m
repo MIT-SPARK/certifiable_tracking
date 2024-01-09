@@ -269,7 +269,7 @@ end
 problem.vars = x;
 problem.objective = prob_obj;
 if ~problem.regen_sdp
-    load data/sdpdata.mat sdpdata
+    load sdpdata.mat sdpdata
 else
     sdpdata = [];
     problem.equality = h; % equality
@@ -377,7 +377,7 @@ soln.residuals = residuals;
 
 %% Save SDP data
 if problem.regen_sdp
-    save("data/sdpdata.mat","sdpdata");
+    save("sdpdata.mat","sdpdata");
 end
 
 end

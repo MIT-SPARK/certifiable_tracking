@@ -3,13 +3,17 @@
 
 clc; clear; close all; restoredefaultpath
 
-% Change paths here
+%% Select experiment
+experiment = "synthetic";
+addpath("experiments/"+experiment);
+
+%% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
 mosekpath   = '../mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
 
-% add external paths
+%% add external paths
 spotpath    = certifiablyrobustperceptionpath + '/spotless';
 stridepath  = certifiablyrobustperceptionpath + '/STRIDE';
 manoptpath  = certifiablyrobustperceptionpath + '/manopt';
@@ -21,12 +25,12 @@ addpath(genpath(gncpath)) % optional if no outliers
 addpath(genpath(mosekpath))
 addpath(genpath(stridepath))
 
-% add internal paths
+%% add internal paths
+addpath('./outlier_rejection')
 addpath('./solvers')
-addpath('./visualization')
 addpath('./utils')
-addpath('./robin')
+addpath('./visualization')
 
-% Setup for ROBIN
+%% Setup for ROBIN
 flag = int32(bitor(2, 8));
 py.sys.setdlopenflags(flag);
