@@ -10,7 +10,7 @@ function out = robin_min_max_dists(shapes)
 
 shapes = permute(shapes,[3,1,2]); % 3 x K x N -> K x 3 x N
 shapes_np = py.numpy.array(shapes);
-out = cell(py.robin.prune_outliers.compute_min_max_distances(shapes_np));
+out = cell(py.outlier_rejection.prune_outliers.compute_min_max_distances(shapes_np));
 
 end
 

@@ -123,29 +123,55 @@ def minimum_distance_to_convex_hull(A):
 
 '''
 Invariance-based outlier pruning for time series
+TODO: FIX
 '''
-def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound):
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, method="maxclique"):
     '''
     Compute an approximate inlier set using ROBIN
     '''
-    N = y.shape[0]/3
+    N = int(y.shape[0]/3)
     L = y.shape[1]
+    print(N)
+    y_list = y.T.reshape([N*L,3]).T
 
     g = robin_py.AdjListGraph()
     # Graph of single-time compatibility with shape lib
     for l in range(L):
-        yl = y[:,l].reshape([3,N])
+        yl = y[:,l].reshape([N,3]).T
         shape_consistency(g, l*N, yl, cad_dist_min, cad_dist_max, noise_bound)
 
-    # Graph of keypoint compatbility across times
-    # for (i, j) in 
+    ## Graph of keypoint compatbility across times
+    # build mask
+    si, sj = np.meshgrid(np.arange(N*L), np.arange(N*L))
+    mask_uppertri = (sj > si)
+    mask_diftimes = (np.floor(sj/L) > np.floor(si/L))
+    mask = mask_diftimes & mask_uppertri
+    si = si[mask]
+    sj = sj[mask]
+    # check
+    dist = np.linalg.norm(y_list[:,sj] - y_list[:,si], axis=0)
+    allEdges = np.arrange(si.shape[0])
+    check = dist <= noise_bound
+    validEdges = allEdges[check]
+    sdata = np.zeros_like(si)
+    sdata[check] = 1
 
-    for l1 in range(L-1):
-        for l2 in range(l1+1,L):
-            for i1 in range(N-1):
-                for i2 in range(i1+1,N):
-                    pass
+    # add to ROBIN graph
+    for edge_idx in validEdges:
+        print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
+        g.AddEdge(si[edge_idx], sj[edge_idx])
 
+    ## solve
+    if method == "maxclique":
+        inlier_indices = robin_py.FindInlierStructure(
+            g, robin_py.InlierGraphStructure.MAX_CLIQUE)
+    elif method == "maxcore":
+        inlier_indices = robin_py.FindInlierStructure(
+            g, robin_py.InlierGraphStructure.MAX_CORE)
+    else:
+        raise RuntimeError('Prune outliers only support maxclique and maxcore')
+
+    return inlier_indices
 
 def shape_consistency(g, lidx, tgt, cad_dist_min, cad_dist_max, noise_bound):
     '''
@@ -177,10 +203,28 @@ def shape_consistency(g, lidx, tgt, cad_dist_min, cad_dist_max, noise_bound):
         g.AddVertex(i + lidx)
 
     for edge_idx in validEdges:
-        # print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
+        print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
         g.AddEdge(si[edge_idx] + lidx, sj[edge_idx] + lidx)
 
 
+import pickle
 
+def save(y, cad_dist_min, cad_dist_max, noise_bound, method="maxclique"):
+    db = {}
+    db['y'] = y
+    db['cad_dist_min'] = cad_dist_min
+    db['cad_dist_max'] = cad_dist_max
+    db['noise_bound'] = noise_bound
+    db['method'] = method
+    
+    dbfile = open('examplePickle', 'ab')
+    # source, destination
+    pickle.dump(db, dbfile)                    
+    dbfile.close()
+    
 if __name__ == '__main__':
-    test()
+    dbfile = open('examplePickle', 'rb')    
+    db = pickle.load(dbfile)
+    dbfile.close()
+    
+    prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['method'])

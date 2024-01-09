@@ -26,7 +26,7 @@ for l = 1:problem.L
     yl_np = py.numpy.array(yl);
     
     % prune outliers with ROBIN
-    out = py.robin.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, problem.noiseBound, 'maxclique');
+    out = py.outlier_rejection.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, problem.noiseBound, 'maxclique');
     out = cell(out);
     inlier_indicies = double(out{1}) + 1;
 
@@ -34,6 +34,8 @@ for l = 1:problem.L
     outliers = setdiff(1:N, inlier_indicies);
     prioroutliers = [prioroutliers, (l-1)*N + outliers];
 end
+
+out = py.outlier_rejection.prune_outliers.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, problem.noiseBound, 'maxclique');
 
 % save
 problem.prioroutliers = sort(prioroutliers);

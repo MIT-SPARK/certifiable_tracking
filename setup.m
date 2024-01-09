@@ -5,13 +5,16 @@ clc; clear; close all; restoredefaultpath
 
 %% Select experiment
 experiment = "synthetic";
-addpath("experiments/"+experiment);
 
 %% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
 mosekpath   = '../mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
+
+if (experiment == "pascal")
+    cadpath = "../datasets/pascal3d";
+end
 
 %% add external paths
 spotpath    = certifiablyrobustperceptionpath + '/spotless';
@@ -34,3 +37,10 @@ addpath('./visualization')
 %% Setup for ROBIN
 flag = int32(bitor(2, 8));
 py.sys.setdlopenflags(flag);
+
+%% Setup experiments
+addpath("experiments/"+experiment);
+
+if (experiment == "pascal")
+    addpath(cadpath);
+end
