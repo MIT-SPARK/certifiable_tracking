@@ -8,7 +8,7 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem based on PASCAL
-problem.category = "bicycle";
+problem.category = "car";
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.3;
