@@ -8,9 +8,9 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.N_VAR = 4; % nr of keypoints
+problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 3; % nr of keyframes in horizon
+problem.L = 11; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.1;
 problem.noiseSigmaSqrt = 0.01; % [m]

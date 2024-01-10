@@ -47,7 +47,7 @@ for i = 1:N
     for k = 1:K
         p = pnames(i);
         coord = getfield(c(k),p{1});
-        if isempty(coord); coord=zeros(1,3); end
+        if isempty(coord); coord=[0.,0.,0.]; end
         shapes(:,i,k) = coord;
     end
 end
