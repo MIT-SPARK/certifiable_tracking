@@ -3,6 +3,7 @@ prune_outliers.py
 
 A graph-theoretic approach to excluding outliers.
 Use compatibility test to determine if two points can simultaneously be inliers.
+TODO: NO SUPPORT FOR MISSING KEYPOINTS
 
 Lorenzo Shaikewitz for SPARK Lab
 Adapted from code written by Jingnan Shi.
@@ -125,13 +126,12 @@ def minimum_distance_to_convex_hull(A):
 Invariance-based outlier pruning for time series
 TODO: FIX
 '''
-def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, method="maxclique"):
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, method="maxclique"):
     '''
     Compute an approximate inlier set using ROBIN
     '''
     N = int(y.shape[0]/3)
     L = y.shape[1]
-    print(N)
     y_list = y.T.reshape([N*L,3]).T
 
     g = robin_py.AdjListGraph()
@@ -140,26 +140,29 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, method="maxclique
         yl = y[:,l].reshape([N,3]).T
         shape_consistency(g, l*N, yl, cad_dist_min, cad_dist_max, noise_bound)
 
-    ## Graph of keypoint compatbility across times
-    # build mask
-    si, sj = np.meshgrid(np.arange(N*L), np.arange(N*L))
-    mask_uppertri = (sj > si)
-    mask_diftimes = (np.floor(sj/L) > np.floor(si/L))
-    mask = mask_diftimes & mask_uppertri
-    si = si[mask]
-    sj = sj[mask]
-    # check
-    dist = np.linalg.norm(y_list[:,sj] - y_list[:,si], axis=0)
-    allEdges = np.arrange(si.shape[0])
-    check = dist <= noise_bound
-    validEdges = allEdges[check]
-    sdata = np.zeros_like(si)
-    sdata[check] = 1
-
-    # add to ROBIN graph
-    for edge_idx in validEdges:
-        print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
-        g.AddEdge(si[edge_idx], sj[edge_idx])
+    test = g.GetAdjMat()
+    # Graph of keypoint compatbility across times
+    for l1 in range(L-1):
+        for l2 in range(l1+1,L):
+            for i1 in range(N-1):
+                for i2 in range(i1+1,N):
+                    p1 = l1*N + i1
+                    p2 = l1*N + i2
+                    d1 = np.linalg.norm(y_list[:,p1]-y_list[:,p2])
+                    q1 = l2*N + i1
+                    q2 = l2*N + i2
+                    d2 = np.linalg.norm(y_list[:,q1]-y_list[:,q2])
+                    if (p1 == 0):
+                        print(p1,p2,q1,q2)
+                    if (abs(d1-d2) < noise_bound_time):
+                        g.AddEdge(p1,q1)
+                        g.AddEdge(p1,q2)
+                        g.AddEdge(p2,q1)
+                        g.AddEdge(p2,q2)
+                    else:
+                        if (g.HasEdge(p1,p2) and g.HasEdge(q1,q2)):
+                            print(p1,p2,q1,q2,abs(d1-d2))
+    test2 = g.GetAdjMat()
 
     ## solve
     if method == "maxclique":
@@ -175,7 +178,7 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, method="maxclique
 
 def shape_consistency(g, lidx, tgt, cad_dist_min, cad_dist_max, noise_bound):
     '''
-
+    Build graph of keypoint measurements by consistency with shape library
     '''
     N = tgt.shape[1]
     si, sj = np.meshgrid(np.arange(N), np.arange(N))
@@ -203,7 +206,7 @@ def shape_consistency(g, lidx, tgt, cad_dist_min, cad_dist_max, noise_bound):
         g.AddVertex(i + lidx)
 
     for edge_idx in validEdges:
-        print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
+        # print(f'Add edge between {si[edge_idx] + lidx} and {sj[edge_idx] + lidx}.')
         g.AddEdge(si[edge_idx] + lidx, sj[edge_idx] + lidx)
 
 
@@ -227,4 +230,5 @@ if __name__ == '__main__':
     db = pickle.load(dbfile)
     dbfile.close()
     
-    prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['method'])
+    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound'], "maxclique")
+    print(np.sort(inliers))

@@ -4,7 +4,8 @@
 clc; clear; close all; restoredefaultpath
 
 %% Select experiment
-experiment = "pascal";
+% see 'experiments' folder
+experiment = "synthetic";
 
 %% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
