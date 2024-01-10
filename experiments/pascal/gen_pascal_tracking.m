@@ -8,15 +8,15 @@ function problem = gen_pascal_tracking(problem)
 cat = problem.category;
 c = load(cat + '.mat', cat);
 c = getfield(c,cat);
+pnames = c.pnames;
 
 problem.K = length(c);
-problem.N_VAR = length({c.pnames});
+problem.N_VAR = length(pnames);
 
 N = problem.N_VAR;
 K = problem.K;
 L = problem.L;
 
-intraRadius = problem.intraRadius;
 velocityBound = problem.velocityBound;
 translationBound = problem.translationBound;
 noiseSigmaSqrt = problem.noiseSigmaSqrt;
@@ -43,11 +43,10 @@ problem.kappa_rotrate  = ones(L-2,1);
 %% load PASCAL CAD library
 % populate B, shapes
 shapes = zeros(3,N,K);
-pnames = c.pnames;
 for i = 1:N
     for k = 1:K
-        p = pnames(k);
-        coord = getfield(c(i),p{1});
+        p = pnames(i);
+        coord = getfield(c(k),p{1});
         shapes(:,i,k) = coord;
     end
 end
