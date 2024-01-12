@@ -17,7 +17,7 @@ problem.noiseSigmaSqrt = 0.01; % [m]
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
-problem.dt = 1.0;
+problem.dt = 0.5;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity

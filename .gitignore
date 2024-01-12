@@ -29,3 +29,6 @@ codegen/
 
 # Octave session info
 octave-workspace
+
+# Bag files
+*.bag
