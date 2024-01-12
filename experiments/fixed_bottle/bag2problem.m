@@ -25,43 +25,41 @@ end
 [stamps, measurements] = parseBag(problem.bag);
 tot_L = length(stamps);
 
-batchsize = problem.batchsize;
-dt = problem.dt;
+L = problem.L;
 
 problem_list = [];
 
-for batch = 1:floor(tot_L/batchsize)
-    idxrange = ((batch-1)*batchsize+1):(batch*batchsize + 1);
+% define batch problems
+for batch = 1:floor(tot_L/L)
+    idxrange = ((batch-1)*L+1):(batch*L);
     curproblem = problem;
-    % figure out L
+     
+    % interpolate between measurements
     t = stamps(idxrange);
-    L = round((t(end) - t(1))/dt) + 1;
-    curproblem.L = L;
-
-    tint = round((t - t(1))/dt) + 1;
-
-    % set weights and create y
-    y = zeros(3*N,L);
-    covar_measure = ones(N,L)*Inf;
-    covar_velocity = ones(L-2,1)*Inf; % l = 2, ..., L-1
-    kappa_rotrate  = ones(L-2,1)*0.0; % l = 2, ..., L-1
+    t = t - t(1);
+    m = measurements(:,:,idxrange); % 3 x N x L
+    t_even = linspace(0,t(end),L);
+    dt = t_even(2) - t_even(1);
     
-    for j = 1:length(tint)
-        l = tint(j);
-        lmeasure = idxrange(j);
-        measure = reshape(measurements(:,:,lmeasure)',[3*N,1]);
-        y(:,l) = measure;
-        covar_measure(:,l) = 1.0;
-        if (l > 1 && l < L)
-            covar_velocity(l-1) = 1.0;
-            kappa_rotrate(l-1) = 1.0;
-        end
+    y = zeros(3*N,L);
+    for i = 1:N
+        xtemp = interp1(t,reshape(m(1,i,:),[L,1,1]),t_even);
+        ytemp = interp1(t,reshape(m(2,i,:),[L,1,1]),t_even);
+        ztemp = interp1(t,reshape(m(3,i,:),[L,1,1]),t_even);
+        y(ib3(i),:) = [xtemp;ytemp;ztemp];
     end
+
+    % set covariances
+    covar_measure = ones(N,L);
+    covar_velocity = ones(L-2,1); % l = 2, ..., L-1
+    kappa_rotrate  = ones(L-2,1); % l = 2, ..., L-1
+
     % save
     curproblem.y = y;
     curproblem.covar_measure = covar_measure;
     curproblem.covar_velocity = covar_velocity;
     curproblem.kappa_rotrate = kappa_rotrate;
+    curproblem.dt = dt;
     problem_list = [problem_list; curproblem];
 end
 
@@ -98,7 +96,7 @@ numKeypoints = length(pixelKeypointsMessages{1}.Keypoints2D_);
 pixelKeypoints = zeros(numKeypoints, 2, numKeypointsMessages);
 pixelKeypointsStamps = zeros(numKeypointsMessages, 1);
 
-worldKeypoints = zeros(numKeypoints, 3, numKeypointsMessages);
+worldKeypoints = zeros(3,numKeypoints, numKeypointsMessages);
 worldKeypointsStamps = zeros(numKeypointsMessages, 1);
 
 startSec = pixelKeypointsMessages{1}.Header.Stamp.Sec;
@@ -122,9 +120,9 @@ for i = 1:numKeypointsMessages
     Y = [currentWorldKeypointsMessage.Keypoints3D_.Y];
     Z = [currentWorldKeypointsMessage.Keypoints3D_.Z];
     for j = 1:numKeypoints
-        worldKeypoints(j,1,i) = X(j);
-        worldKeypoints(j,2,i) = Y(j);
-        worldKeypoints(j,3,i) = Z(j);
+        worldKeypoints(1,j,i) = X(j);
+        worldKeypoints(2,j,i) = Y(j);
+        worldKeypoints(3,j,i) = Z(j);
 
     end
 end

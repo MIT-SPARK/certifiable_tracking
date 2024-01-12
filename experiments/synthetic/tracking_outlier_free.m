@@ -11,7 +11,7 @@ clc; clear; close all
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
-problem.K = 4; % nr of shapes
+problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
@@ -29,7 +29,7 @@ problem.accelerationNoiseBoundSqrt = 0.01;
 problem.rotationNoiseBound = pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
