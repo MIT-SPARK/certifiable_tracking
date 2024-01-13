@@ -50,27 +50,29 @@ for batch = 1:floor(tot_L/L)
         y(ib3(i),:) = [xtemp;ytemp;ztemp];
     end
     % change weights to ignore nans
-    [i3nan, lnan] = find(isnan(y));
-    if ~isempty(lnan)
-        length(lnan)/3
-        prioroutliers = zeros(length(lnan)/3,1);
-        for j = 1:(length(lnan)/3)
-            idx = 3*(j-1)+1;
-            prioroutliers(j) = floor(i3nan(idx)/3) + (lnan(idx)-1)*N;
+    prioroutliers = [];
+    for l = 1:L
+        yl = y(:,l);
+        i3_nan = strfind(isnan(yl)',true(1,3));
+        for j = 1:length(i3_nan)
+            i3 = i3_nan(j);
+            i = (i3-1)/3 + 1;
+            prioroutliers(end+1) = i + N*(l-1);
         end
         curproblem.prioroutliers = prioroutliers;
     end
+
     % y cannot have nans in it
     y(isnan(y)) = 0.0;
 
     % set covariances
-    covar_measure = ones(N,L);
+    weights = ones(N*L-length(prioroutliers),1);
     covar_velocity = ones(L-2,1); % l = 2, ..., L-1
     kappa_rotrate  = ones(L-2,1); % l = 2, ..., L-1
 
     % save
     curproblem.y = y;
-    curproblem.covar_measure = covar_measure;
+    curproblem.weights = weights;
     curproblem.covar_velocity = covar_velocity;
     curproblem.kappa_rotrate = kappa_rotrate;
     curproblem.dt = dt;
@@ -142,6 +144,6 @@ for i = 1:numKeypointsMessages
 end
 
 stamps = worldKeypointsStamps;
-measurements = worldKeypoints / 1000;
+measurements = worldKeypoints / 1000.0;
 
 end
