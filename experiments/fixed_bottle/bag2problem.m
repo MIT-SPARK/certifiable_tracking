@@ -27,7 +27,7 @@ tot_L = length(stamps);
 
 L = problem.L;
 
-problem_list = [];
+problem_list = {};
 
 % define batch problems
 for batch = 1:floor(tot_L/L)
@@ -38,6 +38,7 @@ for batch = 1:floor(tot_L/L)
     t = stamps(idxrange);
     t = t - t(1);
     m = measurements(:,:,idxrange); % 3 x N x L
+    m(m==0) = NaN;
     t_even = linspace(0,t(end),L);
     dt = t_even(2) - t_even(1);
     
@@ -48,6 +49,19 @@ for batch = 1:floor(tot_L/L)
         ztemp = interp1(t,reshape(m(3,i,:),[L,1,1]),t_even);
         y(ib3(i),:) = [xtemp;ytemp;ztemp];
     end
+    % change weights to ignore nans
+    [i3nan, lnan] = find(isnan(y));
+    if ~isempty(lnan)
+        length(lnan)/3
+        prioroutliers = zeros(length(lnan)/3,1);
+        for j = 1:(length(lnan)/3)
+            idx = 3*(j-1)+1;
+            prioroutliers(j) = floor(i3nan(idx)/3) + (lnan(idx)-1)*N;
+        end
+        curproblem.prioroutliers = prioroutliers;
+    end
+    % y cannot have nans in it
+    y(isnan(y)) = 0.0;
 
     % set covariances
     covar_measure = ones(N,L);
@@ -60,7 +74,7 @@ for batch = 1:floor(tot_L/L)
     curproblem.covar_velocity = covar_velocity;
     curproblem.kappa_rotrate = kappa_rotrate;
     curproblem.dt = dt;
-    problem_list = [problem_list; curproblem];
+    problem_list{end+1} = curproblem;
 end
 
 end

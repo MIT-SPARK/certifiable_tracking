@@ -33,16 +33,18 @@ problems = bag2problem(problem);
 %% Solve for each batch
 solns = [];
 for j = 1:length(problems)
-curproblem = problems(j);
+curproblem = problems{j};
 
 soln = solve_weighted_tracking(curproblem);
 
 % soln_pace = pace_with_EKF(problem);
 
-% soln = solve_full_tracking(problem,lambda);
-% Ap = solve_nopos_tracking(problem);
+ef = eig(soln.raw.Xopt{1});
+if (ef(end-4) > 1e-6)
+    disp("soln " + string(j) + " not convergent.")
+end
+
 solns = [solns; soln];
-break
 if problem.regen_sdp
     break;
     disp("SDP data generated. Rerun with regen_sdp true for faster results.")
@@ -54,7 +56,7 @@ end
 figure(1);
 for j = 1:length(solns)
 
-problem = problems(j);
+problem = problems{j};
 soln = solns(j);
 
 % eigenvalue plot
