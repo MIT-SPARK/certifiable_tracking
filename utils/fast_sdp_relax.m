@@ -296,19 +296,19 @@ else % fast version
     coef_cost   = coef_all(:,n^2+1);
     [row,~,v]   = find(coef_cost);
     C           = sparse(n,n);
-    fprintf('Build cost matrix C ... ')
+    % fprintf('Build cost matrix C ... ')
     for i = 1:length(row)
-        if rem(i,1000) == 1
-            fprintf('%d/%d ',i,length(row));
-        end
+        % if rem(i,1000) == 1
+        %     fprintf('%d/%d ',i,length(row));
+        % end
         C       = C + v(i) * B_normalize{row(i)};
     end
-    fprintf('Done.\n')
+    % fprintf('Done.\n')
 end
 
 %% convert to SDPT3 format
 % do this every time
-fprintf('Generate SDPT3 data ... ')
+% fprintf('Generate SDPT3 data ... ')
 blk{1,1}        = 's';
 blk{1,2}        = n;
 for k = 1:l_g
@@ -337,11 +337,11 @@ SDP.At  = At;
 SDP.C   = C;
 SDP.b   = b;
 
-fprintf('Done.\n')
+% fprintf('Done.\n')
 
 %% convert to sedumi format
 % do this every time
-fprintf('Generate sedumi data ... ')
+% fprintf('Generate sedumi data ... ')
 sK.s  = [n;n1s];
 
 A0t     = sparsevec(blk(1,:),A);
@@ -367,8 +367,8 @@ sdata.c     = sc;
 
 SDP.sedumi   = sdata;
 
-fprintf('Done.\n')
-fprintf('====================================================================\n\n\n')
+% fprintf('Done.\n')
+% fprintf('====================================================================\n\n\n')
 info.kappa  = kappa;
 info.lam_g  = lam_g;
 

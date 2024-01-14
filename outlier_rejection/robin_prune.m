@@ -39,6 +39,9 @@ end
 % t = sort(double(out))+1;
 
 % save
+if isfield(problem,'prioroutliers')
+    prioroutliers = [problem.prioroutliers, prioroutliers];
+end
 problem.prioroutliers = sort(prioroutliers);
 problem.priorinliers = setdiff(1:problem.N_VAR*problem.L,problem.prioroutliers);
 problem.N = problem.N - length(prioroutliers);
