@@ -14,19 +14,21 @@ function soln = pace_with_UKF(problem)
 %% Define covariances and noise
 % TODO: FIX ALL THESE BEFORE TESTING!!!!!!
 % state covariance
-covar_position = problem.covar_position(1:3)';
-covar_velocity = problem.covar_velocity(1:3)';
-kappa_rotation = problem.kappa_rotation(1:3)';
-kappa_rotrate = problem.kappa_rotrate(1:3)';
-covar_state_full = [covar_position, covar_velocity, kappa_rotation.^(-1), kappa_rotrate.^(-1)];
+covar_velocity = repmat(problem.covar_velocity(1),[1,3]);
+covar_rotrate = repmat((2*problem.kappa_rotrate(1)).^(-1),[1,3]); % See SE-Sync
+
+covar_position = covar_velocity.*covar_rotrate*problem.dt;
+covar_rotation = covar_rotrate;
+
+covar_state_full = [covar_position, covar_velocity, covar_rotation, covar_rotrate];
 covar_state_full = diag(covar_state_full);
 
 % process noise (noise added to const. vel. model)
-% TODO: this maybe makes less sense
+% TODO: tune this?
 processNoise_full = repmat([0,0.01^2],1,6);
 processNoise_full = diag(processNoise_full);
 
-% Measurement noise (TODO: this isn't quite right)
+% Measurement noise (TODO: this is kinda cheating)
 measureNoise_full = repmat(problem.noiseSigmaSqrt^2, 1,6);
 measureNoise_full = diag(measureNoise_full);
 

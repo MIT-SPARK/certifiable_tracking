@@ -24,13 +24,17 @@ rotNoiseBound = problem.rotationNoiseBound;
 % end
 
 % Weights!
-% TODO: make this more random?
-% TODO: scale by noisebound?
-problem.covar_measure = ones(N,L);
-problem.covar_velocity = ones(L-2,1);
-problem.covar_position = (1/dt^2)*[1.0; problem.covar_velocity];
-problem.kappa_rotation = ones(L-1,1);
-problem.kappa_rotrate  = ones(L-2,1);
+noiseBoundSq = max(4e-2, noiseSigmaSqrt^2 * chi2inv(0.99,3));
+problem.covar_measure = ones(N,L)*(noiseBoundSq/9);
+problem.covar_velocity = ones(L-2,1)*problem.covar_measure(1)*1;
+problem.kappa_rotrate  = ones(L-2,1)*(2/problem.covar_velocity(1));
+% notes on covariances:
+% - covar_measure is scaled by noise bound is the bound is 3 standard
+%   deviations
+% - covar_velocity can be adjusted based on how linear you believe the
+%   system is. In simulated data we are fairly confident.
+% - kappa_rotrate: see covar_velocity. Note that covar ~ 1/(2*kappa)
+% In this case we scale both by covar_measure.
 
 %% generate a mean shape centered at zero
 % allow override by specifying in problem struct
@@ -187,7 +191,6 @@ problem.dR_gt = dR_gt;
 
 problem.cBound = 1.0;
 
-noiseBoundSq = max(4e-2, noiseSigmaSqrt^2 * chi2inv(0.99,3));
 problem.noiseBoundSq = noiseBoundSq;
 problem.noiseBound = sqrt(problem.noiseBoundSq);
 

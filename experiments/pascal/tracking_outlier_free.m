@@ -7,7 +7,7 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.category = "car";
@@ -27,10 +27,11 @@ problem.accelerationNoiseBoundSqrt = 0;%0.01;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = true; % when in doubt, set to true
+problem.regen_sdp = false; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
+% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -42,10 +43,7 @@ problem.lambda = lambda;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 
-soln_pace = pace_with_EKF(problem);
-
-% soln = solve_full_tracking(problem,lambda);
-% Ap = solve_nopos_tracking(problem);
+soln_pace = pace_with_UKF(problem);
 
 %% Check solutions
 % eigenvalue plot

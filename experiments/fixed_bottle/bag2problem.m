@@ -66,9 +66,10 @@ for batch = 1:floor(tot_L/L)
     y(isnan(y)) = 0.0;
 
     % set covariances
-    weights = ones(N*L-length(prioroutliers),1);
-    covar_velocity = ones(L-2,1); % l = 2, ..., L-1
-    kappa_rotrate  = ones(L-2,1); % l = 2, ..., L-1
+    noiseBoundSq = problem.noiseBound^2;
+    weights = ones(N*L-length(prioroutliers),1)*((noiseBoundSq/9).^(-1));
+    covar_velocity = ones(L-2,1)*weights(1)*1;
+    kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
 
     % save
     curproblem.y = y;

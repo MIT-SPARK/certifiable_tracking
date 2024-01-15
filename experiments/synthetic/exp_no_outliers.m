@@ -1,1 +1,0 @@
-%% Test/compare method in many settings with NO OUTLIERS
