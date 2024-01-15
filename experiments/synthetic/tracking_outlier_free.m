@@ -29,7 +29,7 @@ problem.accelerationNoiseBoundSqrt = 0.01;
 problem.rotationNoiseBound = pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = true; % when in doubt, set to true
+problem.regen_sdp = false; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -100,7 +100,7 @@ c_err = norm(problem.c_gt - soln.c_est);
 
 % PACE errors
 norm(problem.p_gt - soln_pace.p_raw,'fro')
-norm(problem.p_gt - soln_pace.p_smoothed,'fro')
+norm(problem.p_gt - soln_pace.p_smoothed2,'fro')
 norm(problem.p_gt - soln.p_est,'fro')
 
 % Plot trajectory!
