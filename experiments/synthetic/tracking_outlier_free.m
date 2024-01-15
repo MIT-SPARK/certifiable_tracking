@@ -25,14 +25,15 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = 0.01;
-problem.rotationNoiseBound = pi/32; % rad
+problem.accelerationNoiseBoundSqrt = 0;%0.01;
+problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = false; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
+% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
