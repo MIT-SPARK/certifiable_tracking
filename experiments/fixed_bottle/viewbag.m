@@ -15,6 +15,10 @@ pixelKeypointsTopic = "/keypoint_detector_node/keypoints_out";
 % 3D keypoints (xyz) in world space
 worldKeypointsTopic = "/reproject_keypoints_node/keypoints_3d_out";
 
+% KEYPOINTS
+teaserKeypointsToper = "/pose_estimator_node/estimated_pose_out";
+fixedLagSmoother = "/gtsam_tracker_node/target_global_odom_estimate";
+
 %% Load Data.
 
 bag = rosbag(bagName);

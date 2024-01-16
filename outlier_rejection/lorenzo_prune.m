@@ -1,11 +1,8 @@
-function problem = robin_prune(problem, min_max_dists)
-% Uses ROBIN to compute largest set of compatible inliers at each time step
-% adds field 'problem.prioroutliers' to problem for use with GNC
-% also updates problem.N
+function problem = lorenzo_prune(problem, min_max_dists)
+% Uses maximum weighted clique calculation to reject inliers efficiently.
 %
 % TODO:
-% - Add more advanced pruning
-% - update to accomodate measuring only a few keypoints
+% - update to accomodate measuring only a few keypoints!!!
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -35,12 +32,16 @@ for l = 1:problem.L
     prioroutliers = [prioroutliers, (l-1)*N + outliers];
 end
 
+out = py.outlier_rejection.prune_outliers_weighted.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, problem.noiseBound, 2*problem.noiseBound);
+priorinliers = sort(double(out))+1;
+prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
+
 % save
 if isfield(problem,'prioroutliers')
     prioroutliers = [problem.prioroutliers, prioroutliers];
 end
 problem.prioroutliers = sort(prioroutliers);
-problem.priorinliers = setdiff(1:problem.N_VAR*problem.L,problem.prioroutliers);
+problem.priorinliers = priorinliers;
 problem.N = problem.N - length(prioroutliers);
 
 end

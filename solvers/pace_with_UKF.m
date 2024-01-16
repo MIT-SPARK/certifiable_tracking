@@ -25,7 +25,7 @@ covar_state_full = diag(covar_state_full);
 
 % process noise (noise added to const. vel. model)
 % TODO: tune this?
-processNoise_full = repmat([0,0.01^2],1,6);
+processNoise_full = repmat([0,0.0^2],1,6);
 processNoise_full = diag(processNoise_full);
 
 % Measurement noise (TODO: this is kinda cheating)
@@ -65,8 +65,8 @@ prior_v = (prior_dR*s(:,2) - s(:,1))/problem.dt;
 
 prior_state = [prior_pos',prior_v',prior_r,prior_w]';
 
-% define EKF
-EKF2 = trackingEKF(State=prior_state,StateCovariance=covar_state_full, ...
+% define UKF
+UKF2 = trackingUKF(State=prior_state,StateCovariance=covar_state_full, ...
         StateTransitionFcn=@constvw,ProcessNoise=processNoise_full, ...
         MeasurementFcn=@measureModel_vw,MeasurementNoise=measureNoise_full);
 
@@ -87,9 +87,9 @@ p_smoothed(:,:,1) = p(:,1);
 p_smoothed(:,:,2) = p(:,2);
 for l = 3:L
     % prediction
-    [xpred, Ppred] = predict(EKF2,problem.dt);
+    [xpred, Ppred] = predict(UKF2,problem.dt);
     % correction
-    [xcorr, Pcorr] = correct(EKF2,[s(:,l)',R2r(R(:,:,l))]');
+    [xcorr, Pcorr] = correct(UKF2,[s(:,l)',R2r(R(:,:,l))]');
 
     % save
     s_smoothed(:,:,l) = xcorr(1:3);
@@ -106,6 +106,8 @@ soln.p_smoothed = p_smoothed;
 soln.R_smoothed = R_smoothed;
 soln.p_raw = reshape(p,[3,1,L]);
 soln.R_raw = R;
+soln.dR_smoothed = dR_smoothed;
+soln.v_smoothed = v_smoothed2;
 
 end
 

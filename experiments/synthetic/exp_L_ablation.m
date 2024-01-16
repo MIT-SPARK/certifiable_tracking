@@ -9,9 +9,8 @@
 clc; clear; close all
 
 %% Experiment settings
-% Ls = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
-Ls = [5,10];
-num_repeats = 2;
+Ls = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
+num_repeats = 50;
 
 %% Loop
 for L = Ls
@@ -24,6 +23,7 @@ resultsL.p_err_ukf = zeros(num_repeats,1);
 resultsL.p_err_pace = zeros(num_repeats,1);
 resultsL.c_err_ours = zeros(num_repeats,1);
 resultsL.gap_ours = zeros(num_repeats,1);
+resultsL.time_ours = zeros(num_repeats,1);
 for j = 1:num_repeats
 
 % Generate random tracking problem
@@ -82,6 +82,7 @@ resultsL.p_err_ukf(j)  = norm(problem.p_gt - soln_pace.p_smoothed,'fro')/L;
 resultsL.p_err_pace(j) = norm(problem.p_gt - soln_pace.p_raw,'fro')/L;
 resultsL.c_err_ours(j) = c_err;
 resultsL.gap_ours(j) = soln.gap;
+resultsL.time_ours(j) = soln.solvetime;
 clear problem;
 end
 results(Ls == L) = resultsL;
@@ -116,5 +117,11 @@ title("Position Errors")
 % gap figure
 figure
 semilogy([results.L],mean([results.gap_ours]));
-xlabel("L"); ylabel("Position Error (m)");
+xlabel("L"); ylabel("Gap");
 title("Suboptimality Gaps")
+
+% time figure
+figure
+plot([results.L],mean([results.time_ours]));
+xlabel("L"); ylabel("Time (s)");
+title("Solve Time")
