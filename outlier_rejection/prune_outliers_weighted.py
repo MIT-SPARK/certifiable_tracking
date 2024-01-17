@@ -38,6 +38,9 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time)
         for l2 in range(l1+1,L):
             for i1 in range(N-1):
                 for i2 in range(i1+1,N):
+                    if not (graphs[l1].has_edge(i1,i2) and graphs[l2].has_edge(i1,i2)):
+                        continue
+
                     p1 = l1*N + i1
                     p2 = l1*N + i2
                     d1 = np.linalg.norm(y_list[:,p1]-y_list[:,p2])
@@ -45,20 +48,29 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time)
                     q2 = l2*N + i2
                     d2 = np.linalg.norm(y_list[:,q1]-y_list[:,q2])
                     if (abs(d1-d2) < noise_bound_time):
-                        graphs[l1].nodes[i1]['weight'] += 1
-                        graphs[l1].nodes[i2]['weight'] += 1
-                        graphs[l2].nodes[i1]['weight'] += 1
-                        graphs[l2].nodes[i2]['weight'] += 1
+                        graphs[l1].nodes[i1]['weight'] += 1.0
+                        graphs[l1].nodes[i2]['weight'] += 1.0
+                        graphs[l2].nodes[i1]['weight'] += 1.0
+                        graphs[l2].nodes[i2]['weight'] += 1.0
+
+                    graphs[l1].nodes[i1]['count'] += 1
+                    graphs[l1].nodes[i2]['count'] += 1
+                    graphs[l2].nodes[i1]['count'] += 1
+                    graphs[l2].nodes[i2]['count'] += 1
 
     ## solve
     inlier_indices = []
     for l in range(L):
         g = graphs[l]
+        for n in range(len(g.nodes())):
+            g.nodes[n]['weight'] = int(g.nodes[n]['weight'] / g.nodes[n]['count'] * 100)
 
         [clique, _] = nx.max_weight_clique(g)
         for n in clique:
             inlier_indices.append(n + l*N)
-        print(clique)
+        # print(l+1)
+        # inlier_indices.sort()
+        # print(inlier_indices)
         # draw(g)
 
     return inlier_indices
@@ -91,7 +103,7 @@ def shape_consistency(g, tgt, cad_dist_min, cad_dist_max, noise_bound):
     nodes = {}
     # creating a Graph in robin
     for i in range(N):
-        g.add_node(i,weight=1)
+        g.add_node(i,weight=1.0,count=1)
 
     for edge_idx in validEdges:
         # print(f'Add edge between {si[edge_idx] + lidx} and {sj[edge_idx] + lidx}.')
@@ -105,14 +117,16 @@ def draw(g):
 
     options = {
     'node_color': 'black',
-    'node_size': 700,
+    'node_size': 4000,
     'width': 3,
     'labels': labels,
     'font_color': 'white',
+    'font_size':18,
     }
     nx.draw(g, **options)
     plt.show()
     input()
+    plt.close()
 
 import pickle
 

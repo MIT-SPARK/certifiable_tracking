@@ -4,12 +4,14 @@ clc; clear; close all
 
 robinct = 0;
 lorenzoct = 0;
+robinwin = 0;
+lorenzowin = 0;
 for iii = 1:100
 
 %% Generate random tracking problem
-problem.N_VAR = 10; % nr of keypoints
+problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 11; % nr of keyframes in horizon
+problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.5;
 problem.noiseSigmaSqrt = 0.01; % [m]
@@ -50,11 +52,14 @@ disp(iii)
 if isequal(problem.inliers_gt,problem_robin.priorinliers)
     robinct = robinct + 1;
     if ~isequal(problem.inliers_gt,problem_lorenzo.priorinliers)
-        disp("robin right but we are not")
+        robinwin = robinwin + 1;
     end
 end
 if isequal(problem.inliers_gt,problem_lorenzo.priorinliers)
     lorenzoct = lorenzoct + 1;
+    if ~isequal(problem.inliers_gt,problem_robin.priorinliers)
+        lorenzowin = lorenzowin + 1;
+    end
 end
 
 end
