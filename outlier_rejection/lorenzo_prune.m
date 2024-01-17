@@ -16,22 +16,6 @@ end
 cdmin = min_max_dists{1};
 cdmax = min_max_dists{2};
 
-prioroutliers = [];
-for l = 1:problem.L
-    % convert measurements to python
-    yl = reshape(problem.y(:,l),[3,N]);
-    yl_np = py.numpy.array(yl);
-    
-    % prune outliers with ROBIN
-    out = py.outlier_rejection.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, problem.noiseBound, 'maxclique');
-    out = cell(out);
-    inlier_indicies = double(out{1}) + 1;
-
-    % convert to outlier index list
-    outliers = setdiff(1:N, inlier_indicies);
-    prioroutliers = [prioroutliers, (l-1)*N + outliers];
-end
-
 out = py.outlier_rejection.prune_outliers_weighted.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, problem.noiseBound, 2*problem.noiseBound);
 priorinliers = sort(double(out))+1;
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);

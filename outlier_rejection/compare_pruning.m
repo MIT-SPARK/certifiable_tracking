@@ -46,9 +46,12 @@ problem_robin = robin_prune(problem);
 problem_lorenzo = lorenzo_prune(problem);
 
 %% Check solutions
-disp("*******************")
+disp(iii)
 if isequal(problem.inliers_gt,problem_robin.priorinliers)
     robinct = robinct + 1;
+    if ~isequal(problem.inliers_gt,problem_lorenzo.priorinliers)
+        disp("robin right but we are not")
+    end
 end
 if isequal(problem.inliers_gt,problem_lorenzo.priorinliers)
     lorenzoct = lorenzoct + 1;

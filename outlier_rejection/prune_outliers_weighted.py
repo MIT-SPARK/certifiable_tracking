@@ -12,6 +12,7 @@ Adapted from code written by Jingnan Shi.
 import numpy as np
 import networkx as nx
 
+import matplotlib.pyplot as plt
 
 '''
 Invariance-based outlier pruning for time series
@@ -57,6 +58,8 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time)
         [clique, _] = nx.max_weight_clique(g)
         for n in clique:
             inlier_indices.append(n + l*N)
+        print(clique)
+        # draw(g)
 
     return inlier_indices
 
@@ -94,6 +97,22 @@ def shape_consistency(g, tgt, cad_dist_min, cad_dist_max, noise_bound):
         # print(f'Add edge between {si[edge_idx] + lidx} and {sj[edge_idx] + lidx}.')
         g.add_edge(si[edge_idx], sj[edge_idx])
 
+def draw(g):
+    weights = nx.get_node_attributes(g, 'weight')
+    labels = {}
+    for i in weights.keys():
+        labels[i] = (i+1,weights[i])
+
+    options = {
+    'node_color': 'black',
+    'node_size': 700,
+    'width': 3,
+    'labels': labels,
+    'font_color': 'white',
+    }
+    nx.draw(g, **options)
+    plt.show()
+    input()
 
 import pickle
 
