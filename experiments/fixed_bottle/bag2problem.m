@@ -144,7 +144,7 @@ for i = 1:numKeypointsMessages
     end
 end
 
-stamps = worldKeypointsStamps;
-measurements = worldKeypoints / 1000.0;
+stamps = worldKeypointsStamps; % L x 1
+measurements = worldKeypoints / 1000.0; % 3 x N x L
 
 end
