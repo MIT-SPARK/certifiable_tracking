@@ -8,7 +8,7 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.bag = "2024-01-11-17-30-52.bag";
+problem.bag = "../datasets/fixed_bottle/2024-01-11-17-30-52.bag";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting

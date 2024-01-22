@@ -10,7 +10,7 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.json = "metadata.json";
+problem.json = "../datasets/ycbv/metadata.json";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting
@@ -56,6 +56,9 @@ end
 end
 
 %% Check solutions
+L = problem.L;
+N = curproblem.N_VAR;
+
 p_err = zeros(L*length(solns),1);
 R_err = zeros(L*length(solns),1);
 
@@ -66,8 +69,6 @@ problem = problems{j};
 soln = solns(j);
 
 % eigenvalue plot
-L = problem.L;
-N = problem.N_VAR;
 % figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 % hold on
 
