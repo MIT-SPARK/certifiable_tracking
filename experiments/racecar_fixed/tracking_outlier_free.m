@@ -23,7 +23,7 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % regen if batch size changes.
-problem.regen_sdp = true; % when in doubt, set to true
+problem.regen_sdp = false; % when in doubt, set to true
 
 % add shape, measurements, outliers
 load("racecar_cad.mat");

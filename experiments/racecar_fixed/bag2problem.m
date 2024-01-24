@@ -22,7 +22,7 @@ else
 end
 
 %% Load and parse bag data into problem format
-[stamps, measurements, stamps_gt, p_gt, R_gt] = parseBag(problem.bag);
+[stamps, measurements, gt, sd] = parseBag(problem.bag);
 % TODO: PROCESS GROUND TRUTH CORRECTLY
 tot_L = length(stamps);
 
@@ -73,7 +73,14 @@ for batch = 1:floor(tot_L/L)
     kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
 
     % Save gt and sd poses
-    % TODO
+    t_gt = gt.stamps - t(1);
+    t_sd = sd.stamps - t(1);
+    p_gt = zeros(3,1,L);
+    p_sd = zeros(3,1,L);
+    for i = 1:3
+        p_gt(i,:,:) = interp1(t_gt,squeeze(gt.p_gt(i,:,:)),t_even);
+        p_sd(i,:,:) = interp1(t_sd,squeeze(sd.p_sd(i,:,:)),t_even);
+    end
 
     % save
     curproblem.y = y;
@@ -81,6 +88,8 @@ for batch = 1:floor(tot_L/L)
     curproblem.covar_velocity = covar_velocity;
     curproblem.kappa_rotrate = kappa_rotrate;
     curproblem.dt = dt;
+    curproblem.p_gt = p_gt;
+    curproblem.p_sd = p_sd;
     problem_list{end+1} = curproblem;
 end
 
@@ -189,8 +198,8 @@ for i = 1:N
     q(4) = cur.Pose.Pose.Orientation.Z;
     R_sd(:,:,i) = quat2rotm(q');
 end
-gt.p_sd = p_sd;
-gt.R_sd = R_sd;
-gt.stamps = stamps_sd;
+sd.p_sd = p_sd;
+sd.R_sd = R_sd;
+sd.stamps = stamps_sd;
 
 end
