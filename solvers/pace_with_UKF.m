@@ -12,7 +12,6 @@ function soln = pace_with_UKF(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Define covariances and noise
-% TODO: FIX ALL THESE BEFORE TESTING!!!!!!
 % state covariance
 covar_velocity = repmat(problem.covar_velocity(1),[1,3]);
 covar_rotrate = repmat((2*problem.kappa_rotrate(1)).^(-1),[1,3]); % See SE-Sync
@@ -67,7 +66,7 @@ prior_v = (prior_dR*s(:,2) - s(:,1))/problem.dt;
 prior_state = [prior_pos',prior_v',prior_r,prior_w]';
 
 % define UKF
-UKF2 = trackingUKF(State=prior_state,StateCovariance=covar_state_full, ...
+UKF2 = trackingEKF(State=prior_state,StateCovariance=covar_state_full, ...
         StateTransitionFcn=@constvw,ProcessNoise=processNoise_full, ...
         MeasurementFcn=@measureModel_vw,MeasurementNoise=measureNoise_full);
 
