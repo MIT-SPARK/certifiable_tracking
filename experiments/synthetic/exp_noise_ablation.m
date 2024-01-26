@@ -1,7 +1,7 @@
-%% RSS Experiment: What Time Step Should We Use?
+%% RSS Experiment: How does noise affect performance?
 % Dataset: synthetic
-% Constants: K, N, noiseSigma, NO nonlinearities in gt
-% Independent variable: L
+% Constants: K, N, L, NO nonlinearities in gt
+% Independent variable: noiseSigma
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -9,9 +9,9 @@
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "L"; % name of independent variable
+indepVar = "noiseSigmaSqrt"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
+domain = [0.01:0.01:0.5,0.6:0.1:1.5];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -27,17 +27,18 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
+disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 % Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
 
-problem.L = iv; % nr of keyframes in horizon
+problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseSigmaSqrt = iv; % [m]
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

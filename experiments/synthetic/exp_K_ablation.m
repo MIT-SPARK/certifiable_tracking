@@ -1,7 +1,7 @@
-%% RSS Experiment: What Time Step Should We Use?
+%% RSS Experiment: How does number of shapes affect performance?
 % Dataset: synthetic
 % Constants: K, N, noiseSigma, NO nonlinearities in gt
-% Independent variable: L
+% Independent variable: K
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -11,7 +11,7 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "L"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
+domain = [1:2:20, 30:10:100];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -31,9 +31,9 @@ for j = 1:num_repeats
 
 % Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
-problem.K = 3; % nr of shapes
+problem.K = iv; % nr of shapes
 
-problem.L = iv; % nr of keyframes in horizon
+problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 
 problem.outlierRatio = 0.0;

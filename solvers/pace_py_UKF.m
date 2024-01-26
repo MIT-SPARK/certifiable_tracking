@@ -38,13 +38,13 @@ P = py.numpy.array(covar_state_full);
 
 % process noise (noise added to const. vel. model)
 % TODO: tune this?
-processNoise_full = repmat([0.01^2,0.01^2],1,6);
+processNoise_full = repmat([0.1^2,0.1^2],1,6);
 processNoise_full = diag(processNoise_full);
 Q = py.numpy.array(processNoise_full);
 
 % Measurement noise (TODO: this is kinda cheating)
 % measureNoise_full = repmat(problem.noiseSigmaSqrt^2, 1,6);
-measureNoise_full = repmat(0.2^2,1,6);
+measureNoise_full = repmat(0.1^2,1,6);
 measureNoise_full = diag(measureNoise_full);
 R_covar = py.numpy.array(measureNoise_full);
 
@@ -68,9 +68,16 @@ out = py.solvers.ukf.run_ukf(problem.dt, L-1, p_meas, R_meas, v_init, w_init, Q,
 p_smoothed = double(out{1});
 R_smoothed = double(out{2});
 
+p_smoothed_full = zeros(3,1,L);
+p_smoothed_full(:,:,1:2) = reshape(p(:,1:2),[3,1,2]);
+p_smoothed_full(:,:,3:end) = p_smoothed;
+R_smoothed_full = zeros(3,3,L);
+R_smoothed_full(:,:,1:2) = R(:,:,1:2);
+R_smoothed_full(:,:,3:end) = R_smoothed;
+
 %% Save
-soln.p_smoothed = p_smoothed;
-soln.R_smoothed = R_smoothed;
+soln.p_smoothed = p_smoothed_full;
+soln.R_smoothed = R_smoothed_full;
 soln.p_raw = reshape(p,[3,1,L]);
 soln.R_raw = R;
 
