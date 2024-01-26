@@ -248,6 +248,10 @@ g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
 % v bound (v'*v<=vBoundSq)
 vBoundSq = vBound^2;
 g_v = vBoundSq*L - v'*v;
+% g_v = [];
+% for l = 1:L-1
+%     g_v = [g_v; vBoundSq - v(ib3(l))'*v(ib3(l))];
+% end
 
 % c bound (0<=c<=1) (if using, uncomment c def)
 % cBoundSq = 1.0; % should just be 1
@@ -324,16 +328,28 @@ for l = 1:L
 end
 
 % suboptimality gap
-x_proj = [1.0];
-for l = 1:L
-    r_temp = reshape(Rs(:,:,l),9,1);
-    x_proj = [x_proj; r_temp];
-end
+% x_proj = [1.0];
+% for l = 1:L
+%     r_temp = reshape(Rs(:,:,l),9,1);
+%     x_proj = [x_proj; r_temp];
+% end
+% for l = 1:L-1
+%     r_temp = reshape(dRs(:,:,l),9,1);
+%     x_proj = [x_proj; r_temp];
+% end
+% x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
+
+x_proj = [1.0; reshape(Rs,[9*L,1])];
+% dR from R
 for l = 1:L-1
-    r_temp = reshape(dRs(:,:,l),9,1);
-    x_proj = [x_proj; r_temp];
+    dr = reshape(Rs(:,:,l)'*Rs(:,:,l+1),[9,1]);
+    x_proj = [x_proj; dr];
 end
-x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
+x_proj = [x_proj; reshape(s_est,[3*L,1,1])];
+for l = 1:L-1
+    v = (1/dt)*(Rs(:,:,l)'*Rs(:,:,l+1) * s_est(:,:,l+1) - s_est(:,:,l));
+    x_proj = [x_proj; v];
+end
 
 % compute gap
 % obj_est = dmsubs(prob_obj,x,x_proj); % slow

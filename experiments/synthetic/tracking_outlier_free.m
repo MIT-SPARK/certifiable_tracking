@@ -7,7 +7,7 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
