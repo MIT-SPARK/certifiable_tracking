@@ -15,7 +15,7 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseSigmaSqrt = 0.2; % [m]
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -46,10 +46,8 @@ problem.lambda = lambda;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 
-soln_pace = pace_with_UKF(problem);
-
-% soln = solve_full_tracking(problem,lambda);
-% Ap = solve_nopos_tracking(problem);
+% soln_pace = pace_with_UKF(problem);
+soln_pace = pace_py_UKF(problem);
 
 %% Check solutions
 % eigenvalue plot
@@ -101,9 +99,9 @@ end
 c_err = norm(problem.c_gt - soln.c_est);
 
 % PACE errors
-norm(problem.p_gt - soln_pace.p_raw,'fro')
-norm(problem.p_gt - soln_pace.p_smoothed,'fro')
-norm(problem.p_gt - soln.p_est,'fro')
+norm(problem.p_gt - soln_pace.p_raw,'fro') / L
+norm(problem.p_gt(:,:,3:end) - soln_pace.p_smoothed,'fro') / (L-2)
+norm(problem.p_gt - soln.p_est,'fro') / L
 
 % Plot trajectory!
 plot_trajectory(problem,soln)
