@@ -9,17 +9,8 @@ clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
-%% Define YCBInEOAT setting
-setting = "../datasets/ycbineoat/cracker_box_yalehand0";
-object = "cracker";
-
-path.poses = setting + "/annotated_poses/*.txt";
-path.depth = setting + "/depth_filled/*.png";
-path.K = setting + "/cam_K.txt";
-path.cad = "../datasets/ycbineoat/" + object + "_keypoints.mat";
-path.rgb = setting + "/rgb/*.png";
-
-%% Generate random tracking problem
+%% Define settings for batch processing
+problem.json = "../datasets/ycbineoat/yalehand_cheese_metrics.json";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting
@@ -35,7 +26,9 @@ problem.velprior = "body";       % constant body frame velocity
 problem.regen_sdp = false; % when in doubt, set to true
 
 % add shape, measurements, outliers
-[problems, gt] = gtkeypoints2problem(problem, path);
+load("../datasets/ycbineoat/cheese.mat");
+problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
+[problems, gt] = json2problem(problem);
 
 %% Solve for each batch
 solns = [];
@@ -86,7 +79,6 @@ p_est = reshape(soln.p_est,[3,L,1]);
 plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
 hold on
 
-p_quiv = repelem(p_est,3,1);
 R_est = soln.R_est;
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
@@ -108,7 +100,6 @@ plot3(p_gt(1,:),p_gt(2,:),p_gt(3,:),'.k', 'MarkerSize',10);
 hold on
 axis equal
 
-p_quiv = repelem(p_est,3,1);
 R_est = soln.R_est;
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,1,:)),squeeze(gt.R(2,1,:)),squeeze(gt.R(3,1,:)),'r');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,2,:)),squeeze(gt.R(2,2,:)),squeeze(gt.R(3,2,:)),'g');

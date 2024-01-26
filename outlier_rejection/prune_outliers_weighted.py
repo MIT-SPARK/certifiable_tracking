@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 '''
 Invariance-based outlier pruning for time series
 '''
-def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time):
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
     '''
     Compute an approximate inlier set using ROBIN
     '''
@@ -30,7 +30,11 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time)
     for l in range(L):
         g = nx.Graph()
         yl = y[:,l].reshape([N,3]).T
-        shape_consistency(g, yl, cad_dist_min, cad_dist_max, noise_bound)
+        if (len(prioroutliers) == 0):
+            outliers = []
+        else:
+            outliers = prioroutliers[l]
+        shape_consistency(g, yl, cad_dist_min, cad_dist_max, noise_bound, outliers)
         graphs[l] = g
 
     # Graph of keypoint compatbility across times
@@ -75,7 +79,7 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time)
 
     return inlier_indices
 
-def shape_consistency(g, tgt, cad_dist_min, cad_dist_max, noise_bound):
+def shape_consistency(g, tgt, cad_dist_min, cad_dist_max, noise_bound, prioroutliers):
     '''
     Build graph of keypoint measurements by consistency with shape library
     '''
@@ -107,6 +111,8 @@ def shape_consistency(g, tgt, cad_dist_min, cad_dist_max, noise_bound):
 
     for edge_idx in validEdges:
         # print(f'Add edge between {si[edge_idx] + lidx} and {sj[edge_idx] + lidx}.')
+        if (si[edge_idx] in prioroutliers) or (sj[edge_idx] in prioroutliers):
+            continue
         g.add_edge(si[edge_idx], sj[edge_idx])
 
 def draw(g):

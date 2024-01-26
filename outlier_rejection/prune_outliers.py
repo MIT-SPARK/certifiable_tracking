@@ -72,7 +72,7 @@ def compute_min_max_distances(cad_kpts):
     '''
     cad_kpts is K x 3 x N
     '''
-    print('Computing upper and lower bounds in cad pairwise distances...')
+    # print('Computing upper and lower bounds in cad pairwise distances...')
 
     K = cad_kpts.shape[0]
     N = cad_kpts.shape[2]
@@ -95,8 +95,8 @@ def compute_min_max_distances(cad_kpts):
         tmp = cad_TIMs_ij[:, :, i].T
         min_dist = minimum_distance_to_convex_hull(tmp)
         cad_dist_min_ij.append(min_dist)
-        if i % one_tenth == 1:
-            print(f'{i}/{num_pairs}.')
+        # if i % one_tenth == 1:
+        #     print(f'{i}/{num_pairs}.')
 
     cad_dist_min_ij = np.array(cad_dist_min_ij)
 

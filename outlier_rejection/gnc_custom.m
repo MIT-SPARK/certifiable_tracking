@@ -1,4 +1,4 @@
-function [inliers, info] = gnc(problem, f, varargin)
+function [inliers, info] = gnc_custom(problem, f, varargin)
 %GNC - Graduated Non-Convexity
 % Implementation of: 
 %    - "Graduated Non-Convexity for Robust Spatial Perception: From Non-Minimal Solvers to Global Outlier Rejection"
