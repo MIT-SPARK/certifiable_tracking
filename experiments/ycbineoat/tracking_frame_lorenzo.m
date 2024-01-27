@@ -1,5 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-%  Version with outlier rejection through Lorenzo+GNC, batch level
+%  Version with outlier rejection through Lorenzo+GNC, frame level
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -26,10 +26,11 @@ problem.regen_sdp = false; % when in doubt, set to true
 % add shape, measurements, outliers
 load("../datasets/ycbineoat/cheese.mat");
 problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
-[problems, gt, teaser] = json2batchproblem(problem);
+[problems, gt, teaser] = json2frameproblem(problem);
 
-%% Solve for each batch
+%% Solve for each frame
 solns = [];
+
 disp("Solving " + string(length(problems)) + " problems...")
 for j = 1:length(problems)
 curproblem = problems{j};
@@ -78,6 +79,7 @@ end
 end
 
 %% Check solutions
+% TODO: UPDATE
 L = problem.L;
 N = curproblem.N_VAR;
 

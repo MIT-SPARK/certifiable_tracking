@@ -1,4 +1,4 @@
-function [problem_list, gt] = json2problem(problem)
+function [problem_list, gt, teaser] = json2batchproblem(problem)
 %% generates a problem from json metadata file
 % 
 % Lorenzo Shaikewitz for SPARK Lab
@@ -22,7 +22,7 @@ else
 end
 
 %% Load and parse bag data into problem format
-[stamps, measurements, gt] = parseJson(problem.json, N);
+[stamps, measurements, gt, teaser] = parseJson(problem.json, N);
 tot_L = length(stamps);
 
 L = problem.L;
@@ -89,7 +89,7 @@ end
 
 end
 
-function [stamps, keypoints, gt] = parseJson(jsonfile, N)
+function [stamps, keypoints, gt, teaser] = parseJson(jsonfile, N)
 
 % Open the json file
 fid = fopen(jsonfile);
@@ -109,6 +109,13 @@ p_gt = poses(1:3,4,:) / 1000; % [m]
 R_gt = poses(1:3,1:3,:);
 gt.p = p_gt;
 gt.R = R_gt;
+
+% Teaser poses
+poses = reshape([data.est_teaser_pose],[4,4,bigL]);
+p_teaser = poses(1:3,4,:) / 1000; % [m]
+R_teaser = poses(1:3,1:3,:);
+teaser.p = p_teaser;
+teaser.R = R_teaser;
 
 % make up stamps
 stamps = 0:(1/30):(1/30*(bigL-1));

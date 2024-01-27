@@ -106,7 +106,7 @@ hold on
 plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
 plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel("L"); ylabel("Rotation Error (deg)");
+xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
@@ -116,17 +116,17 @@ hold on
 plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
 plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel("L"); ylabel("Position Error (m)");
+xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],mean([results.gap_ours]),'x-');
-xlabel("L"); ylabel("Gap");
+semilogy([results.(indepVar)],abs(mean([results.gap_ours])),'x-');
+xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
-xlabel("L"); ylabel("Time (s)");
+xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
