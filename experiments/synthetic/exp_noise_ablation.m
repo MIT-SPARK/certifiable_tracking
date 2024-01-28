@@ -11,7 +11,7 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "noiseSigmaSqrt"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [0.01:0.01:0.5,0.6:0.1:1.5];
+domain = [0.01,0.02,0.05,0.1];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -39,6 +39,7 @@ L = problem.L;
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv; % [m]
+problem.noiseBoundSqrt = 0.2;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -53,6 +54,7 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = (j == 1); % regen only first time
+problem.dR_gt = repmat(eye(3),[1,1,L-1]);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
@@ -97,14 +99,19 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
+colors = {[0 0.4470 0.7410], [0.8500 0.3250 0.0980], [0.9290 0.6940 0.1250]};
 
 % Rotation figure
 figure
 set(0,'DefaultLineLineWidth',2)
-plot([results.(indepVar)],mean([results.R_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.R_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.R_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 legend
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
@@ -130,3 +137,18 @@ figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
 xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
+
+%% Plotting Helper
+function errorshade(x,y,color)
+
+curve1 = prctile(y,75);
+curve2 = prctile(y,25);
+x2 = [x, fliplr(x)];
+inBetween = [curve1, fliplr(curve2)];
+obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
+obj.Annotation.LegendInformation.IconDisplayStyle = "off";
+
+% TF = isoutlier(y);
+% x_rep = repmat(x,[size(y,1),1]);
+% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
+end

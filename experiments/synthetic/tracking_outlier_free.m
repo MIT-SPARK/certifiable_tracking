@@ -15,7 +15,8 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseBoundSqrt = 0.2;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -100,7 +101,7 @@ c_err = norm(problem.c_gt - soln.c_est);
 
 % PACE errors
 norm(problem.p_gt - soln_pace.p_raw,'fro') / L
-norm(problem.p_gt(:,:,3:end) - soln_pace.p_smoothed,'fro') / (L-2)
+norm(problem.p_gt - soln_pace.p_smoothed,'fro') / L
 norm(problem.p_gt - soln.p_est,'fro') / L
 
 % Plot trajectory!
