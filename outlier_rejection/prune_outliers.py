@@ -14,7 +14,7 @@ import cvxpy as cp
 
 import robin_py
 
-def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='maxclique'):
+def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, prioroutliers, method='maxclique'):
     '''
     First form a compatibility graph and then 
     Use robin to select inliers
@@ -49,6 +49,8 @@ def robin_prune_outliers(tgt, cad_dist_min, cad_dist_max, noise_bound, method='m
         g.AddVertex(i)
 
     for edge_idx in validEdges:
+        if (si[edge_idx] in prioroutliers) or (sj[edge_idx] in prioroutliers):
+            continue
         # print(f'Add edge between {si[edge_idx]} and {sj[edge_idx]}.')
         g.AddEdge(si[edge_idx], sj[edge_idx])
 

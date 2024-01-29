@@ -244,10 +244,14 @@ h = [h; dR(ib3(1),:)'*v(ib3(1))*dt - dR(ib3(2),:)*s(ib3(3)) + dR(ib3(1),:)'*s(ib
 % TODO: add in sh
 pBoundSq = pBound^2;
 g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
+% g_s = [];
+% for l = 1:L
+%     g_s = [g_s; pBoundSq - s(ib3(l))'*s(ib3(l))];
+% end
 
 % v bound (v'*v<=vBoundSq)
 vBoundSq = vBound^2;
-g_v = vBoundSq*L - v'*v;
+g_v_allinone = vBoundSq*L - v'*v;
 % g_v = [];
 % for l = 1:L-1
 %     g_v = [g_v; vBoundSq - v(ib3(l))'*v(ib3(l))];
@@ -260,7 +264,8 @@ g_v = vBoundSq*L - v'*v;
 % g = [g_c];
 % g = [g_c;g_v];
 % g = [g_s_first; g_v; g_c]; % only use if regenerating each time.
-g = [g_s_first; g_v];
+g = [g_s_first; g_v_allinone];
+% g = [g_s; g_v];
 
 % save("data/constraints.mat","g","h");
 % else

@@ -12,9 +12,9 @@ problem.json = "../datasets/ycbineoat/yalehand_cheese_metrics.json";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting
-problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
-problem.noiseBound = 0.01;
+problem.translationBound = 2.5; % [m]
+problem.velocityBound = 1.5; % [m/s]
+problem.noiseBound = 0.012;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity

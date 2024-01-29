@@ -38,6 +38,7 @@ for batch = 1:tot_L
         continue
     end
     curproblem = problem;
+    curproblem.startIdx = idxrange(1);
      
     % interpolate between measurements
     t = stamps(idxrange);
@@ -78,7 +79,7 @@ for batch = 1:tot_L
 
     % set covariances
     noiseBoundSq = problem.noiseBound^2;
-    weights = ones(N*L_cur-length(prioroutliers),1)*((noiseBoundSq/9).^(-1));
+    weights = ones(1,N*L_cur)*((noiseBoundSq/9).^(-1));
     covar_velocity = ones(L_cur-2,1)*weights(1)*1;
     kappa_rotrate  = ones(L_cur-2,1)*(2/covar_velocity(1));
 

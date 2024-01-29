@@ -51,7 +51,7 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
                     q1 = l2*N + i1
                     q2 = l2*N + i2
                     d2 = np.linalg.norm(y_list[:,q1]-y_list[:,q2])
-                    if (abs(d1-d2) < 2*noise_bound_time):
+                    if (abs(d1-d2) < 4*noise_bound_time):
                         graphs[l1].nodes[i1]['weight'] += 1.0
                         graphs[l1].nodes[i2]['weight'] += 1.0
                         graphs[l2].nodes[i1]['weight'] += 1.0

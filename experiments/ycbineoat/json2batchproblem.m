@@ -73,7 +73,7 @@ for batch = 1:floor(tot_L/L)
 
     % set covariances
     noiseBoundSq = problem.noiseBound^2;
-    weights = ones(N*L-length(prioroutliers),1)*((noiseBoundSq/9).^(-1));
+    weights = ones(1,N*L)*((noiseBoundSq/9).^(-1));
     covar_velocity = ones(L-2,1)*weights(1)*1;
     kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
 

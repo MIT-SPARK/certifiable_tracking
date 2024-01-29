@@ -1,8 +1,5 @@
 function problem = lorenzo_prune(problem, min_max_dists)
 % Uses maximum weighted clique calculation to reject inliers efficiently.
-%
-% TODO:
-% - update to accomodate measuring only a few keypoints!!!
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 

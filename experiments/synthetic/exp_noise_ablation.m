@@ -39,7 +39,7 @@ L = problem.L;
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv; % [m]
-problem.noiseBoundSqrt = 0.2;
+problem.noiseBoundSqrt = 3*iv;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

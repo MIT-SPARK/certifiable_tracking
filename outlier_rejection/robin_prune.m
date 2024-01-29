@@ -19,27 +19,45 @@ end
 cdmin = min_max_dists{1};
 cdmax = min_max_dists{2};
 
-prioroutliers = [];
+prioroutliers = {};
+if isfield(problem,'prioroutliers')
+    prioroutliers_temp = sort(problem.prioroutliers)-1;
+    for ii = 1:length(prioroutliers_temp)
+        l = floor((prioroutliers_temp(ii))/problem.N_VAR)+1;
+        out = prioroutliers_temp(ii) - (l-1)*problem.N_VAR;
+        if (l > length(prioroutliers))
+            prioroutliers{l} = {out};
+        else
+            prioroutliers{l}{end+1} = out;
+        end
+    end
+end
+
+prioroutliers_new = [];
 for l = 1:problem.L
     % convert measurements to python
     yl = reshape(problem.y(:,l),[3,N]);
     yl_np = py.numpy.array(yl);
     
     % prune outliers with ROBIN
-    out = py.outlier_rejection.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, problem.noiseBound, 'maxclique');
+    out = py.outlier_rejection.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, problem.noiseBound, prioroutliers{l}, 'maxclique');
     out = cell(out);
     inlier_indicies = double(out{1}) + 1;
 
     % convert to outlier index list
     outliers = setdiff(1:N, inlier_indicies);
-    prioroutliers = [prioroutliers, (l-1)*N + outliers];
+    prioroutliers_new = [prioroutliers_new, (l-1)*N + outliers];
+end
+
+if isfield(problem,'prioroutliers')
+    % setdiff(problem.prioroutliers,prioroutliers)
+    prioroutliers = union(problem.prioroutliers, prioroutliers_new);
+else
+    prioroutliers = prioroutliers_new;
 end
 
 % save
-if isfield(problem,'prioroutliers')
-    prioroutliers = [problem.prioroutliers, prioroutliers];
-end
-problem.prioroutliers = sort(prioroutliers);
+problem.prioroutliers = prioroutliers;
 problem.priorinliers = setdiff(1:problem.N_VAR*problem.L,problem.prioroutliers);
 problem.N = problem.N - length(prioroutliers);
 

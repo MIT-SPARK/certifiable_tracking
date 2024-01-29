@@ -12,16 +12,13 @@ problem.json = "../datasets/ycbineoat/yalehand_cheese_metrics.json";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting
-problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
+problem.translationBound = 5.0;
+problem.velocityBound = 1.5;
 problem.noiseBound = 0.01;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
-
-% regen if batch size changes.
-problem.regen_sdp = false; % when in doubt, set to true
 
 % add shape, measurements, outliers
 load("../datasets/ycbineoat/cheese.mat");
@@ -32,8 +29,11 @@ problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
 solns = [];
 
 disp("Solving " + string(length(problems)) + " problems...")
+last_L = 0;
 for j = 1:length(problems)
 curproblem = problems{j};
+curproblem.regen_sdp = (curproblem.L ~= last_L); % regen only first time
+last_L = curproblem.L;
 
 % data for GNC
 curproblem.type = "tracking";
@@ -83,14 +83,15 @@ end
 L = problem.L;
 N = curproblem.N_VAR;
 
-p_err = zeros(L*length(solns),1);
-R_err = zeros(L*length(solns),1);
+p_err = zeros(L*N,L)*NaN;
+R_err = zeros(L*N,L)*NaN;
 
 figure(1);
 for j = 1:length(solns)
 
 problem = problems{j};
 soln = solns(j);
+L_cur = problem.L;
 
 % eigenvalue plot
 % figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
@@ -99,7 +100,7 @@ soln = solns(j);
 % Plot trajectory!
 figure(1);
 axis equal
-p_est = reshape(soln.p_est,[3,L,1]);
+p_est = reshape(soln.p_est,[3,L_cur,1]);
 plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
 hold on
 
@@ -108,10 +109,10 @@ quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,2,:)),'g');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
-idx = ((j-1)*L + 1):j*L;
-for l = 1:L
-    p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
-    R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
+idx = problem.startIdx:(problem.startIdx + L_cur);
+for l = 1:L_cur
+    p_err(idx(l),l) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
+    R_err(idx(l),l) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
 end
 
 end

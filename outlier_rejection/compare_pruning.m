@@ -13,8 +13,9 @@ problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.5;
+problem.outlierRatio = 0.75;
 problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseBoundSqrt = 0.05;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -44,7 +45,7 @@ problem.lambda = lambda;
 % prune outliers with ROBIN
 problem_robin = robin_prune(problem);
 
-% prune outliers with max clique
+% prune outliers with max weighted clique
 problem_lorenzo = lorenzo_prune(problem);
 
 %% Check solutions
