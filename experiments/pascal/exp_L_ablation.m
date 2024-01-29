@@ -1,7 +1,7 @@
-%% RSS Experiment: How does noise affect performance?
-% Dataset: synthetic
-% Constants: K, N, L, NO nonlinearities in gt
-% Independent variable: noiseSigma
+%% RSS Experiment: What Time Step Should We Use?
+% Dataset: pascal + car
+% Constants: K, N, noiseSigma, NO nonlinearities in gt
+% Independent variable: L
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -9,9 +9,9 @@
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "noiseSigmaSqrt"; % name of independent variable
-savename = "syn_" + indepVar;
-domain = [0.01,0.02,0.05,0.1];
+indepVar = "L"; % name of independent variable
+savename = "pascalcar_" + indepVar;
+domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -27,20 +27,15 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
-disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
-% Generate random tracking problem
-problem.N_VAR = 11; % nr of keypoints
-problem.K = 3; % nr of shapes
-
-problem.L = 10; % nr of keyframes in horizon
+problem.L = iv; % nr of keyframes in horizon
 L = problem.L;
+problem.category = "car";
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = iv; % [m]
-problem.noiseBoundSqrt = 3*iv;
-problem.intraRadius = 0.2;
+problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseBoundSqrt = 3*problem.noiseSigmaSqrt;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -54,10 +49,9 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = (j == 1); % regen only first time
-problem.dR_gt = repmat(eye(3),[1,1,L-1]);
 
 % add shape, measurements, outliers
-problem = gen_random_tracking(problem);
+problem = gen_pascal_tracking(problem);
 lambda = 0.0;
 problem.lambda = lambda;
 
@@ -99,21 +93,16 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
-colors = {[0 0.4470 0.7410], [0.8500 0.3250 0.0980], [0.9290 0.6940 0.1250]};
 
 % Rotation figure
 figure
 set(0,'DefaultLineLineWidth',2)
-a=plot([results.(indepVar)],median([results.R_err_ours]),'x-','DisplayName','OURS');
+plot([results.(indepVar)],mean([results.R_err_ours]),'x-','DisplayName','OURS');
 hold on
-b=plot([results.(indepVar)],median([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
-c=plot([results.(indepVar)],median([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
-
-errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
-errorshade([results.(indepVar)],[results.R_err_ukf],get(b,'Color'));
-errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
+plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
+plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel(indepVar); ylabel("Rotation Error (deg)");
+xlabel("L"); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
@@ -123,32 +112,17 @@ hold on
 plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
 plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel(indepVar); ylabel("Position Error (m)");
+xlabel("L"); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],abs(mean([results.gap_ours])),'x-');
-xlabel(indepVar); ylabel("Gap");
+semilogy([results.(indepVar)],mean([results.gap_ours]),'x-');
+xlabel("L"); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
-xlabel(indepVar); ylabel("Time (s)");
+xlabel("L"); ylabel("Time (s)");
 title("Solve Time")
-
-%% Plotting Helper
-function errorshade(x,y,color)
-
-curve1 = prctile(y,75);
-curve2 = prctile(y,25);
-x2 = [x, fliplr(x)];
-inBetween = [curve1, fliplr(curve2)];
-obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
-obj.Annotation.LegendInformation.IconDisplayStyle = "off";
-
-% TF = isoutlier(y);
-% x_rep = repmat(x,[size(y,1),1]);
-% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
-end

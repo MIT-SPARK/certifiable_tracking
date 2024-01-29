@@ -80,7 +80,11 @@ for batch = 1:tot_L
     % set covariances
     noiseBoundSq = problem.noiseBound^2;
     weights = ones(1,N*L_cur)*((noiseBoundSq/9).^(-1));
-    covar_velocity = ones(L_cur-2,1)*weights(1)*1;
+    if (isfield(problem,"covar_velocity_base"))
+        covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+    else
+        covar_velocity = ones(L-2,1)*weights(1).^(-1);
+    end
     kappa_rotrate  = ones(L_cur-2,1)*(2/covar_velocity(1));
 
     % save

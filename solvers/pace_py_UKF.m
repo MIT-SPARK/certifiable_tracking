@@ -38,13 +38,13 @@ P = py.numpy.array(covar_state_full);
 
 % process noise (noise added to const. vel. model)
 % TODO: tune this?
-processNoise_full = repmat(problem.noiseBoundSqrt^2,1,12);
+processNoise_full = repmat(0.05^2,1,12);
 processNoise_full = diag(processNoise_full);
 Q = py.numpy.array(processNoise_full);
 
 % Measurement noise (TODO: this is kinda cheating)
 % measureNoise_full = repmat(problem.noiseSigmaSqrt^2, 1,6);
-measureNoise_full = repmat(0.1^2,1,6);
+measureNoise_full = repmat(problem.noiseBoundSqrt^2,1,6);
 measureNoise_full = diag(measureNoise_full);
 R_covar = py.numpy.array(measureNoise_full);
 

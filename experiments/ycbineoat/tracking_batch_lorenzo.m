@@ -12,16 +12,15 @@ problem.json = "../datasets/ycbineoat/yalehand_cheese_metrics.json";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting
-problem.translationBound = 2.5; % [m]
-problem.velocityBound = 1.5; % [m/s]
-problem.noiseBound = 0.012;
+problem.translationBound = 3.0; % [m]
+problem.velocityBound = 2.0; % [m/s]
+problem.noiseBound_GNC = 0.01;
+problem.noiseBound = 0.01;
+problem.covar_velocity_base = 0.05^2;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
-
-% regen if batch size changes.
-problem.regen_sdp = false; % when in doubt, set to true
 
 % add shape, measurements, outliers
 load("../datasets/ycbineoat/cheese.mat");
@@ -32,7 +31,10 @@ problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
 solns = [];
 disp("Solving " + string(length(problems)) + " problems...")
 for j = 1:length(problems)
+% regen if batch size changes.
+
 curproblem = problems{j};
+curproblem.regen_sdp = (j==1); % when in doubt, set to true
 
 % data for GNC
 curproblem.type = "tracking";
@@ -51,13 +53,13 @@ curproblem = lorenzo_prune(curproblem);
 
 % run GNC
 try
-    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound,'MaxIterations',100,'FixPriorOutliers',false);
+    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
     disp("GNC finished " + string(j))
 
     soln = info.f_info.soln;
     ef = eig(soln.raw.Xopt{1});
     if (ef(end-4) > 1e-4)
-        disp("**Not convergent**")
+        disp("**Not convergent: " + string(soln.gap))
     end
 catch
     f = fieldnames(solns(1))';
@@ -90,6 +92,17 @@ for j = 1:length(solns)
 problem = problems{j};
 soln = solns(j);
 
+idx = ((j-1)*L + 1):j*L;
+for l = 1:L
+    p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
+    R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
+end
+
+if (soln.gap > 0.5)
+    % don't plot
+    continue
+end
+
 % eigenvalue plot
 % figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 % hold on
@@ -105,12 +118,6 @@ R_est = soln.R_est;
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,2,:)),'g');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
-
-idx = ((j-1)*L + 1):j*L;
-for l = 1:L
-    p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
-    R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
-end
 
 end
 

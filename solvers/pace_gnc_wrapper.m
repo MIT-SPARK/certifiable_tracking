@@ -23,7 +23,7 @@ end
 problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
 
 % redirect to appropriate solver
-soln = pace_py_UKF(problem)
+soln = pace_py_UKF(problem);
 
 %% Pull out relevant results
 f_val = soln.raw.obj(1);

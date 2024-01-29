@@ -16,7 +16,7 @@ problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBoundSqrt = 0.2;
+problem.noiseBoundSqrt = 0.05;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

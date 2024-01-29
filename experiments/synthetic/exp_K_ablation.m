@@ -9,9 +9,9 @@
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "L"; % name of independent variable
+indepVar = "K"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [1:2:20, 30:10:100];
+domain = [10, 100, 500, 2000]; % for quick results
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -27,6 +27,7 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
+disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 % Generate random tracking problem
@@ -38,6 +39,7 @@ L = problem.L;
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseBoundSqrt = 3*problem.noiseSigmaSqrt;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -55,7 +57,7 @@ problem.regen_sdp = (j == 1); % regen only first time
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-lambda = 0.0;
+lambda = 0.1;
 problem.lambda = lambda;
 
 % Solve!

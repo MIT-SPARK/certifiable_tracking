@@ -1,7 +1,7 @@
-%% RSS Experiment: What Time Step Should We Use?
+%% RSS Experiment: How does noise affect performance?
 % Dataset: synthetic
-% Constants: K, N, noiseSigma, NO nonlinearities in gt
-% Independent variable: L
+% Constants: K, N, L, NO nonlinearities in gt
+% Independent variable: noiseSigma (measurement)
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 % NOT USED MAY NOT BE UP TO DATE
 %
@@ -10,9 +10,9 @@
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "L"; % name of independent variable
+indepVar = "noiseSigmaSqrt"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
+domain = [0.01,0.02,0.05,0.1];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -28,17 +28,19 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
+disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 % Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
 
-problem.L = iv; % nr of keyframes in horizon
+problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseSigmaSqrt = iv; % [m]
+problem.noiseBoundSqrt = 3*iv;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -97,16 +99,21 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
+colors = {[0 0.4470 0.7410], [0.8500 0.3250 0.0980], [0.9290 0.6940 0.1250]};
 
 % Rotation figure
 figure
 set(0,'DefaultLineLineWidth',2)
-plot([results.(indepVar)],mean([results.R_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.R_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.R_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 legend
-xlabel("L"); ylabel("Rotation Error (deg)");
+xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
@@ -116,17 +123,32 @@ hold on
 plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
 plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel("L"); ylabel("Position Error (m)");
+xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],mean([results.gap_ours]),'x-');
-xlabel("L"); ylabel("Gap");
+semilogy([results.(indepVar)],abs(mean([results.gap_ours])),'x-');
+xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
-xlabel("L"); ylabel("Time (s)");
+xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
+
+%% Plotting Helper
+function errorshade(x,y,color)
+
+curve1 = prctile(y,75);
+curve2 = prctile(y,25);
+x2 = [x, fliplr(x)];
+inBetween = [curve1, fliplr(curve2)];
+obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
+obj.Annotation.LegendInformation.IconDisplayStyle = "off";
+
+% TF = isoutlier(y);
+% x_rep = repmat(x,[size(y,1),1]);
+% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
+end

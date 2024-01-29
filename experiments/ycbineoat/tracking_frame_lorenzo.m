@@ -15,6 +15,7 @@ problem.L = 10; % batch size
 problem.translationBound = 5.0;
 problem.velocityBound = 1.5;
 problem.noiseBound = 0.01;
+problem.covar_velocity_base = 0.1^2;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity

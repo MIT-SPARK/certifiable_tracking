@@ -25,7 +25,13 @@ if isfield(problem,'prioroutliers')
     end
 end
 
-out = py.outlier_rejection.prune_outliers_weighted.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, problem.noiseBound, 2*problem.noiseBound, py.list(prioroutliers));
+if (isfield(problem, "noiseBound_GNC"))
+    noiseBound = problem.noiseBound_GNC;
+else
+    noiseBound = problem.noiseBound;
+end
+
+out = py.outlier_rejection.prune_outliers_weighted.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
 priorinliers = sort(double(out))+1;
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
 

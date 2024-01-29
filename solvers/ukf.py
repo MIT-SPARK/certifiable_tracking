@@ -81,7 +81,8 @@ class CONSTBODY:
         :var state: state :math:`\\boldsymbol{\\chi}`.
         """
         y = np.squeeze(state.p)
-        y = np.hstack([y, SO3.to_rpy(state.R)])
+        # y = np.hstack([y, SO3.to_rpy(state.R)])
+        y = np.hstack([y, SO3.log(state.R)])
         return y
 
     @classmethod
@@ -90,7 +91,7 @@ class CONSTBODY:
         """
         new_state = cls.STATE(
             p=state.p + xi[:3],
-            R=state.R.dot(SO3.exp(xi[3:6])),
+            R=state.R @ (SO3.exp(xi[3:6])),
             v=state.v + xi[6:9],
             w=state.w + xi[9:12],
         )
@@ -102,7 +103,7 @@ class CONSTBODY:
         """
         xi = np.hstack([
                 np.squeeze(state.p - hat_state.p),
-                SO3.log(hat_state.R.T.dot(state.R)),
+                SO3.log(hat_state.R @ (state.R.T)),
                 np.squeeze(state.v - hat_state.v),
                 np.squeeze(state.w - hat_state.w),
                 ])
@@ -128,7 +129,8 @@ def run_ukf(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
     ## Convert measurements into states (R -> rpy)
     ys = [] # TODO
     for l in range(L):
-        rpy = SO3.to_rpy(R_meas[:,:,l])
+        # rpy = SO3.to_rpy(R_meas[:,:,l])
+        rpy = SO3.log(R_meas[:,:,l])
         ys.append(np.hstack([np.squeeze(p_meas[:,:,l]), rpy]))
 
     # initial state
