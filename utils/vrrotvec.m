@@ -11,6 +11,11 @@ axis = cross(a,b)/norm(cross(a,b));
 % angle
 angle = acos(dot(a,b));
 
+
+if (sum(isnan(axis)))
+    axis = [0,0,1];
+end
+
 w = [axis, angle];
 
 end

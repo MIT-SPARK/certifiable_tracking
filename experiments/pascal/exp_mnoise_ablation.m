@@ -36,7 +36,7 @@ problem.category = "car";
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv; % [m]
-problem.noiseBoundSqrt = 3*iv;
+problem.noiseBound = 3*iv;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -133,18 +133,3 @@ figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
 xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
-
-%% Plotting Helper
-function errorshade(x,y,color)
-
-curve1 = prctile(y,75);
-curve2 = prctile(y,25);
-x2 = [x, fliplr(x)];
-inBetween = [curve1, fliplr(curve2)];
-obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
-obj.Annotation.LegendInformation.IconDisplayStyle = "off";
-
-% TF = isoutlier(y);
-% x_rep = repmat(x,[size(y,1),1]);
-% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
-end

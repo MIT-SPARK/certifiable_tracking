@@ -18,7 +18,7 @@ function soln = solve_tracking_body_sym(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Process inputs
-mosekpath = problem.mosekpath;
+% mosekpath = problem.mosekpath;
 
 N = problem.N_VAR;
 K = problem.K;
@@ -98,14 +98,16 @@ for l = 1:L
 end
 % c regularization
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
-for l = 2:L-1
-    % delta v
-    delv = v(ib3(l)) - v(ib3(l-1));
-    prob_obj = prob_obj + wv(l-1)*(delv'*delv);
-    % dR
-    deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
-    prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
-end
+% v regularization (DO NOT USE)
+% prob_obj = prob_obj + 0.001*(s(ib3(3))'*s(ib3(3)));
+% for l = 2:L-1
+%     % delta v
+%     delv = v(ib3(l)) - v(ib3(l-1));
+%     prob_obj = prob_obj + wv(l-1)*(delv'*delv);
+%     % dR
+%     deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
+%     prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
+% end
 
 %% Define constraints
 % EQUALITY
@@ -133,6 +135,16 @@ for l = 2:L
     h = [h; dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) - v(ib3(l-1))*dt];
     h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
 end
+
+% TEMP: R, v constraints
+% for l = 2:L-1
+%     % delta v
+%     delv = v(ib3(l)) - v(ib3(l-1));
+%     h = [h; wv(l-1)*(delv'*delv)];
+%     % dR
+%     deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
+%     h = [h; wd(l-1)*(deldR'*deldR)];
+% end
 
 % constraint on v(t1) as a function of v(t2)
 % TODO: this may help solve time?
@@ -174,12 +186,12 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.b,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
-addpath(genpath(mosekpath))
+% addpath(genpath(mosekpath))
 param = struct();
 param.MSK_IPAR_LOG = 0;
 [~,res] = mosekopt('minimize info',prob,param);
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
-rmpath(genpath(mosekpath))
+% rmpath(genpath(mosekpath))
 soln.solvetime = toc;
 
 % figure; bar(eig(Xopt{1})); % if rank = 1, then relaxation is exact/tight

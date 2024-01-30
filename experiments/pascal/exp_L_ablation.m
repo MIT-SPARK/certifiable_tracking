@@ -35,7 +35,7 @@ problem.category = "car";
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.1; % [m]
-problem.noiseBoundSqrt = 3*problem.noiseSigmaSqrt;
+problem.noiseBound = 3*problem.noiseSigmaSqrt;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;

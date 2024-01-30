@@ -18,7 +18,7 @@ function soln = solve_tracking_world(problem)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Process inputs
-mosekpath = problem.mosekpath;
+% mosekpath = problem.mosekpath;
 
 N = problem.N_VAR;
 K = problem.K;
@@ -207,10 +207,10 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.b,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
-addpath(genpath(mosekpath))
+% addpath(genpath(mosekpath))
 [~,res] = mosekopt('minimize info',prob);
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
-rmpath(genpath(mosekpath))
+% rmpath(genpath(mosekpath))
 soln.solvetime = toc;
 
 % figure; bar(eig(Xopt{1})); % if rank = 1, then relaxation is exact/tight

@@ -24,6 +24,7 @@ manoptpath  = certifiablyrobustperceptionpath + '/manopt';
 addpath(certifiablyrobustperceptionpath + '/utils')
 addpath(genpath(spotpath)) % Use spotless for defining polynomials
 addpath(certifiablyrobustperceptionpath + '/SDPRelaxations') % implementations for SDP relaxation
+addpath(genpath(certifiablyrobustperceptionpath + '/CategoryRegistration')) % implementations for SDP relaxation
 addpath(genpath(gncpath)) % optional if no outliers
 
 addpath(genpath(mosekpath))

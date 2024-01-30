@@ -15,8 +15,9 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBoundSqrt = 0.05;
+problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseBound = 0.05;
+problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -36,13 +37,16 @@ problem.regen_sdp = false; % when in doubt, set to true
 % problem = make_trajectory(problem);
 % problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 % problem.R_gt = repmat(eye(3,3),[1,1,problem.L]);
+% problem.dR_gt = repmat(axang2rotm([0,0,1,1]),[1,1,problem.L-1]);
+% problem.v_gt = repmat([0;1;1],[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-lambda = 0.0;
+% problem.covar_measure(:,3) = ones(problem.N_VAR,1)*Inf;
+% problem.covar_position = ones(problem.L-1,1)*problem.covar_velocity(1);
+% problem.kappa_rotation = ones(problem.L-1,1)*problem.kappa_rotrate(1);
+lambda = 0;
 problem.lambda = lambda;
-
-% problem.mosekpath = mosekpath;
 
 %% Solve!
 soln = solve_weighted_tracking(problem);
@@ -56,21 +60,18 @@ L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 hold on
 
-% if strcmp(problem.velprior, "body")
-%     slices = 1:(1+9*(3*L-2)+3*L);
-%     Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
-%     bar([zeros(3*(L-1),1);eig(Xopt_pRemoved)]);
-%     title("Eigenvalues of Relaxed Solution")
-% elseif strcmp(problem.velprior, "world")
-%     slices = [1:(1+9*(3*L-2)),(1+9*(3*L-2)+3*L+1):(9*(3*L-2)+6*L)];
-%     Xopt_pRemoved = soln.raw.Xopt{1}(slices, slices);
-%     bar([zeros(3*L+1,1);eig(Xopt_pRemoved)]);
-%     title("Eigenvalues of Relaxed Solution")
-% elseif strcmp(problem.velprior, "grav-world")
-%     error("Selected prior is not implemented")
-% else
-%     error("Selected prior is not implemented")
-% end
+if strcmp(problem.velprior, "body")
+    slices = 1:(1+9*(2*L-1)+3*L);
+    Xopt_vRemoved = soln.raw.Xopt{1}(slices, slices);
+    bar([zeros(3*(L-1),1);eig(Xopt_vRemoved)]);
+    title("Eigenvalues of Relaxed Solution")
+elseif strcmp(problem.velprior, "world")
+    error("Selected prior is not implemented")
+elseif strcmp(problem.velprior, "grav-world")
+    error("Selected prior is not implemented")
+else
+    error("Selected prior is not implemented")
+end
 hold off
 
 % raw error

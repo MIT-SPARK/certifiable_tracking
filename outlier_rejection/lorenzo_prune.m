@@ -25,8 +25,8 @@ if isfield(problem,'prioroutliers')
     end
 end
 
-if (isfield(problem, "noiseBound_GNC"))
-    noiseBound = problem.noiseBound_GNC;
+if (isfield(problem, "noiseBound_GRAPH"))
+    noiseBound = problem.noiseBound_GRAPH;
 else
     noiseBound = problem.noiseBound;
 end

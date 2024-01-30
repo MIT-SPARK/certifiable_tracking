@@ -1,18 +1,17 @@
-%% RSS Experiment: How does noise affect performance?
+%% Experiment: How does number of shapes affect performance?
 % Dataset: synthetic
-% Constants: K, N, L, NO nonlinearities in gt
-% Independent variable: noiseSigma (measurement)
+% Constants: K, N, noiseSigma, NO nonlinearities in gt
+% Independent variable: 
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
-% NOT USED MAY NOT BE UP TO DATE
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "noiseSigmaSqrt"; % name of independent variable
+indepVar = "processNoise"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [0.01,0.02,0.05,0.1];
+domain = [0.125,0.15]; % for quick results
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -39,8 +38,9 @@ problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = iv; % [m]
-problem.noiseBoundSqrt = 3*iv;
+problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseBound = 3*problem.noiseSigmaSqrt;
+problem.processNoise = iv;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -58,7 +58,7 @@ problem.regen_sdp = (j == 1); % regen only first time
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-lambda = 0.0;
+lambda = 0.5*iv;
 problem.lambda = lambda;
 
 % Solve!
@@ -99,7 +99,6 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
-colors = {[0 0.4470 0.7410], [0.8500 0.3250 0.0980], [0.9290 0.6940 0.1250]};
 
 % Rotation figure
 figure
@@ -118,37 +117,26 @@ title("Rotation Errors")
 
 % position figure
 figure
-plot([results.(indepVar)],mean([results.p_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.p_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.p_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
 legend
 xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],abs(mean([results.gap_ours])),'x-');
+semilogy([results.(indepVar)],abs(median([results.gap_ours])),'x-');
 xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
-plot([results.(indepVar)],mean([results.time_ours]),'x-');
+plot([results.(indepVar)],median([results.time_ours]),'x-');
 xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
-
-%% Plotting Helper
-function errorshade(x,y,color)
-
-curve1 = prctile(y,75);
-curve2 = prctile(y,25);
-x2 = [x, fliplr(x)];
-inBetween = [curve1, fliplr(curve2)];
-obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
-obj.Annotation.LegendInformation.IconDisplayStyle = "off";
-
-% TF = isoutlier(y);
-% x_rep = repmat(x,[size(y,1),1]);
-% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
-end

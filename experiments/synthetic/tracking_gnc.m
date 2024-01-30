@@ -13,7 +13,9 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.1;
-problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseBound = 10*problem.noiseSigmaSqrt;
+problem.processNoise = 0.15;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -43,9 +45,9 @@ lambda = 0.0;
 problem.lambda = lambda;
 
 %% Solve!
-epsilon = chi2inv(0.99, problem.dof)*problem.noiseSigmaSqrt;
 [inliers, info] = gnc(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'Debug',true);
 
+soln_pace = pace_py_UKF(problem,true);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)

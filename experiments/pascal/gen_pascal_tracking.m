@@ -32,7 +32,8 @@ rotNoiseBound = problem.rotationNoiseBound;
 % end
 
 % Weights!
-noiseBoundSq = max(4e-2, noiseSigmaSqrt^2 * chi2inv(0.99,3));
+% noiseBoundSq = max(4e-2, noiseSigmaSqrt^2 * chi2inv(0.99,3));
+noiseBoundSq = problem.noiseBound^2;
 problem.covar_measure = ones(N,L)*(noiseBoundSq/9);
 if (isfield(problem,"covar_velocity_base"))
     problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;

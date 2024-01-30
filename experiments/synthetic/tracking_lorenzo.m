@@ -12,9 +12,9 @@ problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
 problem.L = 11; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.3;
+problem.outlierRatio = 0.5;
 problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBoundSqrt = 3*problem.noiseSigmaSqrt;
+problem.noiseBound = 3*problem.noiseSigmaSqrt;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -44,6 +44,9 @@ lambda = 0.0;
 problem.lambda = lambda;
 
 %% Solve!
+% pace first
+soln_pace = pace_py_UKF(problem,true,true);
+
 % prune outliers with max weighted clique
 problem = lorenzo_prune(problem);
 
@@ -56,5 +59,9 @@ inliers = problem.priorinliers(inliers);
 if isequal(problem.inliers_gt,inliers)
     disp("Correct inliers found after " + string(info.Iterations) + " iterations.");
 else
-    disp("Inliers not found after " + string(info.Iterations) + " iterations.");
+    if (isempty(setdiff(inliers,problem.inliers_gt)))
+        disp("Subset of correct inliers found after " + string(info.Iterations) + " iterations.");
+    else
+        disp("Inliers not found after " + string(info.Iterations) + " iterations.");
+    end
 end

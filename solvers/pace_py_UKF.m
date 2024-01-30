@@ -1,4 +1,4 @@
-function soln = pace_py_UKF(problem)
+function soln = pace_py_UKF(problem, gnc, robin)
 % A "classic" approach to tracking using PACE and an UKF for smoothing.
 %    Estimate the position of the object using PACE at each time step and
 %    incorporate linear priors/smoothing using a UKF.
@@ -11,13 +11,39 @@ function soln = pace_py_UKF(problem)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
+if nargin < 2
+    gnc = false;
+end
+if nargin < 3
+    robin = false;
+end
+
 %% Run PACE at each time step
 soln_pace = [];
 for l = 1:problem.L
     pace_problem = problem;
     pace_problem.weights = ones(problem.N_VAR,1);
     pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);
-    [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, 'lambda',problem.lambda);
+    if (gnc)
+        pace_problem.N = pace_problem.N_VAR;
+        pace_problem.L = 1;
+        if (robin)
+            pace_problem.y = problem.y(:,l);
+            pace_problem = robin_prune(pace_problem);
+            pace_problem.N_VAR = pace_problem.N;
+        end
+        if isfield(pace_problem,'prioroutliers')
+            pace_problem.scene(:,pace_problem.prioroutliers) = [];
+            pace_problem.weights(pace_problem.prioroutliers) = [];
+            pace_problem.shapes(:,pace_problem.prioroutliers,:) = [];
+        end
+        SDP = relax_category_registration_v2(pace_problem,'lambda',problem.lambda,'checkMonomials',false);
+        out = gnc_category_registration(pace_problem,SDP,path,'lambda',problem.lambda);
+        [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
+        c_est = out.c_est;
+    else
+        [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, 'lambda',problem.lambda);
+    end
     s.R_est = R_est; s.p_est = t_est;
     s.c_est = c_est; s.out = out;
     s.s_est = R_est'*t_est;
@@ -38,13 +64,18 @@ P = py.numpy.array(covar_state_full);
 
 % process noise (noise added to const. vel. model)
 % TODO: tune this?
-processNoise_full = repmat(0.05^2,1,12);
+if (isfield(problem,"processNoise"))
+    pn = problem.processNoise;
+else
+    pn = 0.05;
+end
+processNoise_full = repmat(pn^2,1,12);
 processNoise_full = diag(processNoise_full);
 Q = py.numpy.array(processNoise_full);
 
 % Measurement noise (TODO: this is kinda cheating)
 % measureNoise_full = repmat(problem.noiseSigmaSqrt^2, 1,6);
-measureNoise_full = repmat(problem.noiseBoundSqrt^2,1,6);
+measureNoise_full = repmat(problem.noiseBound^2,1,6);
 measureNoise_full = diag(measureNoise_full);
 R_covar = py.numpy.array(measureNoise_full);
 

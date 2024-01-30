@@ -19,7 +19,7 @@ end
 cdmin = min_max_dists{1};
 cdmax = min_max_dists{2};
 
-prioroutliers = {};
+prioroutliers = cell(1,problem.L);
 if isfield(problem,'prioroutliers')
     prioroutliers_temp = sort(problem.prioroutliers)-1;
     for ii = 1:length(prioroutliers_temp)

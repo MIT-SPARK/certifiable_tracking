@@ -11,7 +11,7 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "K"; % name of independent variable
 savename = "syn_" + indepVar;
-domain = [10, 100, 500, 2000]; % for quick results
+domain = [10, 50, 100, 200, 500, 1000, 2000];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -39,7 +39,8 @@ L = problem.L;
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.1; % [m]
-problem.noiseBoundSqrt = 3*problem.noiseSigmaSqrt;
+problem.noiseBound = 3*problem.noiseSigmaSqrt;
+problem.processNoise = 0.15;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -57,7 +58,7 @@ problem.regen_sdp = (j == 1); % regen only first time
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-lambda = 0.1;
+lambda = 0.5*iv;
 problem.lambda = lambda;
 
 % Solve!
@@ -102,32 +103,40 @@ save("../datasets/results/" + savename + ".mat","results")
 % Rotation figure
 figure
 set(0,'DefaultLineLineWidth',2)
-plot([results.(indepVar)],mean([results.R_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.R_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.R_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 legend
-xlabel("L"); ylabel("Rotation Error (deg)");
+xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
 figure
-plot([results.(indepVar)],mean([results.p_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.p_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.p_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
 legend
-xlabel("L"); ylabel("Position Error (m)");
+xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],mean([results.gap_ours]),'x-');
-xlabel("L"); ylabel("Gap");
+semilogy([results.(indepVar)],abs(median([results.gap_ours])),'x-');
+xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
-plot([results.(indepVar)],mean([results.time_ours]),'x-');
-xlabel("L"); ylabel("Time (s)");
+plot([results.(indepVar)],median([results.time_ours]),'x-');
+xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
