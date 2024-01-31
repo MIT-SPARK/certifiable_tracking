@@ -1,7 +1,7 @@
 %% Topic Definitions.
 
 % Change this to point to rosbag
-bagName = "../datasets/racecar_fixed/2_2024-01-24-10-02-26.bag";
+bagName = "../datasets/racecar_fixed/1_2024-01-30-14-00-09.bag";
 
 % Pose estimate from Teaser + Fixed Lag Smoother (ie. softdrone algo)
 sdPoseTopic = "/gtsam_tracker_node/target_global_odom_estimate";

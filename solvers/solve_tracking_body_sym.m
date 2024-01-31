@@ -98,8 +98,8 @@ for l = 1:L
 end
 % c regularization
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
-% v regularization (DO NOT USE)
-% prob_obj = prob_obj + 0.001*(s(ib3(3))'*s(ib3(3)));
+% s regularization (DO NOT USE)
+prob_obj = prob_obj + 0.001*(s(ib3(3))'*s(ib3(3)));
 % for l = 2:L-1
 %     % delta v
 %     delv = v(ib3(l)) - v(ib3(l-1));

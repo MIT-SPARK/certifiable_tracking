@@ -361,6 +361,14 @@ end
 obj_est = x_proj'*(Q'*Q)*x_proj;
 gap = (obj_est - obj(1)) / obj_est;
 
+% velocity-free gap
+x_proj_nov = x_proj(1:(end-3*(L-1)));
+Q_nov = Q(1:(end-3*(L-1)),1:(end-3*(L-1)));
+obj_est_nov = x_proj_nov'*(Q_nov'*Q_nov)*x_proj_nov;
+Xopt_nov = Xopt{1}(1:(end-3*(L-1)),1:(end-3*(L-1)));
+obj_mosek_nov = trace(Q_nov'*Q_nov*Xopt_nov);
+gap_nov = (obj_est_nov - obj_mosek_nov) / obj_est_nov;
+
 % compute residuals
 residuals = zeros(N, L);
 for i = 1:N
@@ -393,6 +401,10 @@ soln.dR_est = dRs;
 soln.gap = gap;
 soln.x_proj = x_proj;
 soln.obj_est = obj_est;
+
+soln.gap_nov = gap_nov;
+soln.obj_est_nov = obj_est_nov;
+soln.obj_mosek_nov = obj_mosek_nov;
 
 soln.residuals = residuals;
 

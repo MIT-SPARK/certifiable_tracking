@@ -1,4 +1,4 @@
-function [problem_list, gt, sd] = bag2problem(problem, startTime, endTime)
+function [problem_list, gt, sd] = bag2gtproblem(problem, startTime, endTime)
 %% generates a problem from rosbag data
 % 
 % Lorenzo Shaikewitz for SPARK Lab
@@ -22,7 +22,7 @@ else
 end
 
 %% Load and parse bag data into problem format
-[stamps, measurements, gt, sd] = parseBag(problem.bag, startTime, endTime);
+[stamps, measurements, gt, sd] = parseBag(problem.bag, startTime, endTime, problem.shapes);
 % TODO: PROCESS GROUND TRUTH CORRECTLY
 tot_L = length(stamps);
 
@@ -78,9 +78,9 @@ for batch = 1:floor(tot_L/L)
     noiseBoundSq = problem.noiseBound^2;
     weights = ones(1,N*L-length(prioroutliers))*((noiseBoundSq/9).^(-1));
     if (~isfield(curproblem,"covar_velocity_base"))
-        covar_velocity = ones(L-2,1)*weights(1).^(-1);
+        covar_velocity = ones(L-2,1)*weights(1).^(-1)*1;
     else
-        covar_velocity = ones(L-2,1)*curproblem.covar_velocity_base;
+        covar_velocity = ones(L-2,1)*curproblem.covar_velocity_base/9;
     end
     kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
 
@@ -109,7 +109,7 @@ end
 
 end
 
-function [stamps, measurements, gt, sd] = parseBag(bagfile, startTime, endTime)
+function [stamps, measurements, gt, sd] = parseBag(bagfile, startTime, endTime, shape)
 
 %% Keypoint Topics
 % 3D keypoints (xyz) in world space
@@ -243,5 +243,13 @@ sd.p = reshape(sd.p(~isnan(sd.p)),3,1,[]);
 sd.R = reshape(R_sd,[3*3*N,1]);
 sd.R = reshape(sd.R(~isnan(sd.R)),3,3,[]);
 sd.stamps = stamps_sd;
+
+
+% Override stamps, measurements
+stamps = gt.stamps;
+measurements = zeros([3,numKeypoints,length(stamps)]);
+for l = 1:length(stamps)
+    measurements(:,:,l) = gt.R(:,:,l)*shape + gt.p(:,:,l);
+end
 
 end

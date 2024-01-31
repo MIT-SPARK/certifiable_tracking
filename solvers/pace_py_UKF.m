@@ -38,9 +38,17 @@ for l = 1:problem.L
             pace_problem.shapes(:,pace_problem.prioroutliers,:) = [];
         end
         SDP = relax_category_registration_v2(pace_problem,'lambda',problem.lambda,'checkMonomials',false);
-        out = gnc_category_registration(pace_problem,SDP,path,'lambda',problem.lambda);
-        [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
-        c_est = out.c_est;
+        try
+            out = gnc_category_registration(pace_problem,SDP,path,'lambda',problem.lambda);
+            [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
+            c_est = out.c_est;
+        catch
+            out = NaN;
+            t_est = ones(3,1)*NaN;
+            R_est = ones(3,3)*NaN;
+            c_est = ones(problem.K,1)*NaN;
+            disp("PACE GNC Failed.")
+        end
     else
         [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, 'lambda',problem.lambda);
     end

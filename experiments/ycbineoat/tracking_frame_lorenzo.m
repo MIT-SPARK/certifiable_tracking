@@ -8,14 +8,17 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/ycbineoat/yalehand_cheese_metrics.json";
+problem.json = "../datasets/ycbineoat/cracker_box_yalehand0_metrics.json";
 problem.L = 10; % batch size
+problem.savefile = "../datasets/ycbineoat/cracker_box_yalehand0_metrics_ours.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0;
 problem.velocityBound = 1.5;
+problem.noiseBound_GNC = 0.01;
+problem.noiseBound_GRAPH = 0.05;
 problem.noiseBound = 0.01;
-problem.covar_velocity_base = 0.1^2;
+problem.covar_velocity_base = 0.05^2;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity

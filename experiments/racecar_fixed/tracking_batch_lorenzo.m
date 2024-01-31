@@ -1,7 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-%  Generic, tunable script to run one iteration of dense tracking.
-%    Operates on random data with no outlier support.
-%    Run setup.m once to set up paths.
+%  Version with outlier rejection through Lorenzo+GNC, batch level
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -9,59 +7,89 @@ clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
-%% Generate random tracking problem
+%% Define settings for batch processing
 problem.bag = "../datasets/racecar_fixed/2024-01-30-18-14-08.bag";
-% problem.bag = "../datasets/racecar_fixed/2_2024-01-24-10-02-26.bag";
 problem.L = 10; % batch size
 
 % Set bounds based on problem setting
-problem.translationBound = 5.0;
-problem.velocityBound = 2.0;
-problem.noiseBound = 0.03;
-problem.covar_velocity_base = 0.27^2;
+problem.translationBound = 5.0; % [m]
+problem.velocityBound = 1.0; % [m/s]
+problem.noiseBound_GNC = 0.05;
+problem.noiseBound_GRAPH = 0.05;
+problem.noiseBound = 0.04;
+problem.covar_velocity_base = 0.04^2;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-% regen if batch size changes.
-problem.regen_sdp = true; % when in doubt, set to true
-
 % add shape, measurements, outliers
 load("racecar_cad.mat");
-problem.shapes = racecar_cad' / 1000; % 3 x N x K
-[problems, gt, sd] = bag2gtproblem(problem, 15, 50.0);
+problem.shapes = racecar_cad' / 1000; % 3 x N x K [m]
+problem.dt = 1/30;
+[problems, gt, sd] = bag2problem(problem, 15, 50.0);
 
 %% Solve for each batch
 solns = [];
+solns_pace = [];
 disp("Solving " + string(length(problems)) + " problems...")
 for j = 1:length(problems)
+% regen if batch size changes.
+
 curproblem = problems{j};
+curproblem.regen_sdp = (j==1); % when in doubt, set to true
 
-soln = solve_weighted_tracking(curproblem);
+% data for GNC
+curproblem.type = "tracking";
+curproblem.N = curproblem.N_VAR*curproblem.L; % How many measurements this problem has (updated by ROBIN)
+curproblem.outliers = []; % outlier indicies
+curproblem.priors = [];
+curproblem.dof = 3;
 
-% soln_pace = pace_py_UKF(curproblem);
+% soln_pace = pace_py_UKF(curproblem,true,true);
 
-ef = eig(soln.raw.Xopt{1});
-if (ef(end-4) > 1e-6)
-    disp("soln " + string(j) + " not convergent: " + string(soln.gap))
+curproblem = lorenzo_prune(curproblem);
+
+% preprocess inliers
+% if isfield(curproblem,'prioroutliers')
+%     curproblem.prioroutliers = sort(curproblem.prioroutliers);
+%     curproblem.N = curproblem.N - length(curproblem.prioroutliers);
+% end
+
+% run GNC
+try
+    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    disp("GNC finished " + string(j))
+
+    soln = info.f_info.soln;
+    ef = eig(soln.raw.Xopt{1});
+    if (ef(end-4) > 1e-4)
+        disp("**Not convergent: " + string(soln.gap_nov))
+    end
+catch
+    f = fieldnames(solns(1))';
+    f{2,1} = {NaN};
+    soln = struct(f{:});
+    soln.p_est = ones(3,1,curproblem.L)*NaN;
+    soln.R_est = ones(3,3,curproblem.L)*NaN;
+    info.f_info.soln = soln;
+    disp("GNC failed " + string(j))
 end
+
 solns = [solns; soln];
+% solns_pace = [solns_pace; solns_pace];
 
-if problem.regen_sdp
-    break;
-    disp("SDP data generated. Rerun with regen_sdp true for faster results.")
-end
 if (mod(j,5) == 0)
     disp(j);
 end
+
 end
 
 %% Check solutions
 
-L = problem.L;
-p_err = zeros(L*length(solns),1);
-R_err = zeros(L*length(solns),1);
+L=problem.L;
+p_err = zeros(L*length(solns),1)*NaN;
+R_err = zeros(L*length(solns),1)*NaN;
 
 figure(1);
 for j = 1:length(solns)
@@ -69,17 +97,21 @@ for j = 1:length(solns)
 problem = problems{j};
 soln = solns(j);
 
+if (soln.gap > 0.1)
+    continue
+end
+
+idx = ((j-1)*L + 1):j*L;
+for l = 1:L
+    p_err(idx(l)) = norm(soln.p_est(:,:,l) - problem.p_gt(:,:,l));
+    % R_err(idx(l)) = getAngularError(problem.R_gt(:,:,l),soln.R_est(:,:,l));
+end
+
 % eigenvalue plot
 L = problem.L;
 N = problem.N_VAR;
 % figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 % hold on
-
-idx = ((j-1)*L + 1):j*L;
-for l = 1:L
-    p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
-    R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
-end
 
 % Plot trajectory!
 figure(1);
@@ -97,6 +129,7 @@ quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(
 end
 title("OURS")
 view(0,90)
+
 
 %% Plot Ground Truth
 
@@ -124,7 +157,7 @@ axis equal
 quiver3(p_sd(1,:)',p_sd(2,:)',p_sd(3,:)',squeeze(sd.R(1,1,:)),squeeze(sd.R(2,1,:)),squeeze(sd.R(3,1,:)),'r');
 quiver3(p_sd(1,:)',p_sd(2,:)',p_sd(3,:)',squeeze(sd.R(1,2,:)),squeeze(sd.R(2,2,:)),squeeze(sd.R(3,2,:)),'g');
 quiver3(p_sd(1,:)',p_sd(2,:)',p_sd(3,:)',squeeze(sd.R(1,3,:)),squeeze(sd.R(2,3,:)),squeeze(sd.R(3,3,:)),'b');
-title("TEASER")
+title("Soft Drone")
 view(0,90)
 
 %% Quick test to see if keypoints fit
@@ -136,3 +169,15 @@ view(0,90)
 %         hold on
 %     end
 % end
+
+% figure
+for j = 1:length(problems)
+    problem = problems{j};
+    keypoints = reshape(problem.y,[3,N,L]);
+    for l = 1:problem.L
+        k = keypoints(:,:,l);
+        m = mean(k,2);
+        plot3(m(1),m(2),m(3),'x','LineWidth',5)
+        hold on
+    end
+end

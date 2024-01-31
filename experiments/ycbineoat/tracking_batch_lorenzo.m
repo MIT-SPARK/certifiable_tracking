@@ -14,7 +14,7 @@ problem.savefile = "../datasets/ycbineoat/cracker_box_yalehand0_metrics_ours.jso
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
-problem.velocityBound = 1.0; % [m/s]
+problem.velocityBound = 1.5; % [m/s]
 problem.noiseBound_GNC = 0.01;
 problem.noiseBound_GRAPH = 0.05;
 problem.noiseBound = 0.01;

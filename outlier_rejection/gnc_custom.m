@@ -111,6 +111,7 @@ while i < max_iterations
     end
     try
         [~, f_info] = f(problem, 'Weights', weights);
+        problem.regen_sdp = false; % CHANGE
     catch err
         fprintf('Error message: %s', err.message)
         error("Could not run the global solver")

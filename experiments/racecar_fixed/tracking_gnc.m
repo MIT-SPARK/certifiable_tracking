@@ -26,7 +26,7 @@ problem.regen_sdp = false; % when in doubt, set to true
 % add shape, measurements, outliers
 load("racecar_cad.mat");
 problem.shapes = racecar_cad' / 1000; % 3 x N x K
-problems = bag2problem(problem);
+[problems, gt, sd] = bag2problem(problem,0,100);
 
 %% Solve for each batch
 solns = {};
