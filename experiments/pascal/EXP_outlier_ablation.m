@@ -6,13 +6,15 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
+% BROKEN!!!!!!
+
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "L"; % name of independent variable
+indepVar = "outlierratio"; % name of independent variable
 savename = "pascalcar_" + indepVar;
-domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
-% domain = 5;
+domain = [0.05:0.05:0.95];
+% domain = 0.5;
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -30,13 +32,15 @@ resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
 for j = 1:num_repeats
 
-problem.L = iv; % nr of keyframes in horizon
+problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 problem.category = "car";
 
-problem.outlierRatio = 0.0;
+problem.outlierRatio = iv;
 problem.noiseSigmaSqrt = 0.05; % [m]
 problem.noiseBound = 3*problem.noiseSigmaSqrt;
+problem.noiseBound_GNC = 0.15;
+problem.noiseBound_GRAPH = 0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -57,10 +61,35 @@ problem = gen_pascal_tracking(problem);
 lambda = 0.0;
 problem.lambda = lambda;
 
-% Solve!
-soln = solve_weighted_tracking(problem);
+% for GNC
+problem.N = problem.N_VAR*problem.L; % How many measurements this problem has (updated by ROBIN)
+problem.outliers = []; % outlier indicies
+problem.priors = [];
+problem.dof = 3;
 
-soln_pace = pace_py_UKF(problem);
+% Solve!
+soln_pace = pace_py_UKF(problem,true,false);
+soln_pace_robin = pace_py_UKF(problem,true,true);
+
+problem = lorenzo_prune(problem);
+
+try
+    [inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    disp("GNC finished " + string(j))
+
+    soln = info.f_info.soln;
+    ef = eig(soln.raw.Xopt{1});
+    if (ef(end-4) > 1e-4)
+        disp("**Not convergent: " + string(soln.gap_nov))
+    end
+catch
+    soln.p_est = ones(3,1,problem.L)*NaN;
+    soln.R_est = ones(3,3,problem.L)*NaN;
+    soln.c_est = ones(problem.K,1)*NaN;
+    soln.gap = NaN;
+    soln.solvetime = NaN;
+    disp("GNC failed " + string(j))
+end
 
 % Save solutions
 % projected errors

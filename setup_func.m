@@ -1,6 +1,7 @@
 function setup_func(experiment)
-%% Setup for Tracking
-% adds all necessary paths
+%% This is a function form of setup.m, allowing you to run multiple experiments.
+%
+% Lorenzo Shaikewitz for SPARK Lab
 
 restoredefaultpath
 
@@ -12,7 +13,6 @@ restoredefaultpath
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
 mosekpath   = '../mosek/10.1/toolbox/r2017a';
-sdpnalpath  = '../SDPNALv1.0';
 
 if (experiment == "pascal")
     cadpath = "../datasets/pascal3d";
@@ -21,7 +21,6 @@ end
 %% add external paths
 spotpath    = certifiablyrobustperceptionpath + '/spotless';
 stridepath  = certifiablyrobustperceptionpath + '/STRIDE';
-manoptpath  = certifiablyrobustperceptionpath + '/manopt';
 addpath(certifiablyrobustperceptionpath + '/utils')
 addpath(genpath(spotpath)) % Use spotless for defining polynomials
 addpath(certifiablyrobustperceptionpath + '/SDPRelaxations') % implementations for SDP relaxation

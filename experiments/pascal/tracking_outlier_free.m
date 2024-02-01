@@ -1,6 +1,6 @@
 %% Dense SDP relaxation for certifiable tracking
 %  Generic, tunable script to run one iteration of dense tracking.
-%    Operates on random data with no outlier support.
+%    Operates on random data from PASCAL shapes with no outlier support.
 %    Run setup.m once to set up paths.
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -29,7 +29,7 @@ problem.accelerationNoiseBoundSqrt = 0;%0.01;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);

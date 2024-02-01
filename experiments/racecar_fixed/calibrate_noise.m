@@ -22,11 +22,17 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % regen if batch size changes.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % add shape, measurements, outliers
 load("racecar_cad.mat");
 problem.shapes = racecar_cad' / 1000; % 3 x N x K
+
+[problems, gt, sd] = bag2problem(problem, 15, 50.0);
+problem = problems{1};
+soln = solve_weighted_tracking(problem);
+problem.regen_sdp = false;
+
 
 noiseBoundRange = [0.01, 0.05];
 covarVelRange = [0.03, 0.05];

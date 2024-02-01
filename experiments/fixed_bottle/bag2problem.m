@@ -73,7 +73,7 @@ for batch = 1:floor(tot_L/L)
 
     % save
     curproblem.y = y;
-    curproblem.weights = weights;
+    curproblem.weights = weights';
     curproblem.covar_velocity = covar_velocity;
     curproblem.kappa_rotrate = kappa_rotrate;
     curproblem.dt = dt;

@@ -23,7 +23,7 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % regen if batch size changes.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % add shape, measurements, outliers
 load("cad_frame.mat");
@@ -70,12 +70,12 @@ figure(1);
 axis equal
 p_est = reshape(soln.p_est,[3,L,1]);
 plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+hold on
 
 p_quiv = repelem(p_est,3,1);
 R_est = soln.R_est;
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
-hold on
 
 end

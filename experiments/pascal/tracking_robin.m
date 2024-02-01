@@ -13,6 +13,7 @@ problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.3;
 problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseBound = 3*problem.noiseSigmaSqrt;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

@@ -1,5 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-%  Version with outlier rejection through ROBIN+GNC
+%  Version with outlier rejection through GNC
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -20,9 +20,6 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-% regen if batch size changes.
-problem.regen_sdp = false; % when in doubt, set to true
-
 % add shape, measurements, outliers
 load("racecar_cad.mat");
 problem.shapes = racecar_cad' / 1000; % 3 x N x K
@@ -33,6 +30,7 @@ solns = {};
 disp("Solving " + string(length(problems)) + " problems...")
 for j = 1:length(problems)
 curproblem = problems{j};
+curproblem.regen_sdp = (j == 1);
 
 % data for GNC
 curproblem.type = "tracking";

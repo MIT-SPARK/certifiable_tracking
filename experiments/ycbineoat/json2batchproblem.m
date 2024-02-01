@@ -1,5 +1,6 @@
 function [problem_list, gt, teaser] = json2batchproblem(problem)
 %% generates a problem from json metadata file
+% batch-based: optimize each group of L frames separately.
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 

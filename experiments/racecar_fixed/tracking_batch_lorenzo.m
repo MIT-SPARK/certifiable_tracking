@@ -9,7 +9,8 @@ clc; clear; close all
 
 %% Define settings for batch processing
 problem.bag = "../datasets/racecar_fixed/2024-01-30-18-14-08.bag";
-problem.L = 15; % batch size
+problem.L = 10; % batch size
+times = [32, 40];
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
@@ -26,8 +27,9 @@ problem.velprior = "body";       % constant body frame velocity
 % add shape, measurements, outliers
 load("racecar_cad.mat");
 problem.shapes = racecar_cad' / 1000; % 3 x N x K [m]
+min_max_dists = robin_min_max_dists(problem.shapes);
 problem.dt = 1/30;
-[problems, gt, sd] = bag2problem(problem, 32, 40.0); % 15 -> 50?
+[problems, gt, sd] = bag2problem(problem, times(1),times(2));
 
 %% Solve for each batch
 solns = [];
@@ -48,7 +50,7 @@ curproblem.dof = 3;
 
 % soln_pace = pace_py_UKF(curproblem,true,true);
 
-curproblem = lorenzo_prune(curproblem);
+curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % preprocess inliers
 % if isfield(curproblem,'prioroutliers')

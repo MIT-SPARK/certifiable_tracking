@@ -1,5 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-%  Version with outlier rejection through ROBIN+GNC
+%  Version with outlier rejection through GNC
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -73,12 +73,12 @@ figure(1);
 axis equal
 p_est = reshape(soln.p_est,[3,L,1]);
 plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+hold on
 
 p_quiv = repelem(p_est,3,1);
 R_est = soln.R_est;
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
-hold on
 
 end

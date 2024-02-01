@@ -1,3 +1,8 @@
+%% This test script compares the time-dependent pruing method
+% with ROBIN, its time-independent cousin.
+%
+% Lorenzo Shaikewitz for SPARK Lab
+
 clc; clear; close all
 % restoredefaultpath
 % rng("default")

@@ -1,5 +1,7 @@
 function [problem_list, gt, sd] = bag2gtproblem(problem, startTime, endTime)
-%% generates a problem from rosbag data
+%% generates a problem from rosbag GROUND TRUTH data
+% Batch-based: gives batches of L problems based on ground truth generated
+% keypoints
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 

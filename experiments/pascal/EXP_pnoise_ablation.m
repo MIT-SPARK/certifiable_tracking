@@ -1,17 +1,20 @@
 %% RSS Experiment: How does noise affect performance?
 % Dataset: pascal + car
-% Constants: K, N, L, NO nonlinearities in gt
-% Independent variable: noiseSigma (measurement)
+% Constants: K, N, L, noiseSigma
+% Independent variable: accelerationNoiseBoundSqrt
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
+% BROKEN!!!!!!
+
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "noiseSigmaSqrt"; % name of independent variable
-savename = "pascalcar_" + indepVar;
-domain = [0.01:0.01:0.1,0.2:0.1:1];
+indepVar = "bothNoiseBoundSqrt"; % name of independent variable
+savename = "syn_" + indepVar;
+domain = [0.0,0.005,0.01, 0.015, 0.01, 0.025, 0.05, 0.075, 0.1, 0.2];
+% domain = 0.01;
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -35,9 +38,10 @@ L = problem.L;
 problem.category = "car";
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = iv; % [m]
-problem.noiseBound = 3*iv;
+problem.noiseSigmaSqrt = 0.05; % [m]
+problem.noiseBound = 3*problem.noiseSigmaSqrt;
 problem.processNoise = 0.5;
+problem.covar_velocity_base = 0.1;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -47,8 +51,8 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = 0;%0.01;
-problem.rotationNoiseBound = 0;%pi/32; % rad
+problem.accelerationNoiseBoundSqrt = iv;%0.01;
+problem.rotationNoiseBound = iv;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = (j == 1); % regen only first time
@@ -134,3 +138,18 @@ figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
 xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
+
+%% Plotting Helper
+function errorshade(x,y,color)
+
+curve1 = prctile(y,75);
+curve2 = prctile(y,25);
+x2 = [x, fliplr(x)];
+inBetween = [curve1, fliplr(curve2)];
+obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
+obj.Annotation.LegendInformation.IconDisplayStyle = "off";
+
+% TF = isoutlier(y);
+% x_rep = repmat(x,[size(y,1),1]);
+% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
+end

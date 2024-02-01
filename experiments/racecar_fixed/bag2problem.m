@@ -1,5 +1,6 @@
 function [problem_list, gt, sd] = bag2problem(problem, startTime, endTime)
 %% generates a problem from rosbag data
+% batch-based: generates sequential problems of L frames
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 

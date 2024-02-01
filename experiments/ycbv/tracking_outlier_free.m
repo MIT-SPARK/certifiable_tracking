@@ -1,6 +1,5 @@
-%% Dense SDP relaxation for certifiable tracking
-%  Generic, tunable script to run one iteration of dense tracking.
-%    Operates on random data with no outlier support.
+%% Batch-Level Script for Outlier-Free Tracking on YCB-V Keypoint Data
+%    Operates on YCB-V with no outlier support.
 %    Run setup.m once to set up paths.
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -22,9 +21,6 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-% regen if batch size changes.
-problem.regen_sdp = false; % when in doubt, set to true
-
 % add shape, measurements, outliers
 load("cad_frame.mat");
 problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
@@ -35,6 +31,7 @@ solns = [];
 disp("Solving " + string(length(problems)) + " problems...")
 for j = 1:length(problems)
 curproblem = problems{j};
+curproblem.regen_sdp = (j==1);
 
 soln = solve_weighted_tracking(curproblem);
 
@@ -46,10 +43,6 @@ if (ef(end-4) > 1e-6)
 end
 solns = [solns; soln];
 
-if problem.regen_sdp
-    break;
-    disp("SDP data generated. Rerun with regen_sdp true for faster results.")
-end
 if (mod(j,5) == 0)
     disp(j);
 end

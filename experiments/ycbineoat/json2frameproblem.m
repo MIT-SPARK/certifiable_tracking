@@ -1,5 +1,6 @@
 function [problem_list, gt, teaser] = json2frameproblem(problem, skip)
-%% generates a problem from json metadata file
+%% generates a problem from json metadata file at the frame level
+% horizon-based: for each frame, optimize with last L frames
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 

@@ -27,6 +27,7 @@ problem.velprior = "body";       % constant body frame velocity
 % add shape, measurements, outliers
 load("../datasets/ycbineoat/mustard_syn.mat");
 problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
+min_max_dists = robin_min_max_dists(problem.shapes);
 [problems, gt, teaser] = json2frameproblem(problem);
 
 %% Solve for each frame
@@ -46,7 +47,7 @@ curproblem.outliers = []; % outlier indicies
 curproblem.priors = [];
 curproblem.dof = 3;
 
-curproblem = lorenzo_prune(curproblem);
+curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % preprocess inliers
 % if isfield(curproblem,'prioroutliers')

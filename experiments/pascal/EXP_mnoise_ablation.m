@@ -1,17 +1,19 @@
-%% Experiment: How does number of shapes affect performance?
-% Dataset: synthetic
-% Constants: K, N, noiseSigma, NO nonlinearities in gt
-% Independent variable: 
+%% RSS Experiment: How does noise affect performance?
+% Dataset: pascal + car
+% Constants: K, N, L, NO nonlinearities in gt
+% Independent variable: noiseSigma (measurement)
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
+% BROKEN!!!!!
+
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "processNoise"; % name of independent variable
-savename = "syn_" + indepVar;
-domain = [0.125,0.15]; % for quick results
+indepVar = "noiseSigmaSqrt"; % name of independent variable
+savename = "pascalcar_" + indepVar;
+domain = [0.01:0.01:0.1,0.2:0.1:1];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -30,18 +32,15 @@ resultsIV.time_ours = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
-% Generate random tracking problem
-problem.N_VAR = 11; % nr of keypoints
-problem.K = 3; % nr of shapes
-
 problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
+problem.category = "car";
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.1; % [m]
-problem.noiseBound = 3*problem.noiseSigmaSqrt;
-problem.processNoise = iv;
-problem.intraRadius = 0.2;
+problem.noiseSigmaSqrt = iv; % [m]
+problem.noiseBound = 3*iv;
+problem.processNoise = 0.5;
+
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -57,8 +56,8 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 problem.regen_sdp = (j == 1); % regen only first time
 
 % add shape, measurements, outliers
-problem = gen_random_tracking(problem);
-lambda = 0.5*iv;
+problem = gen_pascal_tracking(problem);
+lambda = 0.0;
 problem.lambda = lambda;
 
 % Solve!
@@ -99,6 +98,7 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
+colors = {[0 0.4470 0.7410], [0.8500 0.3250 0.0980], [0.9290 0.6940 0.1250]};
 
 % Rotation figure
 figure
@@ -117,26 +117,22 @@ title("Rotation Errors")
 
 % position figure
 figure
-a=plot([results.(indepVar)],median([results.p_err_ours]),'x-','DisplayName','OURS');
+plot([results.(indepVar)],mean([results.p_err_ours]),'x-','DisplayName','OURS');
 hold on
-b=plot([results.(indepVar)],median([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
-c=plot([results.(indepVar)],median([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
-
-errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
-errorshade([results.(indepVar)],[results.p_err_ukf],get(b,'Color'));
-errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
+plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
+plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
 xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],abs(median([results.gap_ours])),'x-');
+semilogy([results.(indepVar)],abs(mean([results.gap_ours])),'x-');
 xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
-plot([results.(indepVar)],median([results.time_ours]),'x-');
+plot([results.(indepVar)],mean([results.time_ours]),'x-');
 xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")

@@ -27,7 +27,7 @@ problem.velprior = "body";       % constant body frame velocity
 % add shape, measurements, outliers
 load("../datasets/ycbineoat/cheese.mat");
 problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
-% problem.shapes = problem.shapes + repmat([0;0;0.004],[1,size(problem.shapes,2)]); % add 5 mm offset to keypoints due to error
+min_max_dists = robin_min_max_dists(problem.shapes);
 [problems, gt, teaser] = json2batchproblem(problem);
 
 %% Solve for each batch
@@ -46,7 +46,7 @@ curproblem.outliers = []; % outlier indicies
 curproblem.priors = [];
 curproblem.dof = 3;
 
-curproblem = lorenzo_prune(curproblem);
+curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % preprocess inliers
 % if isfield(curproblem,'prioroutliers')

@@ -1,5 +1,6 @@
 function [problem_list, gt, sd] = bag2frameproblem(problem, startTime, endTime)
 %% generates a problem from rosbag data
+% horizon-based: each frame optimized with the last L-1 frames
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 

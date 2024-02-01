@@ -1,3 +1,8 @@
+%% Runs batch-level tracking on racecar data with PACE
+% mostly used for sanity checks.
+% 
+% Lorenzo Shaikewitz for SPARK Lab
+
 problem.bag = "../datasets/racecar_fixed/2024-01-30-18-14-08.bag";
 problem.L = 10; % batch size
 
