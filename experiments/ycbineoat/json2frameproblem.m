@@ -1,7 +1,11 @@
-function [problem_list, gt, teaser] = json2frameproblem(problem)
+function [problem_list, gt, teaser] = json2frameproblem(problem, skip)
 %% generates a problem from json metadata file
 % 
 % Lorenzo Shaikewitz for SPARK Lab
+
+if nargin < 2
+    skip = 1;
+end
 
 %% Define shape data
 % shapes is 3 x N x K
@@ -22,7 +26,7 @@ else
 end
 
 %% Load and parse bag data into problem format
-[stamps, measurements, gt, teaser] = parseJson(problem.json, N);
+[stamps, measurements, gt, teaser] = parseJson(problem.json, N, skip);
 tot_L = length(stamps);
 
 L = problem.L;
@@ -100,7 +104,7 @@ end
 
 end
 
-function [stamps, keypoints, gt, teaser] = parseJson(jsonfile, N)
+function [stamps, keypoints, gt, teaser] = parseJson(jsonfile, N, skip)
 
 % Open the json file
 fid = fopen(jsonfile);
@@ -112,23 +116,26 @@ keypoints = [data.est_world_keypoints];
 keypoints = reshape(keypoints,[N,3,size(data,1)]);
 keypoints = permute(keypoints,[2,1,3]) / 1000.0; % [m]
 
+keypoints = keypoints(:,:,1:skip:end);
+
 bigL = size(data,1);
 
 % gt poses
 poses = reshape([data.gt_teaser_pose],[4,4,bigL]);
 p_gt = poses(1:3,4,:) / 1000; % [m]
 R_gt = poses(1:3,1:3,:);
-gt.p = p_gt;
-gt.R = R_gt;
+gt.p = p_gt(:,:,1:skip:end);
+gt.R = R_gt(:,:,1:skip:end);
 
 % Teaser poses
 poses = reshape([data.est_teaser_pose],[4,4,bigL]);
 p_teaser = poses(1:3,4,:) / 1000; % [m]
 R_teaser = poses(1:3,1:3,:);
-teaser.p = p_teaser;
-teaser.R = R_teaser;
+teaser.p = p_teaser(:,:,1:skip:end);
+teaser.R = R_teaser(:,:,1:skip:end);
 
 % make up stamps
 stamps = 0:(1/30):(1/30*(bigL-1));
+stamps = stamps(1:skip:end);
 
 end

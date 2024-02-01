@@ -12,7 +12,7 @@ clc; clear; close all
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 10; % nr of keyframes in horizon
+problem.L = 11; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.1; % [m]
@@ -31,7 +31,7 @@ problem.accelerationNoiseBoundSqrt = 0;%0.01;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -64,6 +64,10 @@ if strcmp(problem.velprior, "body")
     slices = 1:(1+9*(2*L-1)+3*L);
     Xopt_vRemoved = soln.raw.Xopt{1}(slices, slices);
     bar([zeros(3*(L-1),1);eig(Xopt_vRemoved)]);
+
+    Xopt_vOnly = soln.raw.Xopt{1}(end-3*L+4:end, end-3*L+4:end);
+    bar([zeros(3*(L-1),1);eig(Xopt_vOnly)]);
+
     title("Eigenvalues of Relaxed Solution")
 elseif strcmp(problem.velprior, "world")
     error("Selected prior is not implemented")

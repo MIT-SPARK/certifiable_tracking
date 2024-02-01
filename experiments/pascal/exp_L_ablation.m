@@ -12,6 +12,7 @@ clc; clear; close all
 indepVar = "L"; % name of independent variable
 savename = "pascalcar_" + indepVar;
 domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
+% domain = 5;
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -34,8 +35,9 @@ L = problem.L;
 problem.category = "car";
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.1; % [m]
+problem.noiseSigmaSqrt = 0.05; % [m]
 problem.noiseBound = 3*problem.noiseSigmaSqrt;
+problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;

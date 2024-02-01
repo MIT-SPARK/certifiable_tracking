@@ -8,9 +8,10 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/ycbineoat/mustard0_metrics.json";
+problem.json = "../datasets/ycbineoat/cracker_box_yalehand0_metrics.json";
 problem.L = 10; % batch size
-problem.savefile = "../datasets/ycbineoat/mustard0_metrics.json";
+problem.savefile = "../datasets/ycbineoat/cracker_box_yalehand0_metrics.json";
+skip = 5;
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0;
@@ -25,9 +26,9 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % add shape, measurements, outliers
-load("../datasets/ycbineoat/mustard.mat");
+load("../datasets/ycbineoat/cheese.mat");
 problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
-[problems, gt, teaser] = json2frameproblem(problem);
+[problems, gt, teaser] = json2frameproblem(problem,skip);
 
 %% Solve for each frame
 solns = [];
@@ -90,12 +91,12 @@ N = curproblem.N_VAR;
 p_err = zeros(L*N,L)*NaN;
 R_err = zeros(L*N,L)*NaN;
 
-est_legit.p = zeros(3,1,L*length(solns))*NaN;
-est_legit.R = zeros(3,3,L*length(solns))*NaN;
-est_ignoringbad.p = zeros(3,1,L*length(solns))*NaN;
-est_ignoringbad.R = zeros(3,3,L*length(solns))*NaN;
-est_bestrun.p = zeros(3,1,L*length(solns))*NaN;
-est_bestrun.R = zeros(3,3,L*length(solns))*NaN;
+est_legit.p = zeros(3,1,length(solns))*NaN;
+est_legit.R = zeros(3,3,length(solns))*NaN;
+est_ignoringbad.p = zeros(3,1,length(solns))*NaN;
+est_ignoringbad.R = zeros(3,3,length(solns))*NaN;
+est_bestrun.p = zeros(3,1,length(solns))*NaN;
+est_bestrun.R = zeros(3,3,length(solns))*NaN;
 gaps = [];
 
 figure(1);
@@ -110,16 +111,16 @@ L_cur = problem.L;
 % hold on
 
 % Plot trajectory!
-figure(1);
-axis equal
-p_est = reshape(soln.p_est,[3,L_cur,1]);
-plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-hold on
-
-R_est = soln.R_est;
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
+% figure(1);
+% axis equal
+% p_est = reshape(soln.p_est,[3,L_cur,1]);
+% plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+% hold on
+% 
+% R_est = soln.R_est;
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 idx = problem.startIdx:(problem.startIdx + L_cur);
 for l = 1:L_cur
@@ -166,6 +167,13 @@ est_bestrun.R(:,:,idx(end)) = soln.R_est(:,:,end);
 
 end
 
+est_ignoringbad.p = est_ignoringbad.p(:,:,1:end-1);
+est_legit.p = est_legit.p(:,:,1:end-1);
+est_bestrun.p = est_bestrun.p(:,:,1:end-1);
+est_ignoringbad.R = est_ignoringbad.R(:,:,1:end-1);
+est_legit.R = est_legit.R(:,:,1:end-1);
+est_bestrun.R = est_bestrun.R(:,:,1:end-1);
+
 %% Plot Ground Truth
 
 figure
@@ -179,9 +187,13 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,1,:)),squeeze(gt.R(2,1,:
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,2,:)),squeeze(gt.R(2,2,:)),squeeze(gt.R(3,2,:)),'g');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:)),squeeze(gt.R(3,3,:)),'b');
 
+%% Save everything we need
+% soln
+save("ycb_cracker.mat","solns");
+
 %% ADD and ADD-S scores
-pcfile_gt = "~/Downloads/models/006_mustard_bottle/google_16k/nontextured.ply";
-pcfile_est = "~/Downloads/models/006_mustard_bottle/google_16k/nontextured.ply";
+pcfile_gt = "~/Downloads/models/003_cracker_box/google_16k/nontextured.ply";
+pcfile_est = "~/Downloads/models/003_cracker_box/google_16k/nontextured.ply";
 
 % Compute scores!
 [add_ours_legit, adds_ours_legit] = compute_scores(gt, est_legit, pcfile_gt, pcfile_est);
@@ -200,5 +212,5 @@ scores.add_teaser = add_teaser;
 scores.adds_teaser = adds_teaser;
 
 %% Save everything we need
-% soln + scores
+% soln
 save("ycb_cracker.mat","solns","scores");

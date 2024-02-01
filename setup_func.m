@@ -1,11 +1,12 @@
+function setup_func(experiment)
 %% Setup for Tracking
 % adds all necessary paths
 
-clc; clear; close all; restoredefaultpath
+restoredefaultpath
 
 %% Select experiment
 % see 'experiments' folder
-experiment = "ycbineoat";
+% experiment = "synthetic";
 
 %% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";

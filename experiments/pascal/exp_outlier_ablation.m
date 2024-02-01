@@ -1,7 +1,7 @@
-%% RSS Experiment: How does noise affect performance?
+%% RSS Experiment: What Time Step Should We Use?
 % Dataset: pascal + car
-% Constants: K, N, L, noiseSigma
-% Independent variable: accelerationNoiseBoundSqrt
+% Constants: K, N, noiseSigma, NO nonlinearities in gt
+% Independent variable: L
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -9,10 +9,10 @@
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "bothNoiseBoundSqrt"; % name of independent variable
-savename = "syn_" + indepVar;
-domain = [0.0,0.005,0.01, 0.015, 0.01, 0.025, 0.05, 0.075, 0.1, 0.2];
-% domain = 0.01;
+indepVar = "outlierratio"; % name of independent variable
+savename = "pascalcar_" + indepVar;
+domain = [0.05:0.05:0.95];
+% domain = 0.5;
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -28,19 +28,18 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
-disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 problem.category = "car";
 
-problem.outlierRatio = 0.0;
+problem.outlierRatio = iv;
 problem.noiseSigmaSqrt = 0.05; % [m]
 problem.noiseBound = 3*problem.noiseSigmaSqrt;
+problem.noiseBound_GNC = 0.15;
+problem.noiseBound_GRAPH = 0.2;
 problem.processNoise = 0.5;
-problem.covar_velocity_base = 0.1;
-
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -49,8 +48,8 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = iv;%0.01;
-problem.rotationNoiseBound = iv;%pi/32; % rad
+problem.accelerationNoiseBoundSqrt = 0;%0.01;
+problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = (j == 1); % regen only first time
@@ -60,10 +59,35 @@ problem = gen_pascal_tracking(problem);
 lambda = 0.0;
 problem.lambda = lambda;
 
-% Solve!
-soln = solve_weighted_tracking(problem);
+% for GNC
+problem.N = problem.N_VAR*problem.L; % How many measurements this problem has (updated by ROBIN)
+problem.outliers = []; % outlier indicies
+problem.priors = [];
+problem.dof = 3;
 
-soln_pace = pace_py_UKF(problem);
+% Solve!
+soln_pace = pace_py_UKF(problem,true,false);
+soln_pace_robin = pace_py_UKF(problem,true,true);
+
+problem = lorenzo_prune(problem);
+
+try
+    [inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    disp("GNC finished " + string(j))
+
+    soln = info.f_info.soln;
+    ef = eig(soln.raw.Xopt{1});
+    if (ef(end-4) > 1e-4)
+        disp("**Not convergent: " + string(soln.gap_nov))
+    end
+catch
+    soln.p_est = ones(3,1,problem.L)*NaN;
+    soln.R_est = ones(3,3,problem.L)*NaN;
+    soln.c_est = ones(problem.K,1)*NaN;
+    soln.gap = NaN;
+    soln.solvetime = NaN;
+    disp("GNC failed " + string(j))
+end
 
 % Save solutions
 % projected errors
@@ -98,21 +122,16 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
-colors = {[0 0.4470 0.7410], [0.8500 0.3250 0.0980], [0.9290 0.6940 0.1250]};
 
 % Rotation figure
 figure
 set(0,'DefaultLineLineWidth',2)
-a=plot([results.(indepVar)],median([results.R_err_ours]),'x-','DisplayName','OURS');
+plot([results.(indepVar)],mean([results.R_err_ours]),'x-','DisplayName','OURS');
 hold on
-b=plot([results.(indepVar)],median([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
-c=plot([results.(indepVar)],median([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
-
-errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
-errorshade([results.(indepVar)],[results.R_err_ukf],get(b,'Color'));
-errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
+plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
+plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel(indepVar); ylabel("Rotation Error (deg)");
+xlabel("L"); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
@@ -122,32 +141,17 @@ hold on
 plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
 plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
 legend
-xlabel(indepVar); ylabel("Position Error (m)");
+xlabel("L"); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],abs(mean([results.gap_ours])),'x-');
-xlabel(indepVar); ylabel("Gap");
+semilogy([results.(indepVar)],mean([results.gap_ours]),'x-');
+xlabel("L"); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
 plot([results.(indepVar)],mean([results.time_ours]),'x-');
-xlabel(indepVar); ylabel("Time (s)");
+xlabel("L"); ylabel("Time (s)");
 title("Solve Time")
-
-%% Plotting Helper
-function errorshade(x,y,color)
-
-curve1 = prctile(y,75);
-curve2 = prctile(y,25);
-x2 = [x, fliplr(x)];
-inBetween = [curve1, fliplr(curve2)];
-obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
-obj.Annotation.LegendInformation.IconDisplayStyle = "off";
-
-% TF = isoutlier(y);
-% x_rep = repmat(x,[size(y,1),1]);
-% plot(x_rep(TF),y(TF),"x",'MarkerFaceColor',colors{i},'MarkerEdgeColor',colors{i},'MarkerSize',10);
-end

@@ -25,7 +25,7 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % add shape, measurements, outliers
-load("../datasets/ycbineoat/mustard.mat");
+load("../datasets/ycbineoat/mustard_syn.mat");
 problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
 [problems, gt, teaser] = json2frameproblem(problem);
 
@@ -90,12 +90,12 @@ N = curproblem.N_VAR;
 p_err = zeros(L*N,L)*NaN;
 R_err = zeros(L*N,L)*NaN;
 
-est_legit.p = zeros(3,1,L*length(solns))*NaN;
-est_legit.R = zeros(3,3,L*length(solns))*NaN;
-est_ignoringbad.p = zeros(3,1,L*length(solns))*NaN;
-est_ignoringbad.R = zeros(3,3,L*length(solns))*NaN;
-est_bestrun.p = zeros(3,1,L*length(solns))*NaN;
-est_bestrun.R = zeros(3,3,L*length(solns))*NaN;
+est_legit.p = zeros(3,1,length(solns))*NaN;
+est_legit.R = zeros(3,3,length(solns))*NaN;
+est_ignoringbad.p = zeros(3,1,length(solns))*NaN;
+est_ignoringbad.R = zeros(3,3,length(solns))*NaN;
+est_bestrun.p = zeros(3,1,length(solns))*NaN;
+est_bestrun.R = zeros(3,3,length(solns))*NaN;
 gaps = [];
 
 figure(1);
@@ -110,16 +110,16 @@ L_cur = problem.L;
 % hold on
 
 % Plot trajectory!
-figure(1);
-axis equal
-p_est = reshape(soln.p_est,[3,L_cur,1]);
-plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-hold on
-
-R_est = soln.R_est;
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
+% figure(1);
+% axis equal
+% p_est = reshape(soln.p_est,[3,L_cur,1]);
+% plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+% hold on
+% 
+% R_est = soln.R_est;
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 idx = problem.startIdx:(problem.startIdx + L_cur);
 for l = 1:L_cur
@@ -166,6 +166,13 @@ est_bestrun.R(:,:,idx(end)) = soln.R_est(:,:,end);
 
 end
 
+est_ignoringbad.p = est_ignoringbad.p(:,:,1:end-1);
+est_legit.p = est_legit.p(:,:,1:end-1);
+est_bestrun.p = est_bestrun.p(:,:,1:end-1);
+est_ignoringbad.R = est_ignoringbad.R(:,:,1:end-1);
+est_legit.R = est_legit.R(:,:,1:end-1);
+est_bestrun.R = est_bestrun.R(:,:,1:end-1);
+
 %% Plot Ground Truth
 
 figure
@@ -178,6 +185,10 @@ R_est = soln.R_est;
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,1,:)),squeeze(gt.R(2,1,:)),squeeze(gt.R(3,1,:)),'r');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,2,:)),squeeze(gt.R(2,2,:)),squeeze(gt.R(3,2,:)),'g');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:)),squeeze(gt.R(3,3,:)),'b');
+
+%% Save everything we need
+% soln
+save("ycb_mustard.mat","solns");
 
 %% ADD and ADD-S scores
 pcfile_gt = "~/Downloads/models/006_mustard_bottle/google_16k/nontextured.ply";
@@ -200,5 +211,5 @@ scores.add_teaser = add_teaser;
 scores.adds_teaser = adds_teaser;
 
 %% Save everything we need
-% soln + scores
-save("ycb_cracker.mat","solns","scores");
+% soln
+save("ycb_mustard.mat","solns","scores");

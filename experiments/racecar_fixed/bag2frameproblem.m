@@ -1,4 +1,4 @@
-function [problem_list, gt, sd] = bag2problem(problem, startTime, endTime)
+function [problem_list, gt, sd] = bag2frameproblem(problem, startTime, endTime)
 %% generates a problem from rosbag data
 % 
 % Lorenzo Shaikewitz for SPARK Lab
@@ -31,23 +31,28 @@ L = problem.L;
 problem_list = {};
 
 % define batch problems
-for batch = 1:floor(tot_L/L)
-    idxrange = ((batch-1)*L+1):(batch*L);
+for batch = 1:tot_L
+    idxrange = max(1,batch-L):batch;
+    L_cur = length(idxrange);
+    if (L_cur < 3)
+        continue
+    end
     curproblem = problem;
+    curproblem.startIdx = idxrange(1);
      
     % interpolate between measurements
     t_init = stamps(idxrange);
     t = t_init - t_init(1);
     m = measurements(:,:,idxrange); % 3 x N x L
     m(m==0) = NaN;
-    t_even = linspace(0,t(end),L);
+    t_even = linspace(0,t(end),L_cur);
     dt = t_even(2) - t_even(1);
     
-    y = zeros(3*N,L);
+    y = zeros(3*N,L_cur);
     for i = 1:N
-        xtemp = interp1(t,reshape(m(1,i,:),[L,1,1]),t_even);%,'spline');
-        ytemp = interp1(t,reshape(m(2,i,:),[L,1,1]),t_even);%,'spline');
-        ztemp = interp1(t,reshape(m(3,i,:),[L,1,1]),t_even);%,'spline');
+        xtemp = interp1(t,reshape(m(1,i,:),[L_cur,1,1]),t_even);%,'spline');
+        ytemp = interp1(t,reshape(m(2,i,:),[L_cur,1,1]),t_even);%,'spline');
+        ztemp = interp1(t,reshape(m(3,i,:),[L_cur,1,1]),t_even);%,'spline');
 
         % FOR NO INTERPOLATION:
         % xtemp = reshape(m(1,i,:),[L,1,1])';
@@ -58,7 +63,7 @@ for batch = 1:floor(tot_L/L)
     end
     % change weights to ignore nans
     prioroutliers = [];
-    for l = 1:L
+    for l = 1:L_cur
         yl = y(:,l);
         i3_nan = strfind(isnan(yl)',true(1,3));
         for j = 1:length(i3_nan)
@@ -70,31 +75,36 @@ for batch = 1:floor(tot_L/L)
         end
         curproblem.prioroutliers = prioroutliers;
     end
+    if (length(prioroutliers) >= N*L_cur)
+        disp("Batch " + batch + " failed.")
+        continue
+    end
 
     % y cannot have nans in it
     y(isnan(y)) = 0.0;
 
     % set covariances
     noiseBoundSq = problem.noiseBound^2;
-    weights = ones(1,N*L-length(prioroutliers))*((noiseBoundSq/9).^(-1));
+    weights = ones(1,N*L_cur-length(prioroutliers))*((noiseBoundSq/9).^(-1));
     if (~isfield(curproblem,"covar_velocity_base"))
-        covar_velocity = ones(L-2,1)*weights(1).^(-1);
+        covar_velocity = ones(L_cur-2,1)*weights(1).^(-1);
     else
-        covar_velocity = ones(L-2,1)*curproblem.covar_velocity_base;
+        covar_velocity = ones(L_cur-2,1)*curproblem.covar_velocity_base;
     end
-    kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
+    kappa_rotrate  = ones(L_cur-2,1)*(2/covar_velocity(1));
 
     % Save gt and sd poses
     t_gt = gt.stamps - t_init(1);
     t_sd = sd.stamps - t_init(1);
-    p_gt = zeros(3,1,L);
-    p_sd = zeros(3,1,L);
+    p_gt = zeros(3,1,L_cur);
+    p_sd = zeros(3,1,L_cur);
     for i = 1:3
         p_gt(i,:,:) = interp1(t_gt,squeeze(gt.p(i,:,:)),t_even);
         p_sd(i,:,:) = interp1(t_sd,squeeze(sd.p(i,:,:)),t_even);
     end
 
     % save
+    curproblem.L = L_cur;
     curproblem.noiseBoundSq = curproblem.noiseBound^2;
     curproblem.cBound = 1.0;
     curproblem.y = y;

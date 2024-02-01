@@ -278,7 +278,8 @@ end
 problem.vars = x;
 problem.objective = prob_obj;
 if ~problem.regen_sdp
-    load sdpdata.mat sdpdata
+    pid = string(feature("getpid"));
+    load("sdpdata"+pid +".mat","sdpdata");
 else
     sdpdata = [];
     problem.equality = h; % equality
@@ -410,7 +411,8 @@ soln.residuals = residuals;
 
 %% Save SDP data
 if problem.regen_sdp
-    save("sdpdata.mat","sdpdata");
+    pid = string(feature("getpid"));
+    save("sdpdata"+pid +".mat","sdpdata");
 end
 
 end

@@ -38,14 +38,27 @@ add = VOCap(add)*100;
 %% ADD-S score
 adds = zeros(L,1);
 for l = 1:L
-    e = T_est(:, :, l)*pc_est;
-    e = e(1:3,:,:);
+    e = T_est(:,:,l)*pc_est;
+    e = e(1:3,:,:)'; % ours
     g = T_gt( :, :, l)*pc_gt;
-    g = g(1:3,:,:);
-    nn_index = KDTreeSearcher(e');
-    [nn_dists, ~] = knnsearch(nn_index, g', 'K', 1);
+    g = g(1:3,:,:)'; % ground truth
 
-    adds(l) = mean(vecnorm(e(:,nn_dists) - g(:,:,:)));
+    % create kd tree using ground truth data
+    model = createns(g);
+    % find the ground truth point nearest each measurement
+    idx_g = knnsearch(model,e);
+
+    % Compute the score (TODO:CHECK)
+    adds(l) = mean(vecnorm((e - g(idx_g,:))'));
+
+    % e = T_est(:, :, l)*pc_est;
+    % e = e(1:3,:,:);
+    % g = T_gt( :, :, l)*pc_gt;
+    % g = g(1:3,:,:);
+    % nn_index = KDTreeSearcher(e');
+    % [nn_dists, ~] = knnsearch(nn_index, g', 'K', 1);
+    % 
+    % adds(l) = mean(vecnorm(e(:,nn_dists) - g(:,:,:)));
 end
 adds = VOCap(adds)*100;
 end

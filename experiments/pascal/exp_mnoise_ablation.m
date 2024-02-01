@@ -11,7 +11,7 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "noiseSigmaSqrt"; % name of independent variable
 savename = "pascalcar_" + indepVar;
-domain = [0.01,0.1,0.5,1.0]; % for quick results
+domain = [0.01:0.01:0.1,0.2:0.1:1];
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
@@ -37,6 +37,7 @@ problem.category = "car";
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv; % [m]
 problem.noiseBound = 3*iv;
+problem.processNoise = 0.5;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
