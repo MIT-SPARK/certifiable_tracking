@@ -16,8 +16,8 @@ skip = 5;
 % Set bounds based on problem setting
 problem.translationBound = 5.0;
 problem.velocityBound = 1.5;
-problem.noiseBound_GNC = 0.01;
-problem.noiseBound_GRAPH = 0.05;
+problem.noiseBound_GNC = 0.003;
+problem.noiseBound_GRAPH = 0.01;
 problem.noiseBound = 0.01;
 problem.covar_velocity_base = 0.05^2;
 
@@ -59,12 +59,12 @@ curproblem = lorenzo_prune(curproblem, min_max_dists);
 % run GNC
 try
     [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
-    disp("GNC finished " + string(j))
+    disp("GNC finished " + string(j) + " (" + info.Iterations + " iterations)")
 
     soln = info.f_info.soln;
     ef = eig(soln.raw.Xopt{1});
     if (ef(end-4) > 1e-4)
-        disp("**Not convergent**")
+        disp("**Not convergent: " + string(soln.gap_nov))
     end
 catch
     f = fieldnames(solns(1))';
