@@ -6,12 +6,7 @@ function [f_val, info] = solver_for_gnc(problem, varargin)
 %% Parse GNC params
 % varargin must have:
 % - weights
-% default_weights = ones(1, problem.N); 
-if (isfield(problem,'covar_measure'))
-    default_weights = reshape(problem.covar_measure,[1,problem.N_VAR*problem.L]);
-else
-    default_weights = problem.weights;
-end
+default_weights = ones(1, problem.N);
 
 params = inputParser;
 params.CaseSensitive = false;
@@ -22,9 +17,6 @@ params.parse(varargin{:});
 %% Convert to weights--ignore ROBIN outliers
 w = params.Results.Weights;
 if isfield(problem,'prioroutliers')
-    if (numel(w) ~= problem.N)
-        w(problem.prioroutliers) = [];
-    end
     % add ROBIN priors to weights
     for i = 1:length(problem.prioroutliers)
         o = problem.prioroutliers(i);
@@ -32,6 +24,20 @@ if isfield(problem,'prioroutliers')
     end
 end
 problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
+
+%% Set weights
+noiseBoundSq = problem.noiseBound^2;
+problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
+if (isfield(problem,"covar_velocity_base"))
+    problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+else
+    problem.covar_velocity = ones(L-2,1)*problem.covar_measure(1);
+end
+if (isfield(problem,"kappa_rotrate_base"))
+    problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+else
+    problem.kappa_rotrate  = ones(L-2,1)*(2/problem.covar_velocity(1));
+end
 
 %% Redirect to appropriate solver
 % default to body frame

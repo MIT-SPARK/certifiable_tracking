@@ -7,7 +7,7 @@ function soln = solve_weighted_tracking(problem)
 L = problem.L;
 if isfield(problem,'prioroutliers')
     % add ROBIN priors to weights
-    w = ones(problem.N_VAR*L-length(problem.prioroutliers),1);
+    w = ones(1,problem.N_VAR*L-length(problem.prioroutliers));
 
     for i = 1:length(problem.prioroutliers)
         o = problem.prioroutliers(i);

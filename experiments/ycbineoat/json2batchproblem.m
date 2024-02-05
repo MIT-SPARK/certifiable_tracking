@@ -12,7 +12,6 @@ N = problem.N_VAR;
 K = problem.K;
 
 problem.B = reshape(problem.shapes, 3*N, K);
-B = problem.B;
 
 % set lambda if K > N
 if K > N
@@ -73,24 +72,24 @@ for batch = 1:floor(tot_L/L)
     y(isnan(y)) = 0.0;
 
     % set covariances
-    noiseBoundSq = problem.noiseBound^2;
-    weights = ones(1,N*L)*((noiseBoundSq/9).^(-1));
-    if (isfield(problem,"covar_velocity_base"))
-        covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
-    else
-        covar_velocity = ones(L-2,1)*weights(1).^(-1);
-    end
-    if (isfield(problem,"kappa_rotrate_base"))
-        kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
-    else
-        kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
-    end
+    % noiseBoundSq = problem.noiseBound^2;
+    % weights = ones(1,N*L)*((noiseBoundSq/9).^(-1));
+    % if (isfield(problem,"covar_velocity_base"))
+    %     covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+    % else
+    %     covar_velocity = ones(L-2,1)*weights(1).^(-1);
+    % end
+    % if (isfield(problem,"kappa_rotrate_base"))
+    %     kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+    % else
+    %     kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
+    % end
 
     % save
     curproblem.y = y;
-    curproblem.weights = weights;
-    curproblem.covar_velocity = covar_velocity;
-    curproblem.kappa_rotrate = kappa_rotrate;
+    % curproblem.weights = weights;
+    % curproblem.covar_velocity = covar_velocity;
+    % curproblem.kappa_rotrate = kappa_rotrate;
     curproblem.dt = dt;
 
     problem_list{end+1} = curproblem;
