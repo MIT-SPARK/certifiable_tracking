@@ -22,12 +22,14 @@ problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
 if (isfield(problem,"covar_velocity_base"))
     problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
 else
-    problem.covar_velocity = ones(L-2,1)*problem.covar_measure(1);
+    base = mean(problem.covar_measure(~isinf(problem.covar_measure)));
+    problem.covar_velocity = ones(L-2,1)*base;
 end
 if (isfield(problem,"kappa_rotrate_base"))
     problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
 else
-    problem.kappa_rotrate  = ones(L-2,1)*(2/problem.covar_velocity(1));
+    base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
+    problem.kappa_rotrate  = ones(L-2,1)*(2/base);
 end
 
 %% Run solver!
