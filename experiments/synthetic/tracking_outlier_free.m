@@ -7,7 +7,7 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
@@ -16,22 +16,22 @@ problem.L = 11; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.1; % [m]
-problem.noiseBound = 0.05;
+problem.noiseBound = problem.noiseSigmaSqrt*3;
 problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
-problem.dt = 1.0;
+problem.dt = 0.5;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = 0;%0.01;
+problem.accelerationNoiseBoundSqrt = 0;%0.5;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = true; % when in doubt, set to true
+problem.regen_sdp = false; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -42,9 +42,8 @@ problem.regen_sdp = true; % when in doubt, set to true
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-% problem.covar_measure(:,3) = ones(problem.N_VAR,1)*Inf;
-% problem.covar_position = ones(problem.L-1,1)*problem.covar_velocity(1);
-% problem.kappa_rotation = ones(problem.L-1,1)*problem.kappa_rotrate(1);
+% problem.covar_measure = ones(problem.N_VAR, problem.L);
+% problem.covar_measure(1:10,3) = Inf;
 lambda = 0;
 problem.lambda = lambda;
 
@@ -52,7 +51,7 @@ problem.lambda = lambda;
 soln = solve_weighted_tracking(problem);
 
 % soln_pace = pace_with_UKF(problem);
-soln_pace = pace_py_UKF(problem);
+% soln_pace = pace_py_UKF(problem);
 
 %% Check solutions
 % eigenvalue plot
@@ -106,8 +105,8 @@ end
 c_err = norm(problem.c_gt - soln.c_est);
 
 % PACE errors
-norm(problem.p_gt - soln_pace.p_raw,'fro') / L
-norm(problem.p_gt - soln_pace.p_smoothed,'fro') / L
+% norm(problem.p_gt - soln_pace.p_raw,'fro') / L
+% norm(problem.p_gt - soln_pace.p_smoothed,'fro') / L
 norm(problem.p_gt - soln.p_est,'fro') / L
 
 % Plot trajectory!

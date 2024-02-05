@@ -362,13 +362,13 @@ end
 obj_est = x_proj'*(Q'*Q)*x_proj;
 gap = (obj_est - obj(1)) / obj_est;
 
-% velocity-free gap
-x_proj_nov = x_proj(1:(end-3*(L-1)));
-Q_nov = Q(1:(end-3*(L-1)),1:(end-3*(L-1)));
-obj_est_nov = x_proj_nov'*(Q_nov'*Q_nov)*x_proj_nov;
-Xopt_nov = Xopt{1}(1:(end-3*(L-1)),1:(end-3*(L-1)));
-obj_mosek_nov = trace(Q_nov'*Q_nov*Xopt_nov);
-gap_nov = (obj_est_nov - obj_mosek_nov) / obj_est_nov;
+slices_r = 1:9*L;
+slices_d = (9*L+1):(9*L+9*(L-1));
+slices_s = (18*L-9+1):(18*L-9+3*L);
+slices_v = (21*L-9+1):(21*L-9+3*(L-1));
+
+g = @(slices) computeGap(Q, Xopt{1}, x_proj, slices, true);
+gap_nov = g(1:(18*L-9+3*L));
 
 % compute residuals
 residuals = zeros(N, L);
@@ -404,8 +404,6 @@ soln.x_proj = x_proj;
 soln.obj_est = obj_est;
 
 soln.gap_nov = gap_nov;
-soln.obj_est_nov = obj_est_nov;
-soln.obj_mosek_nov = obj_mosek_nov;
 
 soln.residuals = residuals;
 
@@ -415,4 +413,17 @@ if problem.regen_sdp
     save("sdpdata"+pid +".mat","sdpdata");
 end
 
+end
+
+%% compute gap given slices
+function g = computeGap(Q, Xopt, x_proj, slices, includeOne)
+    if (includeOne)
+        slices = [1,slices+1];
+    end
+    x_proj = x_proj(slices);
+    Q = Q(:,slices);
+    obj_est = x_proj'*(Q'*Q)*x_proj;
+    Xopt = Xopt(slices,slices);
+    obj_mosek = trace(Q'*Q*Xopt);
+    g = (obj_est - obj_mosek) / obj_est;
 end

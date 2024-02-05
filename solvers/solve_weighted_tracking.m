@@ -14,6 +14,9 @@ if isfield(problem,'prioroutliers')
         w = [w(1:o-1),0.0,w(o:end)];
     end
     problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
+elseif isfield(problem,'covar_measure')
+    disp("OVERRIDING COVAR MEASURE. YOU PROBABLY DON'T WANT TO DO THIS.")
+    % use only for testing: skipping points or other tests
 else
     problem.covar_measure = ones(problem.N_VAR,L);
 end
