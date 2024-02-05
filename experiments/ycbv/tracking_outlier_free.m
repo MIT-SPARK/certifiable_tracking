@@ -12,6 +12,9 @@ clc; clear; close all
 problem.json = "../datasets/ycbv/metadata.json";
 problem.L = 10; % batch size
 
+problem.covar_velocity_base = 225;
+problem.kappa_rotrate_base = 0.1;
+
 % Set bounds based on problem setting
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

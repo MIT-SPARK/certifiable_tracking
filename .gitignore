@@ -33,6 +33,9 @@ octave-workspace
 # Bag files
 *.bag
 
+# SDP data files
+sdpdata*.mat
+
 ### PYTHON IGNORE
 # Byte-compiled / optimized / DLL files
 __pycache__/

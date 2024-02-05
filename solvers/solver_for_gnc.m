@@ -33,7 +33,7 @@ if isfield(problem,'prioroutliers')
 end
 problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
 
-%% Redirect
+%% Redirect to appropriate solver
 % default to body frame
 if ~isfield(problem,'velprior')
     problem.velprior = 'body';
