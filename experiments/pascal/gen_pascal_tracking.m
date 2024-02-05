@@ -34,13 +34,13 @@ rotNoiseBound = problem.rotationNoiseBound;
 % Weights!
 % noiseBoundSq = max(4e-2, noiseSigmaSqrt^2 * chi2inv(0.99,3));
 noiseBoundSq = problem.noiseBound^2;
-problem.covar_measure = ones(N,L)*(noiseBoundSq/9);
-if (isfield(problem,"covar_velocity_base"))
-    problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
-else
-    problem.covar_velocity = ones(L-2,1)*problem.covar_measure(1)*1;
-end
-problem.kappa_rotrate  = ones(L-2,1)*(2/problem.covar_velocity(1));
+% problem.covar_measure = ones(N,L)*(noiseBoundSq/9);
+% if (isfield(problem,"covar_velocity_base"))
+%     problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+% else
+%     problem.covar_velocity = ones(L-2,1)*problem.covar_measure(1)*1;
+% end
+% problem.kappa_rotrate  = ones(L-2,1)*(2/problem.covar_velocity(1));
 
 %% load PASCAL CAD library
 % populate B, shapes

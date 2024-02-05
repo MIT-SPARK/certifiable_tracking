@@ -85,14 +85,14 @@ for batch = 1:tot_L
     y(isnan(y)) = 0.0;
 
     % set covariances
-    noiseBoundSq = problem.noiseBound^2;
-    weights = ones(1,N*L_cur-length(prioroutliers))*((noiseBoundSq/9).^(-1));
-    if (~isfield(curproblem,"covar_velocity_base"))
-        covar_velocity = ones(L_cur-2,1)*weights(1).^(-1);
-    else
-        covar_velocity = ones(L_cur-2,1)*curproblem.covar_velocity_base;
-    end
-    kappa_rotrate  = ones(L_cur-2,1)*(2/covar_velocity(1));
+    % noiseBoundSq = problem.noiseBound^2;
+    % weights = ones(1,N*L_cur-length(prioroutliers))*((noiseBoundSq/9).^(-1));
+    % if (~isfield(curproblem,"covar_velocity_base"))
+    %     covar_velocity = ones(L_cur-2,1)*weights(1).^(-1);
+    % else
+    %     covar_velocity = ones(L_cur-2,1)*curproblem.covar_velocity_base;
+    % end
+    % kappa_rotrate  = ones(L_cur-2,1)*(2/covar_velocity(1));
 
     % Save gt and sd poses
     t_gt = gt.stamps - t_init(1);
@@ -109,9 +109,9 @@ for batch = 1:tot_L
     curproblem.noiseBoundSq = curproblem.noiseBound^2;
     curproblem.cBound = 1.0;
     curproblem.y = y;
-    curproblem.weights = weights;
-    curproblem.covar_velocity = covar_velocity;
-    curproblem.kappa_rotrate = kappa_rotrate;
+    % curproblem.weights = weights;
+    % curproblem.covar_velocity = covar_velocity;
+    % curproblem.kappa_rotrate = kappa_rotrate;
     curproblem.dt = dt;
     curproblem.p_gt = p_gt;
     curproblem.p_sd = p_sd;

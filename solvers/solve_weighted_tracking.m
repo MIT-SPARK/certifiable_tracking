@@ -14,6 +14,8 @@ if isfield(problem,'prioroutliers')
         w = [w(1:o-1),0.0,w(o:end)];
     end
     problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
+else
+    problem.covar_measure = ones(problem.N_VAR,L);
 end
 
 %% Set weights

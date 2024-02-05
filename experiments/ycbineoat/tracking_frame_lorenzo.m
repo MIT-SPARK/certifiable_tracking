@@ -15,7 +15,7 @@ problem.savefile = "../datasets/ycbineoat/mustard0_metrics.json";
 % Set bounds based on problem setting
 problem.translationBound = 5.0;
 problem.velocityBound = 1.5;
-problem.noiseBound_GNC = 0.01;
+problem.noiseBound_GNC = 0.005;
 problem.noiseBound_GRAPH = 0.05;
 problem.noiseBound = 0.01;
 problem.covar_velocity_base = 0.05^2;
@@ -35,7 +35,7 @@ solns = [];
 
 disp("Solving " + string(length(problems)) + " problems...")
 last_L = 0;
-for j = 1:length(problems)
+for j = 39:length(problems)
 curproblem = problems{j};
 curproblem.regen_sdp = (curproblem.L ~= last_L); % regen only first time
 last_L = curproblem.L;
@@ -57,7 +57,7 @@ curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % run GNC
 try
-    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound,'MaxIterations',100,'FixPriorOutliers',false);
+    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
     disp("GNC finished " + string(j) + " (" + info.Iterations + " iterations)")
 
     soln = info.f_info.soln;

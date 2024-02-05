@@ -58,7 +58,7 @@ curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % run GNC
 try
-    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound,'MaxIterations',100,'FixPriorOutliers',false);
+    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
     disp("GNC finished " + string(j))
 
     soln = info.f_info.soln;

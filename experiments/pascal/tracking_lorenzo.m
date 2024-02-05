@@ -15,7 +15,7 @@ problem.outlierRatio = 0.5;
 problem.noiseSigmaSqrt = 0.05; % [m]
 problem.noiseBound = 3*problem.noiseSigmaSqrt;
 problem.noiseBound_GNC = 0.15;
-problem.noiseBound_GRAPH = 0.20;
+problem.noiseBound_GRAPH = 0.15;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -54,7 +54,7 @@ problem.dof = 3;
 problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'FixPriorOutliers',true);
+[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',true);
 % convert to true inliers
 inliers = problem.priorinliers(inliers);
 

@@ -45,7 +45,7 @@ problem.lambda = lambda;
 
 %% Solve!
 % pace first
-soln_pace = pace_py_UKF(problem,true,true);
+% soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
 problem = lorenzo_prune(problem);
