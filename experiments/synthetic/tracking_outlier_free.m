@@ -23,7 +23,7 @@ problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
-problem.velprior = "body";       % constant body frame velocity
+problem.velprior = "body-sym";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
@@ -65,8 +65,9 @@ if strcmp(problem.velprior, "body")
     Xopt_vRemoved = soln.raw.Xopt{1}(slices, slices);
     bar([zeros(3*(L-1),1);eig(Xopt_vRemoved)]);
 
-    Xopt_vOnly = soln.raw.Xopt{1}(end-3*L+4:end, end-3*L+4:end);
-    bar([zeros(3*(L-1),1);eig(Xopt_vOnly)]);
+    % v_idx = length(soln.raw.Xopt{1})-3*L+4:length(soln.raw.Xopt{1});
+    % Xopt_vOnly = soln.raw.Xopt{1}(end-3*L+4:end, end-3*L+4:end);
+    % bar([eig(Xopt_vOnly)]);
 
     title("Eigenvalues of Relaxed Solution")
 elseif strcmp(problem.velprior, "world")

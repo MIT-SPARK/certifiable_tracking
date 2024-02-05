@@ -110,7 +110,7 @@ for l = 1:L
         dR_gt(:,:,l) = dR_gt(:,:,l) * rand_rotation('RotationBound',rotNoiseBound);
         v_gt(:,:,l) = v_gt(:,:,l) + accNoiseSigmaSqrt*randn(3,1)*dt;
 
-        if strcmp(problem.velprior, "body")
+        if strcmp(problem.velprior, "body") || strcmp(problem.velprior, "body-sym")
             dR = dR_gt(:,:,l);
             v = v_gt(:,:,l);
             p = p_gt(:,:,l);
@@ -162,7 +162,7 @@ for i = 1:(N*L)
 end
 
 %% Save
-if strcmp(problem.velprior, "body")
+if strcmp(problem.velprior, "body") || strcmp(problem.velprior, "body-sym")
     % convert p to s, sh for saving
     s_gt  = zeros(3,1,L);
     sh_gt = zeros(3,1,L-1);
@@ -199,7 +199,7 @@ problem.inliers_gt = inliers_gt;
 problem.outliers_gt = outliers_gt;
 
 % also save a "ground truth vector" that we can quickly compare
-if strcmp(problem.velprior, "body")
+if strcmp(problem.velprior, "body") || strcmp(problem.velprior, "body-sym")
     for l = 1:L
         R_cur = problem.R_gt(:,:,l);
         if (l < L)

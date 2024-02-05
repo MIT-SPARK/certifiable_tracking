@@ -99,15 +99,15 @@ end
 % c regularization
 prob_obj = prob_obj + lambda*((c - cbar)'*(c - cbar));
 % s regularization (DO NOT USE)
-prob_obj = prob_obj + 0.001*(s(ib3(3))'*s(ib3(3)));
-% for l = 2:L-1
-%     % delta v
-%     delv = v(ib3(l)) - v(ib3(l-1));
-%     prob_obj = prob_obj + wv(l-1)*(delv'*delv);
-%     % dR
-%     deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
-%     prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
-% end
+% prob_obj = prob_obj + 0.001*(s(ib3(3))'*s(ib3(3)));
+for l = 2:L-1
+    % delta v
+    delv = v(ib3(l)) - v(ib3(l-1));
+    prob_obj = prob_obj + wv(l-1)*(delv'*delv);
+    % dR
+    deldR = reshape(dR(ib3(l),:) - dR(ib3(l-1),:),9,1);
+    prob_obj = prob_obj + wd(l-1)*(deldR'*deldR);
+end
 
 %% Define constraints
 % EQUALITY

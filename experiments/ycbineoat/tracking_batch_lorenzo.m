@@ -8,9 +8,9 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/ycbineoat/cracker_box_yalehand0_metrics.json";
+problem.json = "../datasets/ycbineoat/cheese_metrics_feb1.json";
 problem.L = 10; % batch size
-problem.savefile = "../datasets/ycbineoat/cracker_box_yalehand0_metrics_ours.json";
+problem.savefile = "../datasets/ycbineoat/cheese_metrics_feb1_ours.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
@@ -18,7 +18,8 @@ problem.velocityBound = 1.5; % [m/s]
 problem.noiseBound_GNC = 0.01;
 problem.noiseBound_GRAPH = 0.05;
 problem.noiseBound = 0.01;
-problem.covar_velocity_base = 0.05^2;
+problem.covar_velocity_base = 0.1^2;
+problem.kappa_rotrate_base = 2/(0.001)^2; % lower covar = more smoothing
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
@@ -79,6 +80,7 @@ solns = [solns; soln];
 if (mod(j,5) == 0)
     disp(j);
 end
+break
 
 end
 
@@ -153,24 +155,24 @@ pcfile_est = "~/Downloads/models/006_mustard_bottle/google_16k/nontextured.ply";
 [add_teaser, adds_teaser] = compute_scores(gt, teaser, pcfile_gt, pcfile_est);
 
 %% Save Poses into JSON
-% L_big = length(est.p);
-% T_est = repmat(eye(4),[1,1,L_big]);
-% for l = 1:L_big
-%     T_est(1:3,1:3,l) = est.R(:,:,l);
-%     T_est(1:3,4,l) = est.p(:,:,l);%*1000.0;
-% end
-% 
-% fid = fopen(problem.json); 
-% raw = fread(fid,inf); 
-% str = char(raw'); 
-% fclose(fid);
-% data = jsondecode(str);
-% 
-% for l = 1:length(T_est)
-%     data(l).cast_pose = T_est(:,:,l);
-% end
-% 
-% cocoString = jsonencode(data, "PrettyPrint",true);
-% fid = fopen(problem.savefile, 'w');
-% fprintf(fid, '%s', cocoString);
-% fclose(fid);
+L_big = length(est.p);
+T_est = repmat(eye(4),[1,1,L_big]);
+for l = 1:L_big
+    T_est(1:3,1:3,l) = est.R(:,:,l);
+    T_est(1:3,4,l) = est.p(:,:,l)*1000.0;
+end
+
+fid = fopen(problem.json); 
+raw = fread(fid,inf); 
+str = char(raw'); 
+fclose(fid);
+data = jsondecode(str);
+
+for l = 1:length(T_est)
+    data(l).cast_pose = T_est(:,:,l);
+end
+
+cocoString = jsonencode(data, "PrettyPrint",true);
+fid = fopen(problem.savefile, 'w');
+fprintf(fid, '%s', cocoString);
+fclose(fid);

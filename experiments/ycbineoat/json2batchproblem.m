@@ -80,7 +80,11 @@ for batch = 1:floor(tot_L/L)
     else
         covar_velocity = ones(L-2,1)*weights(1).^(-1);
     end
-    kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
+    if (isfield(problem,"kappa_rotrate_base"))
+        kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+    else
+        kappa_rotrate  = ones(L-2,1)*(2/covar_velocity(1));
+    end
 
     % save
     curproblem.y = y;
