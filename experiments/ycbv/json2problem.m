@@ -11,7 +11,6 @@ N = problem.N_VAR;
 K = problem.K;
 
 problem.B = reshape(problem.shapes, 3*N, K);
-B = problem.B;
 
 % set lambda if K > N
 if K > N
