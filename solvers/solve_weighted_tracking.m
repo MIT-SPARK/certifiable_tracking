@@ -3,13 +3,11 @@ function soln = solve_weighted_tracking(problem)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
-% deal with prior outliers
+%% deal with prior outliers
+L = problem.L;
 if isfield(problem,'prioroutliers')
     % add ROBIN priors to weights
-    w = problem.weights;
-    if (numel(w) ~= problem.N_VAR*problem.L - length(problem.prioroutliers))
-        w(problem.prioroutliers) = [];
-    end
+    w = ones(problem.N_VAR*L-length(problem.prioroutliers),1);
 
     for i = 1:length(problem.prioroutliers)
         o = problem.prioroutliers(i);
@@ -18,6 +16,21 @@ if isfield(problem,'prioroutliers')
     problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
 end
 
+%% Set weights
+noiseBoundSq = problem.noiseBound^2;
+problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
+if (isfield(problem,"covar_velocity_base"))
+    problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+else
+    problem.covar_velocity = ones(L-2,1)*problem.covar_measure(1);
+end
+if (isfield(problem,"kappa_rotrate_base"))
+    problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+else
+    problem.kappa_rotrate  = ones(L-2,1)*(2/problem.covar_velocity(1));
+end
+
+%% Run solver!
 % default to body frame
 if ~isfield(problem,'velprior')
     problem.velprior = 'body';
