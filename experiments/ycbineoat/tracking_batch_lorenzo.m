@@ -8,28 +8,30 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/ycbineoat/cheese_metrics_feb1.json";
+problem.json = "../datasets/ycbineoat/cheese_metrics_interp.json";
 problem.L = 10; % batch size
-problem.savefile = "../datasets/ycbineoat/cheese_metrics_feb1_ours.json";
+problem.savefile = "../datasets/ycbineoat/cheese_metrics_interp.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
-problem.velocityBound = 1.5; % [m/s]
-problem.noiseBound_GNC = 0.01;
-problem.noiseBound_GRAPH = 0.05;
+problem.velocityBound = 3.0; % [m/s]
+problem.noiseBound_GNC = 0.007;
+problem.noiseBound_GRAPH = 0.01;
 problem.noiseBound = 0.01;
-problem.covar_velocity_base = 0.1^2;
-problem.kappa_rotrate_base = 2/(0.001)^2; % lower covar = more smoothing
+problem.covar_velocity_base = 0.08^2;
+problem.kappa_rotrate_base = 2/(0.01)^2; % lower covar = more smoothing
+% worked well: 0.007, 0.01, 0.01, 0.1, 0.001
+% similar performance: 0.005, 0.01, 0.005, 0.05, 0.01
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % add shape, measurements, outliers
-load("../datasets/ycbineoat/cheese.mat");
-problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
-min_max_dists = robin_min_max_dists(problem.shapes);
+% load("../datasets/ycbineoat/cheese.mat");
+% problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
 [problems, gt, teaser] = json2batchproblem(problem);
+min_max_dists = robin_min_max_dists(problems{1}.shapes);
 
 %% Solve for each batch
 solns = [];
@@ -104,7 +106,7 @@ for l = 1:L
     R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
 end
 
-if (soln.gap > 0.5)
+if (soln.gap_nov > 0.5)
     % don't plot
     est.p(:,:,idx) = NaN;
     est.R(:,:,idx) = NaN;

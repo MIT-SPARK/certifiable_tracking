@@ -59,6 +59,37 @@ for l = 1:problem.L
 end
 
 %% Define covariances and noise
+L = problem.L;
+if isfield(problem,'prioroutliers')
+    % add ROBIN priors to weights
+    w = ones(1,problem.N_VAR*L-length(problem.prioroutliers));
+
+    for i = 1:length(problem.prioroutliers)
+        o = problem.prioroutliers(i);
+        w = [w(1:o-1),0.0,w(o:end)];
+    end
+    problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
+elseif isfield(problem,'covar_measure')
+    disp("OVERRIDING COVAR MEASURE. YOU PROBABLY DON'T WANT TO DO THIS.")
+    % use only for testing: skipping points or other tests
+else
+    problem.covar_measure = ones(problem.N_VAR,L);
+end
+noiseBoundSq = problem.noiseBound^2;
+problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
+if (isfield(problem,"covar_velocity_base"))
+    problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+else
+    base = mean(problem.covar_measure(~isinf(problem.covar_measure)));
+    problem.covar_velocity = ones(L-2,1)*base;
+end
+if (isfield(problem,"kappa_rotrate_base"))
+    problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+else
+    base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
+    problem.kappa_rotrate  = ones(L-2,1)*(2/base);
+end
+
 % state covariance
 covar_velocity = repmat(problem.covar_velocity(1),[1,3]);
 covar_rotrate = repmat((2*problem.kappa_rotrate(1)).^(-1),[1,3]); % See SE-Sync

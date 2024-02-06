@@ -31,7 +31,7 @@ traj_gt = zeros(3,(L-1)*interval_pts);
 for l = 1:L-1
     ran = (interval_pts*(l-1) + 1):(interval_pts*l);
 
-    if strcmp(problem.velprior, "body")
+    if strcmp(problem.velprior, "body") || strcmp(problem.velprior, "body-sym")
         R = problem.R_gt(:,:,l);
         dR = problem.dR_gt(:,:,l);
         v = problem.v_gt(:,:,l);
@@ -69,7 +69,7 @@ traj_est = zeros(3,(L-1)*interval_pts);
 for l = 1:L-1
     ran = (interval_pts*(l-1) + 1):(interval_pts*l);
 
-    if strcmp(problem.velprior, "body")
+    if strcmp(problem.velprior, "body") || strcmp(problem.velprior, "body-sym")
         R = soln.R_est(:,:,l);
         dR = soln.dR_est(:,:,l);
         v = soln.v_est(:,:,l);

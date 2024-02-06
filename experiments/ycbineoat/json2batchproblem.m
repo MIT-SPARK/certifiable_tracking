@@ -4,14 +4,18 @@ function [problem_list, gt, teaser] = json2batchproblem(problem)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
+%% Load and parse bag data
+[stamps, measurements, gt, teaser, shapes] = parseJson(problem.json);
+if (~isnan(shapes))
+    problem.shapes = shapes;
+end
+
 %% Define shape data
 % shapes is 3 x N x K
 problem.N_VAR = size(problem.shapes,2);
 problem.K = size(problem.shapes,3);
 N = problem.N_VAR;
 K = problem.K;
-
-problem.B = reshape(problem.shapes, 3*N, K);
 
 % set lambda if K > N
 if K > N
@@ -20,9 +24,9 @@ if K > N
 else
     problem.lambda = 0.0;
 end
+problem.B = reshape(problem.shapes, 3*N, K);
 
-%% Load and parse bag data into problem format
-[stamps, measurements, gt, teaser] = parseJson(problem.json, N);
+%% Parse into problem format
 tot_L = length(stamps);
 
 L = problem.L;
@@ -97,7 +101,7 @@ end
 
 end
 
-function [stamps, keypoints, gt, teaser] = parseJson(jsonfile, N)
+function [stamps, keypoints, gt, teaser, shapes] = parseJson(jsonfile, N)
 
 % Open the json file
 fid = fopen(jsonfile);
@@ -105,7 +109,17 @@ raw = fread(fid,Inf);
 str = char(raw'); 
 fclose(fid); 
 data = jsondecode(str);
-keypoints = [data.est_world_keypoints];
+
+% get CAD keypoints if there
+if isfield(data, "interp_cad_keypoints")
+    shapes = data(1).interp_cad_keypoints' / 1000.0;
+    N = size(shapes,2);
+else
+    shapes = NaN;
+end
+
+% keypoints = [data.est_world_keypoints];
+keypoints = [data.est_interp_world_keypoints];
 keypoints = reshape(keypoints,[N,3,size(data,1)]);
 keypoints = permute(keypoints,[2,1,3]) / 1000.0; % [m]
 
