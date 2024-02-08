@@ -88,7 +88,7 @@ end
 %% Check solutions
 % TODO: UPDATE
 L = problem.L;
-N = curproblem.N_VAR;
+N = problems{1}.N_VAR;
 
 p_err = zeros(L*N,L)*NaN;
 R_err = zeros(L*N,L)*NaN;
@@ -113,16 +113,16 @@ L_cur = problem.L;
 % hold on
 
 % Plot trajectory!
-% figure(1);
-% axis equal
-% p_est = reshape(soln.p_est,[3,L_cur,1]);
-% plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-% hold on
-% 
-% R_est = soln.R_est;
-% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
+figure(1);
+axis equal
+p_est = reshape(soln.p_est,[3,L_cur,1]);
+plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+hold on
+
+R_est = soln.R_est;
+quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
+quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
+quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 idx = problem.startIdx:(problem.startIdx + L_cur);
 for l = 1:L_cur
@@ -216,3 +216,5 @@ scores.adds_teaser = adds_teaser;
 %% Save everything we need
 % soln
 save("ycb_cracker.mat","solns","scores");
+
+%% Another Useful Plot

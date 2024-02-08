@@ -10,15 +10,15 @@ clc; clear; close all
 %% Define settings for batch processing
 problem.json = "../datasets/ycbineoat/cheese_metrics_interp.json";
 problem.L = 10; % batch size
-problem.savefile = "../datasets/ycbineoat/cheese_metrics_interp.json";
+problem.savefile = "../datasets/ycbineoat/cheese_metrics_interp_ours.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
 problem.velocityBound = 3.0; % [m/s]
-problem.noiseBound_GNC = 0.007;
-problem.noiseBound_GRAPH = 0.01;
-problem.noiseBound = 0.01;
-problem.covar_velocity_base = 0.08^2;
+problem.noiseBound_GNC = 0.005;
+problem.noiseBound_GRAPH = 0.008;
+problem.noiseBound = 0.005;
+problem.covar_velocity_base = 0.15^2;
 problem.kappa_rotrate_base = 2/(0.01)^2; % lower covar = more smoothing
 % worked well: 0.007, 0.01, 0.01, 0.1, 0.001
 % similar performance: 0.005, 0.01, 0.005, 0.05, 0.01
@@ -28,8 +28,9 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
 % add shape, measurements, outliers
-% load("../datasets/ycbineoat/cheese.mat");
-% problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
+load("../datasets/ycbineoat/cheese.mat");
+problem.shapes = annotatedPoints' / 1000; % 3 x N x K [m]
+problem.shapes = axang2rotm([0, -0.2102, -0.9776, 2/180*pi])*problem.shapes;
 [problems, gt, teaser] = json2batchproblem(problem);
 min_max_dists = robin_min_max_dists(problems{1}.shapes);
 
@@ -106,7 +107,7 @@ for l = 1:L
     R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
 end
 
-if (soln.gap_nov > 0.5)
+if (soln.gap > 0.5)
     % don't plot
     est.p(:,:,idx) = NaN;
     est.R(:,:,idx) = NaN;
@@ -148,8 +149,8 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:
 
 %% Compute scores
 % define shape paths
-pcfile_gt = "~/Downloads/models/006_mustard_bottle/google_16k/nontextured.ply";
-pcfile_est = "~/Downloads/models/006_mustard_bottle/google_16k/nontextured.ply";
+pcfile_gt = "~/Downloads/models/003_cracker_box/google_16k/nontextured.ply";
+pcfile_est = "~/Downloads/models/003_cracker_box/google_16k/nontextured.ply";
 
 % Compute scores!
 [add_ours, adds_ours] = compute_scores(gt, est, pcfile_gt, pcfile_est);
@@ -177,3 +178,15 @@ cocoString = jsonencode(data, "PrettyPrint",true);
 fid = fopen(problem.savefile, 'w');
 fprintf(fid, '%s', cocoString);
 fclose(fid);
+
+%% Try to estimate R_err
+% figure
+% axisdif = zeros(3,L_big);
+% angdif = zeros(1,L_big);
+% for l = 1:L_big
+%     axang = rotm2axang(est.R(:,:,l)'*gt.R(:,:,l));
+%     axisdif(:,l) = axang(1:3);
+%     angdif(:,l) = axang(4)*180/pi;
+%     quiver3(0,0,0,axang(1),axang(2),axang(3),'r');
+%     hold on
+% end

@@ -7,10 +7,10 @@
 
 clc; clear; close all
 % restoredefaultpath
-rng("default")
+% rng("default")
 
 %% Generate random tracking problem
-problem.N_VAR = 11; % nr of keypoints
+problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
 problem.L = 11; % nr of keyframes in horizon
 
@@ -52,6 +52,7 @@ soln = solve_weighted_tracking(problem);
 
 % soln_pace = pace_with_UKF(problem);
 % soln_pace = pace_py_UKF(problem);
+soln_pace = pace_raw(problem);
 
 %% Check solutions
 % eigenvalue plot
@@ -104,10 +105,16 @@ end
 % shape error
 c_err = norm(problem.c_gt - soln.c_est);
 
-% PACE errors
-% norm(problem.p_gt - soln_pace.p_raw,'fro') / L
-% norm(problem.p_gt - soln_pace.p_smoothed,'fro') / L
-norm(problem.p_gt - soln.p_est,'fro') / L
-
 % Plot trajectory!
 plot_trajectory(problem,soln)
+
+compare(problem, soln, soln_pace);
+
+function compare(gt, ours, pace, paceukf)
+
+% compare position
+norm(gt.p_gt - pace.p,'fro')
+% norm(gt.p_gt - paceukf.p,'fro')
+norm(gt.p_gt - ours.p_est,'fro')
+
+end

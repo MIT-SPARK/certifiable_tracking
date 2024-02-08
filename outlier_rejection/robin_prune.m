@@ -33,6 +33,12 @@ if isfield(problem,'prioroutliers')
     end
 end
 
+if (isfield(problem, "noiseBound_GRAPH"))
+    noiseBound = problem.noiseBound_GRAPH;
+else
+    noiseBound = problem.noiseBound;
+end
+
 prioroutliers_new = [];
 for l = 1:problem.L
     % convert measurements to python
@@ -40,7 +46,7 @@ for l = 1:problem.L
     yl_np = py.numpy.array(yl);
     
     % prune outliers with ROBIN
-    out = py.outlier_rejection.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, problem.noiseBound, prioroutliers{l}, 'maxclique');
+    out = py.outlier_rejection.prune_outliers.robin_prune_outliers(yl_np, cdmin, cdmax, noiseBound, prioroutliers{l}, 'maxclique');
     out = cell(out);
     inlier_indicies = double(out{1}) + 1;
 
