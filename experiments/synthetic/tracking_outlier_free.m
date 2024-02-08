@@ -15,8 +15,8 @@ problem.K = 3; % nr of shapes
 problem.L = 11; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.1; % [m]
-problem.noiseBound = problem.noiseSigmaSqrt*3;
+problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseBound = 0.1;%problem.noiseSigmaSqrt*3;
 problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
@@ -31,7 +31,7 @@ problem.accelerationNoiseBoundSqrt = 0;%0.5;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -50,9 +50,8 @@ problem.lambda = lambda;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 
-% soln_pace = pace_with_UKF(problem);
-% soln_pace = pace_py_UKF(problem);
-soln_pace = pace_raw(problem);
+pace = pace_raw(problem);
+paceukf = pace_py_UKF(problem,pace);
 
 %% Check solutions
 % eigenvalue plot
@@ -108,13 +107,13 @@ c_err = norm(problem.c_gt - soln.c_est);
 % Plot trajectory!
 plot_trajectory(problem,soln)
 
-compare(problem, soln, soln_pace);
+compare(problem, soln, pace, paceukf);
 
 function compare(gt, ours, pace, paceukf)
 
 % compare position
 norm(gt.p_gt - pace.p,'fro')
-% norm(gt.p_gt - paceukf.p,'fro')
+norm(gt.p_gt - paceukf.p,'fro')
 norm(gt.p_gt - ours.p_est,'fro')
 
 end
