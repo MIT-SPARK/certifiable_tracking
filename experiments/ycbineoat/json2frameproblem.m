@@ -1,4 +1,4 @@
-function [problem_list, gt, teaser] = json2frameproblem(problem, skip)
+function [problem_list, gt, teaser, shapes] = json2frameproblem(problem, skip)
 %% generates a problem from json metadata file at the frame level
 % horizon-based: for each frame, optimize with last L frames
 % 
@@ -6,12 +6,6 @@ function [problem_list, gt, teaser] = json2frameproblem(problem, skip)
 
 if nargin < 2
     skip = 1;
-end
-
-%% Load and parse bag data
-[stamps, measurements, gt, teaser, shapes] = parseJson(problem.json, skip);
-if (~isnan(shapes))
-    problem.shapes = shapes;
 end
 
 %% Define shape data
@@ -30,6 +24,12 @@ else
 end
 problem.B = reshape(problem.shapes, 3*N, K);
 
+%% Load and parse bag data
+[stamps, measurements, gt, teaser, shapes] = parseJson(problem.json, skip, problem.N_VAR);
+if (~isnan(shapes))
+    problem.shapes = shapes;
+end
+
 %% Parse into problem format
 tot_L = length(stamps);
 
@@ -40,7 +40,7 @@ problem_list = {};
 % define batch problems
 for batch = 1:tot_L
 
-    idxrange = max(1,batch-L):batch;
+    idxrange = max(1,batch-L+1):batch;
     L_cur = length(idxrange);
     if (L_cur < 3)
         continue
@@ -129,7 +129,7 @@ else
     shapes = NaN;
 end
 
-keypoints = [data.est_interp_world_keypoints];
+keypoints = [data.est_world_keypoints];
 keypoints = reshape(keypoints,[N,3,size(data,1)]);
 keypoints = permute(keypoints,[2,1,3]) / 1000.0; % [m]
 

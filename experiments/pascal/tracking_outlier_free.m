@@ -1,7 +1,7 @@
 %% Dense SDP relaxation for certifiable tracking
 %  Generic, tunable script to run one iteration of dense tracking.
 %    Operates on random data from PASCAL shapes with no outlier support.
-%    Run setup.m once to set up paths.
+%    Run setup.m once to set up paths.false
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -15,8 +15,8 @@ problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.05; % [m]
-problem.noiseBound = 3*problem.noiseSigmaSqrt;
-problem.processNoise = 0.5;
+problem.noiseBound = 0.2;
+% problem.processNoise = 0.01;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -25,7 +25,7 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = 0;%0.01;
+problem.accelerationNoiseBoundSqrt = 0;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
@@ -44,14 +44,13 @@ problem.lambda = lambda;
 
 %% Solve!
 soln = solve_weighted_tracking(problem);
-
-soln_pace = pace_py_UKF(problem);
+pace = pace_raw(problem);
+paceukf = pace_py_UKF(problem,pace);
 
 %% Check solutions
 % eigenvalue plot
 L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
-hold on
 
 % if strcmp(problem.velprior, "body")
 %     slices = 1:(1+9*(3*L-2)+3*L);
@@ -68,7 +67,7 @@ hold on
 % else
 %     error("Selected prior is not implemented")
 % end
-hold off
+% hold off
 
 % raw error
 % x_err = norm(problem.x_gt - soln.x_est);
@@ -96,10 +95,29 @@ end
 % shape error
 c_err = norm(problem.c_gt - soln.c_est);
 
-% PACE errors
-norm(problem.p_gt - soln_pace.p_raw,'fro')
-norm(problem.p_gt - soln_pace.p_smoothed,'fro')
-norm(problem.p_gt - soln.p_est,'fro')
-
 % Plot trajectory!
-plot_trajectory(problem,soln)
+plot_trajectory2(problem,soln)
+
+compare(problem, soln, pace, paceukf);
+
+function compare(gt, ours, pace, paceukf)
+L = gt.L;
+% compare position
+epace.p = norm(gt.p_gt - pace.p,'fro') / L;
+eukf.p = norm(gt.p_gt - paceukf.p,'fro') / L;
+eours.p = norm(gt.p_gt - ours.p_est,'fro') / L;
+
+% compare rotation
+epace.R = zeros(L,1);
+eukf.R = zeros(L,1);
+eours.R = zeros(L,1);
+for l = 1:L
+    epace.R(l) = getAngularError(gt.R_gt(:,:,l), pace.R(:,:,l));
+    eukf.R(l) = getAngularError(gt.R_gt(:,:,l), paceukf.R(:,:,l));
+    eours.R(l) = getAngularError(gt.R_gt(:,:,l), ours.R_est(:,:,l));
+end
+
+fprintf("           PACE    +UKF    OURS \n")
+fprintf("Position: %.4f, %.4f, %.4f\n",epace.p,eukf.p,eours.p);
+fprintf("Rotation: %.4f, %.4f, %.4f\n",mean(epace.R),mean(eukf.R),mean(eours.R));
+end

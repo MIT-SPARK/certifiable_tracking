@@ -4,6 +4,7 @@ function [add,adds] = compute_scores(gt, est, pcfile_gt, pcfile_est)
 % Lorenzo Shaikewitz for SPARK Lab
 
 % preliminaries
+if (isfield(est,"p"))
 L = length(est.p);
 T_gt = repmat(eye(4),[1,1,L]);
 T_est = repmat(eye(4),[1,1,L]);
@@ -13,6 +14,11 @@ for l = 1:L
 
     T_est(1:3,1:3,l) = est.R(:,:,l);
     T_est(1:3,4,l) = est.p(:,:,l);
+end
+else
+    T_gt = gt;
+    T_est = est;
+    L = length(T_est);
 end
 
 % Read point clouds

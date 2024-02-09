@@ -11,20 +11,18 @@ function soln = pace_py_UKF(problem, pace)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
-%% Define covariances
-
 %% Define covariances and noise
+rotBase = 0.001; % use 0.1% for rotation due to EKF operating in radians
 % state covariance
 if (isfield(problem,"covar_velocity_base"))
     covar_velocity = ones(1,3)*problem.covar_velocity_base;
 else
     covar_velocity = ones(1,3)*(problem.noiseBound/9)^2;
 end
-% use 0.5% for rotation due to EKF operating in radians
 if (isfield(problem,"kappa_rotrate_base"))
-    covar_rotrate = ones(1,3)*(1/problem.kappa_rotrate_base*1/2)*0.005;
+    covar_rotrate = ones(1,3)*(1/problem.kappa_rotrate_base*1/2)*rotBase;
 else
-    covar_rotrate  = ones(1,3)*(problem.noiseBound/9)^2*0.005;
+    covar_rotrate  = ones(1,3)*(problem.noiseBound/9)^2*rotBase;
 end
 
 covar_position = covar_velocity.*covar_rotrate*problem.dt;
@@ -40,13 +38,13 @@ if (isfield(problem,"processNoise"))
 else
     pn = 0.05;
 end
-processNoise_full = [pn, pn, pn, 0.005*pn, 0.005*pn, 0.005*pn];
+processNoise_full = [pn, pn, pn, rotBase*pn, rotBase*pn, rotBase*pn];
 processNoise_full = diag(processNoise_full);
 Q = py.numpy.array(processNoise_full);
 
 % Measurement noise
 measureNoise_full = repmat(problem.noiseBound^2,1,6);
-measureNoise_full(4:end) = 0.005*measureNoise_full(4:end);
+measureNoise_full(4:end) = rotBase*measureNoise_full(4:end);
 measureNoise_full = diag(measureNoise_full);
 R_covar = py.numpy.array(measureNoise_full);
 

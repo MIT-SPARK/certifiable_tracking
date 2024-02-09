@@ -232,6 +232,7 @@ for l = 2:L
     % dR version
     h = [h; dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) - v(ib3(l-1))*dt];
     h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
+    % h = [h; R(ib3(l),:)*s(ib3(l)) - R(ib3(l-1),:)*s(ib3(l-1)) - R(ib3(l-1),:)*v(ib3(l-1))*dt];
 end
 
 % constraint on v(t1) as a function of v(t2)
@@ -278,8 +279,12 @@ end
 problem.vars = x;
 problem.objective = prob_obj;
 if ~problem.regen_sdp
-    pid = string(feature("getpid"));
-    load("sdpdata"+pid +".mat","sdpdata");
+    if isfield(problem,"sdp_filename")
+        load(problem.sdp_filename +".mat","sdpdata");
+    else
+        pid = string(feature("getpid"));
+        load("sdpdata"+ pid +".mat","sdpdata");
+    end
 else
     sdpdata = [];
     problem.equality = h; % equality
@@ -394,6 +399,7 @@ soln.x_est = x_est;
 soln.c_est = c_est;
 soln.p_est = p_est;
 soln.v_est = v_est;
+soln.v_est_corrected = reshape(x_proj(1+slices_v),[3,1,L-1]);
 soln.s_est = s_est;
 
 soln.R_est = Rs;
@@ -409,8 +415,12 @@ soln.residuals = residuals;
 
 %% Save SDP data
 if problem.regen_sdp
-    pid = string(feature("getpid"));
-    save("sdpdata"+pid +".mat","sdpdata");
+    if isfield(problem,"sdp_filename")
+        save(problem.sdp_filename +".mat","sdpdata");
+    else
+        pid = string(feature("getpid"));
+        save("sdpdata"+ pid +".mat","sdpdata");
+    end
 end
 
 end

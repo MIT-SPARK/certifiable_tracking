@@ -1,25 +1,25 @@
-%% RSS Experiment: What Time Step Should We Use?
-% Dataset: pascal + car
+%% Experiment: How does process noise affect UKF performance?
+% Dataset: synthetic
 % Constants: K, N, noiseSigma, NO nonlinearities in gt
-% Independent variable: L
+% Independent variable: process noise
 % Dependent variables: runtime, duality gap, accuracy (p, R, c)
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-% BROKEN!!!!!
-
 clc; clear; close all
 
 %% Experiment settings
-indepVar = "L"; % name of independent variable
+indepVar = "processNoise"; % name of independent variable
 savename = "pascalcar_" + indepVar;
-domain = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30];
-% domain = 5;
+domain = [0.09:0.01:0.12]; % for quick results
 num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
 %% Loop
-for iv = domain
+results = cell(length(domain),1);
+parfor index = 1:length(domain)
+iv = domain(index);
+resultsIV = struct();
 resultsIV.(indepVar) = iv;
 resultsIV.R_err_ours = zeros(num_repeats,1);
 resultsIV.R_err_ukf = zeros(num_repeats,1);
@@ -30,16 +30,20 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
+disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
-problem.L = iv; % nr of keyframes in horizon
+% Generate random tracking problem
+problem = struct();
+problem.L = 10; % nr of keyframes in horizon
 L = problem.L;
 problem.category = "car";
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.05; % [m]
 problem.noiseBound = 3*problem.noiseSigmaSqrt;
-problem.processNoise = 0.5;
+problem.processNoise = iv;
+
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -56,13 +60,13 @@ problem.regen_sdp = (j == 1); % regen only first time
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.0;
+lambda = 0;
 problem.lambda = lambda;
 
 % Solve!
 soln = solve_weighted_tracking(problem);
-
-soln_pace = pace_py_UKF(problem);
+pace = pace_raw(problem);
+paceukf = pace_py_UKF(problem,pace);
 
 % Save solutions
 % projected errors
@@ -71,8 +75,8 @@ R_err_ukf = zeros(L,1);
 R_err_pace = zeros(L,1);
 for l = 1:L
     R_err_ours(l) = getAngularError(problem.R_gt(:,:,l), soln.R_est(:,:,l));
-    R_err_ukf(l) = getAngularError(problem.R_gt(:,:,l), soln_pace.R_smoothed(:,:,l));
-    R_err_pace(l) = getAngularError(problem.R_gt(:,:,l), soln_pace.R_raw(:,:,l));
+    R_err_ukf(l) = getAngularError(problem.R_gt(:,:,l), paceukf.R(:,:,l));
+    R_err_pace(l) = getAngularError(problem.R_gt(:,:,l), pace.R(:,:,l));
 end
 
 % shape error
@@ -83,15 +87,15 @@ resultsIV.R_err_ours(j) = norm(R_err_ours)/L;
 resultsIV.R_err_ukf(j)  = norm(R_err_ukf)/L;
 resultsIV.R_err_pace(j) = norm(R_err_pace)/L;
 resultsIV.p_err_ours(j) = norm(problem.p_gt - soln.p_est,'fro')/L;
-resultsIV.p_err_ukf(j)  = norm(problem.p_gt - soln_pace.p_smoothed,'fro')/L;
-resultsIV.p_err_pace(j) = norm(problem.p_gt - soln_pace.p_raw,'fro')/L;
+resultsIV.p_err_ukf(j)  = norm(problem.p_gt - paceukf.p,'fro')/L;
+resultsIV.p_err_pace(j) = norm(problem.p_gt - pace.p,'fro')/L;
 resultsIV.c_err_ours(j) = c_err;
 resultsIV.gap_ours(j) = soln.gap;
 resultsIV.time_ours(j) = soln.solvetime;
-clear problem;
 end
-results(domain == iv) = resultsIV;
+results{index} = resultsIV;
 end
+results = [results{:}];
 % save
 save("../datasets/results/" + savename + ".mat","results")
 
@@ -101,32 +105,40 @@ save("../datasets/results/" + savename + ".mat","results")
 % Rotation figure
 figure
 set(0,'DefaultLineLineWidth',2)
-plot([results.(indepVar)],mean([results.R_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.R_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.R_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.R_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.R_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 legend
-xlabel("L"); ylabel("Rotation Error (deg)");
+xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
 figure
-plot([results.(indepVar)],mean([results.p_err_ours]),'x-','DisplayName','OURS');
+a=plot([results.(indepVar)],median([results.p_err_ours]),'x-','DisplayName','OURS');
 hold on
-plot([results.(indepVar)],mean([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
-plot([results.(indepVar)],mean([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
+b=plot([results.(indepVar)],median([results.p_err_ukf]),'x-','DisplayName','PACE-UKF');
+c=plot([results.(indepVar)],median([results.p_err_pace]),'x-','DisplayName','PACE-RAW');
+
+errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
+errorshade([results.(indepVar)],[results.p_err_ukf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
 legend
-xlabel("L"); ylabel("Position Error (m)");
+xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
 
 % gap figure
 figure
-semilogy([results.(indepVar)],mean([results.gap_ours]),'x-');
-xlabel("L"); ylabel("Gap");
+semilogy([results.(indepVar)],abs(median([results.gap_ours])),'x-');
+xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
 figure
-plot([results.(indepVar)],mean([results.time_ours]),'x-');
-xlabel("L"); ylabel("Time (s)");
+plot([results.(indepVar)],median([results.time_ours]),'x-');
+xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")

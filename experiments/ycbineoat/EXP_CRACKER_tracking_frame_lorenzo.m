@@ -4,8 +4,11 @@
 % Lorenzo Shaikewitz for SPARK Lab
 
 clc; clear; close all
-% restoredefaultpath
-% rng("default")
+
+%% Experiment settings
+indepVar = "noiseSigmaSqrt"; % name of independent variable
+savename = "pascalcar_" + indepVar;
+domain = [0.01:0.005:0.1];
 
 %% Define settings for batch processing
 problem.json = "../datasets/ycbineoat/cheese_metrics_interp.json";
@@ -13,18 +16,28 @@ problem.L = 10; % batch size
 problem.savefile = "../datasets/ycbineoat/cheese_metrics_interp_ours.json";
 skip = 1;
 
-% Set bounds based on problem setting
+%% Loop
+for iv = domain
+resultsIV.(indepVar) = iv;
+resultsIV.R_err_ours = zeros(num_repeats,1);
+resultsIV.R_err_ukf = zeros(num_repeats,1);
+resultsIV.R_err_pace = zeros(num_repeats,1);
+resultsIV.p_err_ours = zeros(num_repeats,1);
+resultsIV.p_err_ukf = zeros(num_repeats,1);
+resultsIV.p_err_pace = zeros(num_repeats,1);
+resultsIV.c_err_ours = zeros(num_repeats,1);
+resultsIV.gap_ours = zeros(num_repeats,1);
+resultsIV.time_ours = zeros(num_repeats,1);
+disp("Starting " + indepVar + "=" + string(iv));
 problem.translationBound = 5.0;
 problem.velocityBound = 1.5;
-problem.noiseBound_GNC = 0.007;
-problem.noiseBound_GRAPH = 0.01;
-problem.noiseBound = 0.01;
+problem.noiseBound_GNC = iv;
+problem.noiseBound_GRAPH = iv + 0.005;
+problem.noiseBound = iv;
 problem.covar_velocity_base = 0.05^2;
 problem.kappa_rotrate_base = 2/(0.01)^2; % lower covar = more smoothing
 
 problem.velprior = "body";       % constant body frame velocity
-% problem.velprior = "world";      % constant world frame velocity
-% problem.velprior = "grav-world"; % add gravity in z direction
 
 % add shape, measurements, outliers
 % load("../datasets/ycbineoat/cheese.mat");
@@ -83,6 +96,7 @@ if (mod(j,5) == 0)
     disp(j);
 end
 
+end
 end
 
 %% Check solutions

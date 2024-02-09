@@ -16,7 +16,10 @@ num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
 %% Loop
-for iv = domain
+results = cell(length(domain),1);
+parfor index = 1:length(domain)
+iv = domain(index);
+resultsIV = struct();
 resultsIV.(indepVar) = iv;
 resultsIV.R_err_ours = zeros(num_repeats,1);
 resultsIV.R_err_ukf = zeros(num_repeats,1);
@@ -31,6 +34,7 @@ disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 % Generate random tracking problem
+problem = struct();
 problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
 
@@ -63,8 +67,8 @@ problem.lambda = lambda;
 
 % Solve!
 soln = solve_weighted_tracking(problem);
-
-soln_pace = pace_py_UKF(problem);
+pace = pace_raw(problem);
+paceukf = pace_py_UKF(problem,pace);
 
 % Save solutions
 % projected errors
@@ -73,8 +77,8 @@ R_err_ukf = zeros(L,1);
 R_err_pace = zeros(L,1);
 for l = 1:L
     R_err_ours(l) = getAngularError(problem.R_gt(:,:,l), soln.R_est(:,:,l));
-    R_err_ukf(l) = getAngularError(problem.R_gt(:,:,l), soln_pace.R_smoothed(:,:,l));
-    R_err_pace(l) = getAngularError(problem.R_gt(:,:,l), soln_pace.R_raw(:,:,l));
+    R_err_ukf(l) = getAngularError(problem.R_gt(:,:,l), paceukf.R(:,:,l));
+    R_err_pace(l) = getAngularError(problem.R_gt(:,:,l), pace.R(:,:,l));
 end
 
 % shape error
@@ -85,15 +89,15 @@ resultsIV.R_err_ours(j) = norm(R_err_ours)/L;
 resultsIV.R_err_ukf(j)  = norm(R_err_ukf)/L;
 resultsIV.R_err_pace(j) = norm(R_err_pace)/L;
 resultsIV.p_err_ours(j) = norm(problem.p_gt - soln.p_est,'fro')/L;
-resultsIV.p_err_ukf(j)  = norm(problem.p_gt - soln_pace.p_smoothed,'fro')/L;
-resultsIV.p_err_pace(j) = norm(problem.p_gt - soln_pace.p_raw,'fro')/L;
+resultsIV.p_err_ukf(j)  = norm(problem.p_gt - paceukf.p,'fro')/L;
+resultsIV.p_err_pace(j) = norm(problem.p_gt - pace.p,'fro')/L;
 resultsIV.c_err_ours(j) = c_err;
 resultsIV.gap_ours(j) = soln.gap;
 resultsIV.time_ours(j) = soln.solvetime;
-clear problem;
 end
-results(domain == iv) = resultsIV;
+results{index} = resultsIV;
 end
+results = [results{:}];
 % save
 save("../datasets/results/" + savename + ".mat","results")
 

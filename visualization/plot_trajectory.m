@@ -77,7 +77,7 @@ for l = 1:L-1
     
         % spiral to next
         pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
-%         pts = sim_dynamics(R, dR, v, p, dt, interval_pts, false);
+        % pts = sim_dynamics(R, dR, v, p, dt, interval_pts, false);
     
         traj_est(:, ran) = pts(:,1:end-1);%pts(:,:,1:end-1);
         if (l == (L-1))
