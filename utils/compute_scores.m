@@ -69,7 +69,7 @@ end
 adds = VOCap(adds)*100;
 end
 
-function ap = VOCap(rec)
+function ap = VOCap(rec, max_dist)
     rec = sort(rec);
     n = length(rec);
     if n == 0
@@ -78,7 +78,11 @@ function ap = VOCap(rec)
     end
     
     prec = (1:n)' / n;
-    index = find(rec < 0.1);
+    if nargin >= 2
+        index = find(rec < max_dist);
+    else
+        index = 1:length(rec);
+    end
     
     if isempty(index)
         ap = 0;

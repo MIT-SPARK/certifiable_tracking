@@ -142,7 +142,7 @@ def run_ukf(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
     # sigma point parameters
     alpha = np.array([1e-3]*12) # TODO: 12?
 
-    # P = np.diag([1,1,1,0.005,0.005,0.005,1,1,1,0.005,0.005,0.005])*p_base
+    # P = np.diag([1,1,1,0.005,0.005,0.005,1,1,1,0.005,0.005,0.005])
     # Q = np.diag([1,1,1,0.005,0.005,0.005])
     # R = np.diag([1,1,1,0.005,0.005,0.005])
 

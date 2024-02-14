@@ -20,7 +20,7 @@ domain = ["cracker_box_reorient", "cracker_box_yalehand0", ...
           "mustard0", "mustard_easy_00_02", ...
           "bleach0", "bleach_hard_00_03_chaitanya", ...
           "tomato_soup_can_yalehand0"];
-domain = domain(1); % just do one for now
+domain = domain(5); % just do one for now
 % directories
 jsondir = "../datasets/ycbineoat/";
 
@@ -44,23 +44,46 @@ for iv = domain
     skip = 1; % TODO: experiment with different skip?
 
     % Add shape, split into batches
-    [problems, gt, teaser, shapes] = json2frameproblem(problem, skip); % TODO: rewrite to actually parse shapes
-    min_max_dists = robin_min_max_dists(problem.shapes);
+    [problems, gt, teaser, shapes] = json2frameproblem(problem, skip);
+    disp("Computing max/min distances...")
+    min_max_dists = robin_min_max_dists(problems{1}.shapes);
+    disp("Finished computing max/min distances")
+
+    % For testing: limit to small set of problems
+    numProblemsToSolve = length(problems);
 
     % define solution variable
-    solnsIV = cell(length(problems),1);
+    solnsIV = cell(numProblemsToSolve,1);
 
     % now we can start!
     disp("Starting " + string(iv));
-    disp("Solving " + string(length(problems)) + " problems...")
+    
+    % we need to prune using serial processing
+    % disp("Pruning " + string(numProblemsToSolve) + " problems...")
+    for batch = 1:numProblemsToSolve
+        curproblem = problems{batch};
+        % data for GNC/pruning
+        curproblem.type = "tracking";
+        curproblem.N = curproblem.N_VAR*curproblem.L; % How many measurements this problem has (updated by ROBIN)
+        curproblem.outliers = []; % outlier indicies
+        curproblem.priors = [];
+        curproblem.dof = 0;
+        % run pruning!
+        curproblem = lorenzo_prune(curproblem, min_max_dists);
+        % save pruned problem
+        problems{batch} = curproblem;
+        disp("Finished " + string(batch));
+    end
+
+    disp("Solving " + string(numProblemsToSolve) + " problems...")
 
     % L should change for the first problem.L - 2 problems
-    parfor batch = 1:min(problem.L-2, length(problems))
+    parfor batch = 1:min(problem.L-2, numProblemsToSolve)
         curproblem = problems{batch};
         curproblem.sdp_filename = "sdpdata" + curproblem.L;
         curproblem.regen_sdp = true;
 
-        soln = solveBatch(curproblem, min_max_dists);
+        soln = solveBatch(curproblem);
         solnsIV{batch} = soln;
 
         % report bad results
@@ -70,14 +93,14 @@ for iv = domain
             fprintf("Batch %d failed: NaN\n",batch)
         end
     end
-
+    
     % Now that L is fixed, run through the remainder of the problems
-    parfor batch = min(problem.L-2, length(problems)):length(problems)
+    parfor batch = min(problem.L-2, numProblemsToSolve):numProblemsToSolve
         curproblem = problems{batch};
         curproblem.sdp_filename = "sdpdata" + curproblem.L;
         curproblem.regen_sdp = false;
 
-        soln = solveBatch(curproblem, min_max_dists);
+        soln = solveBatch(curproblem);
         solnsIV{batch} = soln;
 
         % report bad results
@@ -93,8 +116,9 @@ for iv = domain
 end
 
 %% Check solutions
+solns = solnsIV;
 L = problem.L;
-N = curproblem.N_VAR;
+N = problems{1}.N_VAR;
 
 p_err = zeros(L*N,L)*NaN;
 R_err = zeros(L*N,L)*NaN;
@@ -111,7 +135,7 @@ figure(1);
 for j = 1:length(solns)
 
 problem = problems{j};
-soln = solns(j);
+soln = solns{j};
 L_cur = problem.L;
 
 % eigenvalue plot
@@ -121,30 +145,30 @@ L_cur = problem.L;
 % Plot trajectory!
 % figure(1);
 % axis equal
-% p_est = reshape(soln.p_est,[3,L_cur,1]);
+% p_est = reshape(soln.p,[3,L_cur,1]);
 % plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
 % hold on
 % 
-% R_est = soln.R_est;
+% R_est = soln.R;
 % quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
 % quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
 % quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 idx = problem.startIdx:(problem.startIdx + L_cur);
 for l = 1:L_cur
-    p_err(idx(l),l) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
-    R_err(idx(l),l) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
+    p_err(idx(l),l) = norm(soln.p(:,:,l) - gt.p(:,:,idx(l)));
+    R_err(idx(l),l) = getAngularError(gt.R(:,:,idx(l)),soln.R(:,:,l));
 end
 
 
 % compute errors
 % 1) legit: use latest estimate no matter what
-est_legit.p(:,:,idx(end)) = soln.p_est(:,:,end);
-est_legit.R(:,:,idx(end)) = soln.R_est(:,:,end);
+est_legit.p(:,:,idx(end)) = soln.p(:,:,end);
+est_legit.R(:,:,idx(end)) = soln.R(:,:,end);
 % 2) ignoringbad: throw away bad
 if (soln.gap_nov < 0.3)
-    est_ignoringbad.p(:,:,idx(end)) = soln.p_est(:,:,end);
-    est_ignoringbad.R(:,:,idx(end)) = soln.R_est(:,:,end);
+    est_ignoringbad.p(:,:,idx(end)) = soln.p(:,:,end);
+    est_ignoringbad.R(:,:,idx(end)) = soln.R(:,:,end);
 end
 % 3) bestrun: use estimate that has best run (by gap)
 gaps = [gaps; abs(soln.gap_nov)];
@@ -165,12 +189,12 @@ for l = 1:L_cur-1
     end
     if (newgood)
         % update!
-        est_bestrun.p(:,:,idx(l)) = soln.p_est(:,:,l);
-        est_bestrun.R(:,:,idx(l)) = soln.R_est(:,:,l);
+        est_bestrun.p(:,:,idx(l)) = soln.p(:,:,l);
+        est_bestrun.R(:,:,idx(l)) = soln.R(:,:,l);
     end
 end
-est_bestrun.p(:,:,idx(end)) = soln.p_est(:,:,end);
-est_bestrun.R(:,:,idx(end)) = soln.R_est(:,:,end);
+est_bestrun.p(:,:,idx(end)) = soln.p(:,:,end);
+est_bestrun.R(:,:,idx(end)) = soln.R(:,:,end);
 
 
 end
@@ -190,7 +214,7 @@ plot3(p_gt(1,:),p_gt(2,:),p_gt(3,:),'.k', 'MarkerSize',10);
 hold on
 axis equal
 
-R_est = soln.R_est;
+R_est = soln.R;
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,1,:)),squeeze(gt.R(2,1,:)),squeeze(gt.R(3,1,:)),'r');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,2,:)),squeeze(gt.R(2,2,:)),squeeze(gt.R(3,2,:)),'g');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:)),squeeze(gt.R(3,3,:)),'b');
@@ -224,20 +248,20 @@ scores.adds_teaser = adds_teaser;
 save("ycb_mustard.mat","solns","scores");
 
 %% Helper function: solve each batch
-function soln = solveBatch(problem, min_max_dists)
+function soln = solveBatch(problem)
     % data for GNC
-    problem.type = "tracking";
-    problem.N = problem.N_VAR*problem.L; % How many measurements this problem has (updated by ROBIN)
-    problem.outliers = []; % outlier indicies
-    problem.priors = [];
-    problem.dof = 0;
+    % problem.type = "tracking";
+    % problem.N = problem.N_VAR*problem.L; % How many measurements this problem has (updated by ROBIN)
+    % problem.outliers = []; % outlier indicies
+    % problem.priors = [];
+    % problem.dof = 0;
+    % 
+    % problem = lorenzo_prune(problem, min_max_dists);
     
-    problem = lorenzo_prune(problem, min_max_dists);
-    
-    % preprocess inliers
-    % if isfield(curproblem,'prioroutliers')
-    %     curproblem.prioroutliers = sort(curproblem.prioroutliers);
-    %     curproblem.N = curproblem.N - length(curproblem.prioroutliers);
+    % preprocess inliers (use only if pruning off)
+    % if isfield(problem,'prioroutliers')
+    %     problem.prioroutliers = sort(problem.prioroutliers);
+    %     problem.N = problem.N - length(problem.prioroutliers);
     % end
     
     % run GNC
