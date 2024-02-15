@@ -12,7 +12,7 @@ function soln = pace_py_UKF(problem, pace)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Define covariances and noise
-rotBase = 0.01; % use 0.1% for rotation due to EKF operating in radians
+rotBase = 1; % use 0.1% for rotation due to EKF operating in radians
 % state covariance
 if (isfield(problem,"covar_velocity_base"))
     covar_velocity = ones(1,3)*problem.covar_velocity_base;
@@ -30,7 +30,7 @@ covar_rotation = covar_rotrate;
 
 covar_state_full = [covar_position, covar_velocity, covar_rotation, covar_rotrate];
 covar_state_full = diag(covar_state_full);
-P = py.numpy.array(covar_state_full*0.00001);
+P = py.numpy.array(covar_state_full);
 
 % process noise (noise added to const. vel. model)
 if (isfield(problem,"processNoise"))
@@ -43,7 +43,7 @@ processNoise_full = diag(processNoise_full);
 Q = py.numpy.array(processNoise_full);
 
 % Measurement noise
-measureNoise_full = repmat(problem.noiseBound^2,1,6);
+measureNoise_full = repmat(problem.noiseBound^2/9,1,6);
 measureNoise_full(4:end) = rotBase*measureNoise_full(4:end);
 measureNoise_full = diag(measureNoise_full);
 R_covar = py.numpy.array(measureNoise_full);

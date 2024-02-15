@@ -119,7 +119,7 @@ def run_ukf(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
     R_meas: 3 x 3 x L matrix of rotation measurements
     v_init: initial body velocity
     w_init: initial angular velocity
-    Q: propagation noise covariance matrix (6 x 6)
+    Q: propagation noise covariance matrix (6 x 6) -- noise on const. vel. model
     R: measurement noise covariance matrix (6 x 6)
     P: initial uncertainty matrix (12 x 12)
     '''
@@ -142,9 +142,9 @@ def run_ukf(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
     # sigma point parameters
     alpha = np.array([1e-3]*12) # TODO: 12?
 
-    # P = np.diag([1,1,1,0.005,0.005,0.005,1,1,1,0.005,0.005,0.005])
+    # P = np.diag([1,1,1,0.0,0.,0.0,1,1,1,0.005,0.005,0.005])
     # Q = np.diag([1,1,1,0.005,0.005,0.005])
-    # R = np.diag([1,1,1,0.005,0.005,0.005])
+    # R = np.diag([1,1,1,0.005,0.005,0.005])*0
 
     ukf = ukfm.UKF(state0=state0, P0=P, f=model.f, h=model.h, Q=Q, R=R,
                 phi=model.phi, phi_inv=model.phi_inv, alpha=alpha)

@@ -12,7 +12,7 @@ clc; clear; close all
 indepVar = "processNoise"; % name of independent variable
 savename = "pascalcar_" + indepVar;
 domain = 0.1; % for quick results
-num_repeats = 1;
+num_repeats = 50;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
 %% Loop
@@ -30,7 +30,7 @@ c_err_ours = zeros(num_repeats,1);
 gap_ours = zeros(num_repeats,1);
 time_ours = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
-for j = 1:num_repeats
+parfor j = 1:num_repeats
 
 % Generate random tracking problem
 problem = struct();
@@ -39,8 +39,10 @@ L = problem.L;
 problem.category = "car";
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05; % [m]
+problem.noiseSigmaSqrt = 0.01; % [m]
 problem.noiseBound = 0.1;
+problem.covar_velocity_base = 0.001;
+problem.kappa_rotrate_base = 500;
 problem.processNoise = iv;
 
 problem.translationBound = 10.0;

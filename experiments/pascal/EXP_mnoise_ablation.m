@@ -42,7 +42,9 @@ problem.category = "car";
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv; % [m]
 problem.noiseBound = 0.1;
-problem.processNoise = 0.15;
+problem.processNoise = 0.12;
+problem.covar_velocity_base = 0.001;
+problem.kappa_rotrate_base = 500;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
