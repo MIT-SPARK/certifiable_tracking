@@ -36,6 +36,7 @@ else
     base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
     problem.kappa_rotrate  = ones(L-2,1)*(2/base);
 end
+% problem.covar_velocity(1) = Inf;
 
 %% Run solver!
 % default to body frame

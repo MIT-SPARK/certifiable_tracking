@@ -10,12 +10,12 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.category = "car";
+problem.category = "aeroplane";
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.05; % [m]
-problem.noiseBound = 0.2;
+problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseBound = 0.1;
 % problem.processNoise = 0.01;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -33,7 +33,7 @@ problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
-% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
+problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -46,6 +46,7 @@ problem.lambda = lambda;
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
 paceukf = pace_py_UKF(problem,pace);
+paceekf = pace_lin_EKF(problem,pace);
 
 %% Check solutions
 % eigenvalue plot
@@ -98,13 +99,14 @@ c_err = norm(problem.c_gt - soln.c_est);
 % Plot trajectory!
 plot_trajectory2(problem,soln)
 
-compare(problem, soln, pace, paceukf);
+compare(problem, soln, pace, paceukf, paceekf);
 
-function compare(gt, ours, pace, paceukf)
+function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;
 % compare position
 epace.p = norm(gt.p_gt - pace.p,'fro') / L;
 eukf.p = norm(gt.p_gt - paceukf.p,'fro') / L;
+eekf.p = norm(gt.p_gt - paceekf.p,'fro') / L;
 eours.p = norm(gt.p_gt - ours.p_est,'fro') / L;
 
 % compare rotation
@@ -117,7 +119,7 @@ for l = 1:L
     eours.R(l) = getAngularError(gt.R_gt(:,:,l), ours.R_est(:,:,l));
 end
 
-fprintf("           PACE    +UKF    OURS \n")
-fprintf("Position: %.4f, %.4f, %.4f\n",epace.p,eukf.p,eours.p);
+fprintf("           PACE    +UKF    OURS    LEKF \n")
+fprintf("Position: %.4f, %.4f, %.4f, %.4f\n",epace.p,eukf.p,eours.p, eekf.p);
 fprintf("Rotation: %.4f, %.4f, %.4f\n",mean(epace.R),mean(eukf.R),mean(eours.R));
 end

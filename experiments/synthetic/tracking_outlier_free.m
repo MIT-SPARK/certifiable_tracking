@@ -7,7 +7,7 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
@@ -35,7 +35,7 @@ problem.regen_sdp = false; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
-% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
+problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 % problem.R_gt = repmat(eye(3,3),[1,1,problem.L]);
 % problem.dR_gt = repmat(axang2rotm([0,0,1,1]),[1,1,problem.L-1]);
 % problem.v_gt = repmat([0;1;1],[1,1,problem.L-1]);

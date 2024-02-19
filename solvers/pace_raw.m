@@ -15,10 +15,8 @@ soln_pace = [];
 for l = 1:problem.L
     pace_problem = problem;
     
-    % scale weights
+    % uniform weights -> scale does not matter
     pace_problem.weights = ones(problem.N_VAR,1);
-    noiseBoundSq = problem.noiseBound^2;
-    pace_problem.weights = pace_problem.weights.*(9/noiseBoundSq);
 
     % convert y into native PACE form
     pace_problem.scene = reshape(problem.y(:,l),[3,problem.N_VAR]);

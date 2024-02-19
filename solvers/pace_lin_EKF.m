@@ -18,7 +18,7 @@ function soln = pace_lin_EKF(problem, pace)
 if (isfield(problem,"covar_velocity_base"))
     covar_velocity = ones(1,3)*problem.covar_velocity_base;
 else
-    covar_velocity = ones(1,3)*(problem.noiseBound/9)^2;
+    covar_velocity = ones(1,3)*(problem.noiseBound/3)^2;
 end
 covar_position = covar_velocity.*problem.dt;
 covar_state = reshape([covar_position(1:3); covar_velocity(1:3)], 6,1);
@@ -30,7 +30,7 @@ processNoise = repmat([0,0.01^2],1,3);
 processNoise = diag(processNoise);
 
 % Measurement noise (todo: this isn't quite right)
-measureNoise = repmat(problem.noiseSigmaSqrt^2, 1,3);
+measureNoise = repmat((problem.noiseBound/3)^2/5, 1,3);
 measureNoise = diag(measureNoise);
 
 %% Pull out position, orientation
