@@ -12,10 +12,10 @@ rng("default")
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 3; % nr of keyframes in horizon
+problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.0; % [m]
+problem.noiseSigmaSqrt = 0.01; % [m]
 problem.noiseBound = 0.01; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
 problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 
@@ -61,9 +61,9 @@ figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tigh
 hold on
 
 if strcmp(problem.velprior, "body")
-    slices = 1:(1+9*(2*L-1)+3*L);
-    Xopt_vRemoved = soln.raw.Xopt{1}(slices, slices);
-    bar([zeros(3*(L-1),1);eig(Xopt_vRemoved)]);
+    % slices = 1:(1+9*(2*L-1)+3*L);
+    % Xopt_vRemoved = soln.raw.Xopt{1}(slices, slices);
+    % bar([zeros(3*(L-1),1);eig(Xopt_vRemoved)]);
 
     % v_idx = length(soln.raw.Xopt{1})-3*L+4:length(soln.raw.Xopt{1});
     % Xopt_vOnly = soln.raw.Xopt{1}(end-3*L+4:end, end-3*L+4:end);
@@ -109,8 +109,6 @@ c_err = norm(problem.c_gt - soln.c_est);
 plot_trajectory(problem,soln)
 
 compare(problem, soln, pace, paceukf, paceekf);
-
-soln.raw.Xopt{1}(56,56)
 
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;

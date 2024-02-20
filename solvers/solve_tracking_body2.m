@@ -1,13 +1,5 @@
-function soln = solve_tracking_body(problem)
-% Solves const. vel. (body frame) optimization exactly via SDP
-%   Assume the *body frame* velocity is constant and object is spinning.
-%   Result: spiral trajectory.
-%   Analytically remove velocity & shape. SDP variables are
-%   * rotated position (s)
-%   * body velocity (v)
-%   * rotation (R)
-%   * rotation change (dR)
-%   MINIMALLY SYMBOLIC VERSION
+function soln = solve_tracking_body2(problem)
+% HAS VELOCITY COMPLETELY REMOVED!! USEFUL FOR SEPARATING TEST CASE
 %
 % INPUTS:
 % - problem (struct): populated problem data
@@ -46,7 +38,7 @@ end
 
 %% Define objective
 % optimization vector
-d = 9*(2*L - 1) + 3*L + 3*(L-1); % 2L - 1 rotations, L rotated positions, L-1 body velocities
+d = 9*(2*L - 1) + 3*L; % 2L - 1 rotations, L rotated positions
 % 2L-1 rotations: L rotations, L-1 delta rotations
 x = msspoly('x',d);
 
@@ -54,7 +46,6 @@ x = msspoly('x',d);
 r  = x(1:(9*L));
 dr = x((9*L + 1):(9*L + 9*(L-1)));
 s  = x((18*L - 9 + 1):(18*L - 9 + 3*L));
-v = x((21*L - 9 + 1):(21*L - 9 + 3*(L-1)));
 
 % convert to useful form
 R  = reshape(r ,3,3*L)';
@@ -190,7 +181,7 @@ eye9LR = [eye(9*(L-2)), zeros(9*(L-2),9)];
 Ad = diag(dwd)*(eye9LL - eye9LR);
 
 % ALL TOGETHER (VERIFIED)
-Q = zeros(size(Ag,1) + size(Ad,1) + size(Av,1),d+1);
+Q = zeros(size(Ag,1) + size(Ad,1),d+1);
 % measurements
 Q(1:size(Ag,1),1:(1+9*L+9*(L-1)+3*L)) = ...
     [Ag, Ar, zeros(size(Ag,1),9*(L-1)), As];
@@ -198,10 +189,6 @@ Q(1:size(Ag,1),1:(1+9*L+9*(L-1)+3*L)) = ...
 Q((size(Ag,1) + 1):(size(Ag,1)+size(Ad,1)),...
   (1+9*L+1):(1+9*L+9*(L-1))) = ...
     Ad;
-% velocity
-Q((size(Ag,1)+size(Ad,1) + 1):(size(Ag,1)+size(Ad,1) + size(Av,1)),...
-  (1+9*L+9*(L-1)+3*L+1):(1+21*L-9+3*(L-1))) = ...
-    Av;
 prob_obj = [1;x]'*(Q'*Q)*[1;x];
 % c = Cr*r - Cs*s + gbar;
 
@@ -227,17 +214,17 @@ for l = 2:L
     h = [h; reshape(R(ib3(l),:) - R(ib3(l-1),:)*dR(ib3(l-1),:),9,1)];
 end
 
-% sh(l) = s(l-1) + v(l-1)*dt constraint
-for l = 2:L
-    % dR version
-    h = [h; dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) - v(ib3(l-1))*dt];
-    h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
-    % h = [h; R(ib3(l),:)*s(ib3(l)) - R(ib3(l-1),:)*s(ib3(l-1)) - R(ib3(l-1),:)*v(ib3(l-1))*dt];
-end
+% % sh(l) = s(l-1) + v(l-1)*dt constraint
+% for l = 2:L
+%     % dR version
+%     h = [h; dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) - v(ib3(l-1))*dt];
+%     % h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
+%     % h = [h; R(ib3(l),:)*s(ib3(l)) - R(ib3(l-1),:)*s(ib3(l-1)) - R(ib3(l-1),:)*v(ib3(l-1))*dt];
+% end
 
 % constraint on v(t1) as a function of v(t2)
 % TODO: this may help solve time?
-h = [h; dR(ib3(1),:)'*v(ib3(1))*dt - dR(ib3(2),:)*s(ib3(3)) + dR(ib3(1),:)'*s(ib3(1)) + v(ib3(2))*dt];
+% h = [h; dR(ib3(1),:)'*v(ib3(1))*dt - dR(ib3(2),:)*s(ib3(3)) + dR(ib3(1),:)'*s(ib3(1)) + v(ib3(2))*dt];
 
 % INEQUALITY
 % p,s in range for just first time (p'*p<=pBoundSq)
@@ -251,8 +238,8 @@ g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
 % end
 
 % v bound (v'*v<=vBoundSq)
-vBoundSq = vBound^2;
-g_v_allinone = vBoundSq*L - v'*v;
+% vBoundSq = vBound^2;
+% g_v_allinone = vBoundSq*L - v'*v;
 % g_v = [];
 % for l = 1:L-1
 %     g_v = [g_v; vBoundSq - v(ib3(l))'*v(ib3(l))];
@@ -265,9 +252,9 @@ g_v_allinone = vBoundSq*L - v'*v;
 % g = [g_c];
 % g = [g_c;g_v];
 % g = [g_s_first; g_v; g_c]; % only use if regenerating each time.
-g = [g_s_first; g_v_allinone];
+% g = [g_s_first; g_v_allinone];
 % g = [g_s; g_v];
-% g = [];
+g = [];
 
 % save("data/constraints.mat","g","h");
 % else
@@ -304,8 +291,12 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
 % addpath(genpath(mosekpath))
+
+prob = add_v(prob,Av,L,dt);
+
 [~,res] = mosekopt('minimize info echo(10)',prob);
-[Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
+blk = {SDP.blk{1}, SDP.blk{2}; SDP.blk{1}, [1+3*(L-1)]};
+[Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,blk);
 % rmpath(genpath(mosekpath))
 soln.solvetime = toc;
 
@@ -328,7 +319,7 @@ dRs = projectRList(drs);
 % s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
 s_est = reshape(x_est((18*L-9+1):(18*L-9+3*L)),[3,1,L]);
 % v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
-v_est = reshape(x_est((18*L-9+3*L+1):(21*L-9+3*L-3)),[3,1,L-1]);
+v_est = reshape(Xopt{2}((2):(3*L-3+1)),[3,1,L-1]);
 % c_est = full(dmsubs(c,x,x_est));
 c_est = Cr*reshape(Rs,9*L,1,1) - Cs*reshape(s_est,3*L,1,1) + gbar;
 % c = Cr*r - Cs*s + gbar;
@@ -358,9 +349,10 @@ for l = 1:L-1
     x_proj = [x_proj; dr];
 end
 x_proj = [x_proj; reshape(s_est,[3*L,1,1])];
+v_est_corrected = zeros(3*(L-1),1);
 for l = 1:L-1
     v = (1/dt)*(Rs(:,:,l)'*Rs(:,:,l+1) * s_est(:,:,l+1) - s_est(:,:,l));
-    x_proj = [x_proj; v];
+    v_est_corrected(ib3(l)) = v;
 end
 
 % compute gap
@@ -368,13 +360,13 @@ end
 obj_est = x_proj'*(Q'*Q)*x_proj;
 gap = (obj_est - obj(1)) / obj_est;
 
-slices_r = 1:9*L;
-slices_d = (9*L+1):(9*L+9*(L-1));
-slices_s = (18*L-9+1):(18*L-9+3*L);
-slices_v = (21*L-9+1):(21*L-9+3*(L-1));
-
-g = @(slices) computeGap(Q, Xopt{1}, x_proj, slices, true);
-gap_nov = g(1:(18*L-9+3*L));
+% slices_r = 1:9*L;
+% slices_d = (9*L+1):(9*L+9*(L-1));
+% slices_s = (18*L-9+1):(18*L-9+3*L);
+% slices_v = (21*L-9+1):(21*L-9+3*(L-1));
+% 
+% g = @(slices) computeGap(Q, Xopt{1}, x_proj, slices, true);
+% gap_nov = g(1:(18*L-9+3*L));
 
 % compute residuals
 residuals = zeros(N, L);
@@ -400,7 +392,7 @@ soln.x_est = x_est;
 soln.c_est = c_est;
 soln.p_est = p_est;
 soln.v_est = v_est;
-soln.v_est_corrected = reshape(x_proj(1+slices_v),[3,1,L-1]);
+soln.v_est_corrected = reshape(v_est_corrected,[3,1,L-1]);
 soln.s_est = s_est;
 
 soln.R_est = Rs;
@@ -410,7 +402,7 @@ soln.gap = gap;
 soln.x_proj = x_proj;
 soln.obj_est = obj_est;
 
-soln.gap_nov = gap_nov;
+% soln.gap_nov = gap_nov;
 
 soln.residuals = residuals;
 
@@ -437,4 +429,57 @@ function g = computeGap(Q, Xopt, x_proj, slices, includeOne)
     Xopt = Xopt(slices,slices);
     obj_mosek = trace(Q'*Q*Xopt);
     g = (obj_est - obj_mosek) / obj_est;
+end
+
+%% Add v constraints
+function prob = add_v(prob,Av,L,dt)
+    % adds 3*(L-1) x 3*(L-1) SDP of velocity variables
+    % and associated constraints
+
+    % create a new PSD variable for velocity
+    prob.bardim = [prob.bardim, 1+3*(L-1)];
+
+    % objective
+    [r2,c2,v2] = find(tril(Av'*Av));
+    prob.barc.subj = [prob.barc.subj,...
+                      repmat(2,1,length(v2))];
+    prob.barc.subk = [prob.barc.subk, r2'+1];
+    prob.barc.subl = [prob.barc.subl, c2'+1];
+    prob.barc.val = [prob.barc.val, v2'];
+
+    % constrain 1 = 1
+    prob.blc = [prob.blc; 1];
+    prob.buc = [prob.buc; 1];
+    prob.bara.subi = [prob.bara.subi, prob.bara.subi(end)+1];
+    prob.bara.subj = [prob.bara.subj, 2];
+    prob.bara.subk = [prob.bara.subk, 1];
+    prob.bara.subl = [prob.bara.subl, 1];
+    prob.bara.val = [prob.bara.val, 1];
+
+    % add constraints between SDP vars
+    slices_d = 1+((9*L+1):(9*L+9*(L-1)));
+    slices_s = 1+((18*L-9+1):(18*L-9+3*L));
+    slices_v = 1+(1:3*(L-1));
+    for l = 1:L-1
+        % A1: dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) 
+        r1 = [repmat(slices_s(ib3(l+1)),[1,3]),slices_s(ib3(l))];
+        c1 = [slices_d([1,4,7]+9*(l-1)),slices_d([2,5,8]+9*(l-1)),slices_d([3,6,9]+9*(l-1)),ones(1,3)]; % TODO: fix d
+        v1 = [1*ones(1,9),-1*ones(1,3)];
+        % A2: -v(ib3(l-1))*dt
+        r2 = [slices_v(ib3(l))];
+        c2 = [1*ones(1,3)];
+        v2 = [-dt*ones(1,3)];
+        
+        prob.blc = [prob.blc; zeros(3,1)];
+        prob.buc = [prob.buc; zeros(3,1)];
+        prob.bara.subi = [prob.bara.subi, ...
+                            repelem(prob.bara.subi(end) + (1:3),3), ...
+                            repmat(prob.bara.subi(end) + (1:3),[1,2])];
+        prob.bara.subj = [prob.bara.subj, 1*ones(1,12), 2*ones(1,3)];
+        prob.bara.subk = [prob.bara.subk, r1, r2];
+        prob.bara.subl = [prob.bara.subl, c1, c2];
+        prob.bara.val  = [prob.bara.val , v1, v2];
+    end
+
+    prob.a = sparse([], [], [], length(prob.blc), 0); 
 end
