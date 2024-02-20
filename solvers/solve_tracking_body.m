@@ -265,8 +265,9 @@ g_v_allinone = vBoundSq*L - v'*v;
 % g = [g_c];
 % g = [g_c;g_v];
 % g = [g_s_first; g_v; g_c]; % only use if regenerating each time.
-g = [g_s_first; g_v_allinone];
+% g = [g_s_first; g_v_allinone];
 % g = [g_s; g_v];
+g = [];
 
 % save("data/constraints.mat","g","h");
 % else
@@ -303,7 +304,8 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
 % addpath(genpath(mosekpath))
-[~,res] = mosekopt('minimize info echo(0)',prob);
+prob = add_v_stuff(prob,L);
+[~,res] = mosekopt('minimize info echo(10)',prob);
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
 % rmpath(genpath(mosekpath))
 soln.solvetime = toc;
@@ -436,4 +438,46 @@ function g = computeGap(Q, Xopt, x_proj, slices, includeOne)
     Xopt = Xopt(slices,slices);
     obj_mosek = trace(Q'*Q*Xopt);
     g = (obj_est - obj_mosek) / obj_est;
+end
+
+%% Add v constraints
+function prob = add_v_stuff(prob,L)
+    % add the constraint:
+    % sqrt(vl_i^2) <= vl_i for l = 1,...,L-1, i = 1,..,3
+    % this is a second order cone constraint
+    [~, res] = mosekopt('symbcon');
+    symbcon = res.symbcon;
+
+    % number of new constraints
+    num_v_constraints = 2;%3*(L-1);
+
+    % some weird setup
+    prob.a = sparse([], [], [], length(prob.blc), 1);
+    prob.blx = [-inf];
+    prob.bux = [inf];
+    prob.f = sparse(1*num_v_constraints,1);
+
+    % inequality should be in a second order quadratic cone
+    prob.accs = repmat([symbcon.MSK_DOMAIN_QUADRATIC_CONE 1],[1,num_v_constraints]);
+    
+    
+    % for l = 1:L-1
+    %     prob.barf.subi(ib3(l)) = [1, 1, 1];
+    %     prob.barf.subj(ib3(l)) = [1, 1, 1];
+    %     prob.barf.subk(ib3(l)) = [1, 1, 1];
+    %     prob.barf.subl(ib3(l)) = [1, 1, 1];
+    %     prob.barf.val(ib3(l))  = [1, 1, 1];
+    % end
+    prob.barf.subi = [1,1,1,1];%, 2, 2];%, 3, 3]; % 1st acc
+    prob.barf.subj = [1,1,1,1];%, 1, 1];%, 1, 1]; % 1st semidefinite variable
+    prob.barf.subk = [21*L-9+2, 21*L-9+2,21*L-9+3,21*L-9+3];%, 21*L-9+3, 21*L-9+3];%, 21*L-9+4, 21*L-9+4]; % 1st is vl_i (k >= l)
+    prob.barf.subl = [21*L-9+2,1,21*L-9+3,1];%, 1,21*L-9+3];%, 1,21*L-9+4];
+    prob.barf.val  = [-2,1,-2,1];%, 1,-2];%, 1,-2];
+
+
+    
+    % % repeat for each v
+    % for l = 1:L-1
+    % 
+    % end
 end

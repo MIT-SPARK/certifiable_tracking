@@ -12,11 +12,11 @@ rng("default")
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 11; % nr of keyframes in horizon
+problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBound = chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
+problem.noiseSigmaSqrt = 0.0; % [m]
+problem.noiseBound = 0.01; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
 problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
@@ -31,11 +31,11 @@ problem.accelerationNoiseBoundSqrt = 0;%0.5;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = false; % when in doubt, set to true
+problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
-problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
+% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 % problem.R_gt = repmat(eye(3,3),[1,1,problem.L]);
 % problem.dR_gt = repmat(axang2rotm([0,0,1,1]),[1,1,problem.L-1]);
 % problem.v_gt = repmat([0;1;1],[1,1,problem.L-1]);
@@ -75,7 +75,7 @@ elseif strcmp(problem.velprior, "world")
 elseif strcmp(problem.velprior, "grav-world")
     error("Selected prior is not implemented")
 else
-    error("Selected prior is not implemented")
+    % error("Selected prior is not implemented")
 end
 hold off
 
@@ -110,6 +110,8 @@ plot_trajectory(problem,soln)
 
 compare(problem, soln, pace, paceukf, paceekf);
 
+soln.raw.Xopt{1}(56,56)
+
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;
 % compare position
@@ -129,6 +131,6 @@ for l = 1:L
 end
 
 fprintf("           PACE    +UKF    OURS    LEKF \n")
-fprintf("Position: %.4f, %.4f, %.4f, %.4f\n",epace.p,eukf.p,eours.p, eekf.p);
-fprintf("Rotation: %.4f, %.4f, %.4f\n",mean(epace.R),mean(eukf.R),mean(eours.R));
+fprintf("Position: %.4e, %.4e, %.4e, %.4e\n",epace.p,eukf.p,eours.p, eekf.p);
+fprintf("Rotation: %.4e, %.4e, %.4e\n",mean(epace.R),mean(eukf.R),mean(eours.R));
 end
