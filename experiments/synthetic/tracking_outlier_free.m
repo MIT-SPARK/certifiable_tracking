@@ -15,7 +15,7 @@ problem.K = 3; % nr of shapes
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseSigmaSqrt = 0.1; % [m]
 problem.noiseBound = 0.01; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
 problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 

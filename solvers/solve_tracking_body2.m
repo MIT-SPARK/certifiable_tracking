@@ -292,7 +292,7 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.K);
 % addpath(genpath(mosekpath))
 
-prob = add_v(prob,Av,L,dt);
+prob = add_v(prob,Av,L,dt,vBound);
 
 [~,res] = mosekopt('minimize info echo(10)',prob);
 blk = {SDP.blk{1}, SDP.blk{2}; SDP.blk{1}, [1+3*(L-1)]};
@@ -432,12 +432,12 @@ function g = computeGap(Q, Xopt, x_proj, slices, includeOne)
 end
 
 %% Add v constraints
-function prob = add_v(prob,Av,L,dt)
+function prob = add_v(prob,Av,L,dt, vBound)
     % adds 3*(L-1) x 3*(L-1) SDP of velocity variables
     % and associated constraints
 
     % create a new PSD variable for velocity
-    prob.bardim = [prob.bardim, 1+3*(L-1)];
+    prob.bardim = [prob.bardim; 1+3*(L-1)];
 
     % objective
     [r2,c2,v2] = find(tril(Av'*Av));
@@ -480,6 +480,16 @@ function prob = add_v(prob,Av,L,dt)
         prob.bara.subl = [prob.bara.subl, c1, c2];
         prob.bara.val  = [prob.bara.val , v1, v2];
     end
+
+    % add that v.^2 < vbound^2
+    vBoundSq = vBound^2;
+    prob.blc = [prob.blc; zeros(3,1)];
+    prob.buc = [prob.buc; vBoundSq*ones(3,1)];
+    prob.bara.subi = [prob.bara.subi, prob.bara.subi(end)+(1:3)];
+    prob.bara.subj = [prob.bara.subj, 2,2,2];
+    prob.bara.subk = [prob.bara.subk, 2,3,4];
+    prob.bara.subl = [prob.bara.subl, 2,3,4];
+    prob.bara.val = [prob.bara.val, 1,1,1];
 
     prob.a = sparse([], [], [], length(prob.blc), 0); 
 end
