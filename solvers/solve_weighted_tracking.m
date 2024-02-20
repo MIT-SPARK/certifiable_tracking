@@ -46,7 +46,7 @@ end
 
 % redirect to appropriate solver
 if strcmp(problem.velprior, "body")
-    soln = solve_tracking_body(problem);
+    soln = solve_tracking_body2(problem);
 elseif strcmp(problem.velprior,"body-sym")
     soln = solve_tracking_body_sym(problem);
 elseif strcmp(problem.velprior, "world")

@@ -483,9 +483,9 @@ function prob = add_v(prob,Av,L,dt, vBound)
 
     % add that v.^2 < vbound^2
     vBoundSq = vBound^2;
-    prob.blc = [prob.blc; zeros(3,1)];
-    prob.buc = [prob.buc; vBoundSq*ones(3,1)];
-    prob.bara.subi = [prob.bara.subi, prob.bara.subi(end)+(1:3)];
+    prob.blc = [prob.blc; 0];
+    prob.buc = [prob.buc; vBoundSq];
+    prob.bara.subi = [prob.bara.subi, prob.bara.subi(end)+ones(1,3)];
     prob.bara.subj = [prob.bara.subj, 2,2,2];
     prob.bara.subk = [prob.bara.subk, 2,3,4];
     prob.bara.subl = [prob.bara.subl, 2,3,4];
