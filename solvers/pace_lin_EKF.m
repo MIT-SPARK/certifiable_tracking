@@ -11,8 +11,6 @@ function soln = pace_lin_EKF(problem, pace)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
-% TODO: SPIRAL VERSION!!
-
 %% Define covariances and noise
 % state covariance
 if (isfield(problem,"covar_velocity_base"))

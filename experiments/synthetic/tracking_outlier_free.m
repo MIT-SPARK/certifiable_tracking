@@ -1,4 +1,4 @@
-%% Dense SDP relaxation for certifiable tracking
+%% Certifiable Tracking, Outlier-Free Case
 %  Generic, tunable script to run one iteration of dense tracking.
 %    Operates on random data with no outlier support.
 %    Run setup.m once to set up paths.
@@ -6,8 +6,7 @@
 % Lorenzo Shaikewitz for SPARK Lab
 
 clc; clear; close all
-% restoredefaultpath
-rng("default")
+% rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
@@ -21,11 +20,9 @@ problem.processNoise = 0.05;
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
-problem.dt = 0.5;
+problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
-% problem.velprior = "world";      % constant world frame velocity
-% problem.velprior = "grav-world"; % add gravity in z direction
 
 problem.accelerationNoiseBoundSqrt = 0;%0.5;
 problem.rotationNoiseBound = 0;%pi/32; % rad
@@ -35,15 +32,13 @@ problem.regen_sdp = true; % when in doubt, set to true
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
-% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
+% problem.dR_gt = repmat(axang2rotm([0,0,1,pi/2]),[1,1,problem.L-1]);
 % problem.R_gt = repmat(eye(3,3),[1,1,problem.L]);
 % problem.dR_gt = repmat(axang2rotm([0,0,1,1]),[1,1,problem.L-1]);
-% problem.v_gt = repmat([0;1;1],[1,1,problem.L-1]);
+% problem.v_gt = repmat([1;0;1],[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-% problem.covar_measure = ones(problem.N_VAR, problem.L);
-% problem.covar_measure(1:10,3) = Inf;
 lambda = 0;
 problem.lambda = lambda;
 
@@ -52,35 +47,13 @@ soln = solve_weighted_tracking(problem);
 
 pace = pace_raw(problem);
 paceukf = pace_py_UKF(problem,pace);
-paceekf = pace_lin_EKF(problem,pace);
+paceekf = pace_ekf(problem,pace);
 
 %% Check solutions
 % eigenvalue plot
 L = problem.L;
 figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
-hold on
-
-if strcmp(problem.velprior, "body")
-    % slices = 1:(1+9*(2*L-1)+3*L);
-    % Xopt_vRemoved = soln.raw.Xopt{1}(slices, slices);
-    % bar([zeros(3*(L-1),1);eig(Xopt_vRemoved)]);
-
-    % v_idx = length(soln.raw.Xopt{1})-3*L+4:length(soln.raw.Xopt{1});
-    % Xopt_vOnly = soln.raw.Xopt{1}(end-3*L+4:end, end-3*L+4:end);
-    % bar([eig(Xopt_vOnly)]);
-
-    title("Eigenvalues of Relaxed Solution")
-elseif strcmp(problem.velprior, "world")
-    error("Selected prior is not implemented")
-elseif strcmp(problem.velprior, "grav-world")
-    error("Selected prior is not implemented")
-else
-    % error("Selected prior is not implemented")
-end
-hold off
-
-% raw error
-% x_err = norm(problem.x_gt - soln.x_est);
+title("Eigenvalues of Relaxed Solution")
 
 % projected errors
 R_err = zeros(L,1);
@@ -113,10 +86,12 @@ compare(problem, soln, pace, paceukf, paceekf);
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;
 % compare position
-epace.p = norm(gt.p_gt - pace.p,'fro') / L;
-eukf.p = norm(gt.p_gt - paceukf.p,'fro') / L;
-eekf.p = norm(gt.p_gt - paceekf.p,'fro') / L;
-eours.p = norm(gt.p_gt - ours.p_est,'fro') / L;
+epace.p = norm(gt.p_gt(:,:,end) - pace.p(:,:,end));
+eukf.p = norm(gt.p_gt(:,:,end) - paceukf.p(:,:,end));
+eekf.p = norm(gt.p_gt(:,:,end) - paceekf.p(:,:,end));
+eours.p = norm(gt.p_gt(:,:,end) - ours.p_est(:,:,end));
+
+pagenorm(gt.p_gt - pace.p)
 
 % compare rotation
 epace.R = zeros(L,1);
@@ -128,7 +103,7 @@ for l = 1:L
     eours.R(l) = getAngularError(gt.R_gt(:,:,l), ours.R_est(:,:,l));
 end
 
-fprintf("           PACE    +UKF    OURS    LEKF \n")
-fprintf("Position: %.4e, %.4e, %.4e, %.4e\n",epace.p,eukf.p,eours.p, eekf.p);
-fprintf("Rotation: %.4e, %.4e, %.4e\n",mean(epace.R),mean(eukf.R),mean(eours.R));
+fprintf("            PACE      +UKF      OURS      LEKF \n")
+fprintf("Position: %.2e, %.2e, %.2e, %.2e\n",epace.p,eukf.p,eours.p, eekf.p);
+fprintf("Rotation: %.2e, %.2e, %.2e\n",epace.R(end),eukf.R(end),eours.R(end));
 end

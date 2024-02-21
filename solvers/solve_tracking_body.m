@@ -256,7 +256,7 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.K);
 prob = add_v(prob,Av,L,dt,vBound);
 tic
-[~,res] = mosekopt('minimize info echo(10)',prob);
+[~,res] = mosekopt('minimize info echo(0)',prob);
 soln.solvetime = toc;
 blk = {SDP.blk{1}, SDP.blk{2}; SDP.blk{1}, [1+3*(L-1)]};
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,blk);

@@ -30,7 +30,7 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
     for l in range(L):
         g = nx.Graph()
         yl = y[:,l].reshape([N,3]).T
-        if (len(prioroutliers) == 0):
+        if (len(prioroutliers) < l + 1):
             outliers = []
         else:
             outliers = prioroutliers[l]
@@ -136,13 +136,14 @@ def draw(g):
 
 import pickle
 
-def save(y, cad_dist_min, cad_dist_max, noise_bound, method="maxclique"):
+def save(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
     db = {}
     db['y'] = y
     db['cad_dist_min'] = cad_dist_min
     db['cad_dist_max'] = cad_dist_max
     db['noise_bound'] = noise_bound
-    db['method'] = method
+    db['noise_bound_time'] = noise_bound_time
+    db['prioroutliers'] = prioroutliers
     
     dbfile = open('examplePickle', 'ab')
     # source, destination
@@ -154,5 +155,5 @@ if __name__ == '__main__':
     db = pickle.load(dbfile)
     dbfile.close()
     
-    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound'])
+    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'])
     print(np.sort(inliers))

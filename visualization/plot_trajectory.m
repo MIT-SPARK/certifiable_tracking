@@ -26,7 +26,7 @@ interval_pts = 50.0;
 t = linspace(0,dt*L,interval_pts*(L-1)+1);
 
 %% Extract ground truth trajectory
-traj_gt = zeros(3,(L-1)*interval_pts);
+traj_gt = zeros(3,1,(L-1)*interval_pts);
 
 for l = 1:L-1
     ran = (interval_pts*(l-1) + 1):(interval_pts*l);
@@ -41,9 +41,9 @@ for l = 1:L-1
         pts = get_spiral_pts(R, dR, v, p, dt/interval_pts, 1+interval_pts);
 %         pts = sim_dynamics(R, dR, v, p, dt, interval_pts, true);
     
-        traj_gt(:, ran) = pts(:,1:end-1);%pts(:,:,1:end-1);
+        traj_gt(:,:, ran) = pts(:,1:end-1);%pts(:,:,1:end-1);
         if (l == (L-1))
-            traj_gt(:,end+1) = pts(:,end);
+            traj_gt(:,:,end+1) = pts(:,end);
         end
     elseif strcmp(problem.velprior, "world")
         if l == (L-1)
@@ -106,7 +106,7 @@ end
 figure
 plot3(traj_gt(1,:),traj_gt(2,:),traj_gt(3,:),'DisplayName','Ground Truth')
 hold on
-plot3(traj_est(1,:),traj_est(2,:),traj_est(3,:), 'DisplayName','Estimate')
+% plot3(traj_est(1,:),traj_est(2,:),traj_est(3,:), 'DisplayName','Estimate')
 
 if (plot_pace)
     t_pace = linspace(0,dt*(L-1), L);
