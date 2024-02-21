@@ -1,4 +1,4 @@
-function soln = solve_tracking_body2(problem)
+function soln = solve_tracking_body_dense(problem)
 % Solves const. vel. (body frame) optimization exactly via SDP
 %   Assume the *body frame* velocity is constant and object is spinning.
 %   Result: spiral trajectory.
@@ -190,7 +190,7 @@ eye9LR = [eye(9*(L-2)), zeros(9*(L-2),9)];
 Ad = diag(dwd)*(eye9LL - eye9LR);
 
 % ALL TOGETHER (VERIFIED)
-Q = zeros(size(Ag,1) + size(Ad,1),d+1);
+Q = zeros(size(Ag,1) + size(Ad,1) + size(Av,1),d+1);
 % measurements
 Q(1:size(Ag,1),1:(1+9*L+9*(L-1)+3*L)) = ...
     [Ag, Ar, zeros(size(Ag,1),9*(L-1)), As];
@@ -231,13 +231,13 @@ end
 for l = 2:L
     % dR version
     h = [h; dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) - v(ib3(l-1))*dt];
-    % h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
+    h = [h; s(ib3(l)) - dR(ib3(l-1),:)'*s(ib3(l-1)) - dR(ib3(l-1),:)'*v(ib3(l-1))*dt];
     % h = [h; R(ib3(l),:)*s(ib3(l)) - R(ib3(l-1),:)*s(ib3(l-1)) - R(ib3(l-1),:)*v(ib3(l-1))*dt];
 end
 
 % constraint on v(t1) as a function of v(t2)
 % TODO: this may help solve time?
-% h = [h; dR(ib3(1),:)'*v(ib3(1))*dt - dR(ib3(2),:)*s(ib3(3)) + dR(ib3(1),:)'*s(ib3(1)) + v(ib3(2))*dt];
+h = [h; dR(ib3(1),:)'*v(ib3(1))*dt - dR(ib3(2),:)*s(ib3(3)) + dR(ib3(1),:)'*s(ib3(1)) + v(ib3(2))*dt];
 
 % INEQUALITY
 % p,s in range for just first time (p'*p<=pBoundSq)
@@ -251,8 +251,8 @@ g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
 % end
 
 % v bound (v'*v<=vBoundSq)
-% vBoundSq = vBound^2;
-% g_v_allinone = vBoundSq*L - v'*v;
+vBoundSq = vBound^2;
+g_v_allinone = vBoundSq*L - v'*v;
 % g_v = [];
 % for l = 1:L-1
 %     g_v = [g_v; vBoundSq - v(ib3(l))'*v(ib3(l))];
@@ -265,9 +265,9 @@ g_s_first = pBoundSq*L - s(ib3(1))'*s(ib3(1));
 % g = [g_c];
 % g = [g_c;g_v];
 % g = [g_s_first; g_v; g_c]; % only use if regenerating each time.
-% g = [g_s_first; g_v_allinone];
+g = [g_s_first; g_v_allinone];
 % g = [g_s; g_v];
-g = [];
+% g = [];
 
 % save("data/constraints.mat","g","h");
 % else
@@ -304,9 +304,6 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
 % addpath(genpath(mosekpath))
-
-prob = add_v_constraints(prob,L);
-
 [~,res] = mosekopt('minimize info echo(10)',prob);
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,SDP.blk);
 % rmpath(genpath(mosekpath))
@@ -440,74 +437,4 @@ function g = computeGap(Q, Xopt, x_proj, slices, includeOne)
     Xopt = Xopt(slices,slices);
     obj_mosek = trace(Q'*Q*Xopt);
     g = (obj_est - obj_mosek) / obj_est;
-end
-
-%% Add v constraints
-function prob = add_v(prob,Av,L)
-    % adds L-1 velocity terms as quadratic variables
-    % and adds position constraints
-
-    % step 1: add velocity variables
-    % form: v'*Q*v + c*v
-    prob.c = zeros(1,3*(L-1));
-    prob.a = sparse([], [], [], length(prob.blc), 3*(L-1));
-    [prob.qosubi, prob.qosubj, prob.qoval] = find(tril(Av'*Av));
-
-    % step 2: add constraints with SDP vars
-
-end
-
-function prob = add_v_constraints(prob,L)
-    % add the constraint:
-    % vl_i^2 <= (vl_i^2) for l = 1,...,L-1, i = 1,..,3
-    % this is a second order cone constraint (RQUADRATIC)
-    % use auxillary variables to do this
-    [~, res] = mosekopt('symbcon');
-    symbcon = res.symbcon;
-
-    % create three variables
-    prob.a = sparse(...
-            [length(prob.blc)+1, length(prob.blc)+2], ...
-            [1,2], ...
-            [1.0,1.0],...
-            length(prob.blc)+2, 3);
-    
-
-    % set bounds of our new variables
-    % x3 is aux variable (x3 = 1/2)
-    prob.blx = [-Inf, 0, 0.5]; % x2 >= 0
-    prob.bux = [Inf, Inf, 0.5];
-    
-    % add two equality constraints = 0
-    % -vl_i + x1 and -(vl_i^2) + x2
-    prob.bara.subi = [prob.bara.subi, prob.bara.subi(end) + 1, prob.bara.subi(end) + 2];
-    prob.bara.subj = [prob.bara.subj, 1, 1];
-    prob.bara.subk = [prob.bara.subk, 21*L-9+2, 21*L-9+2];
-    prob.bara.subl = [prob.bara.subl, 1, 21*L-9+2];
-    prob.bara.val  = [prob.bara.val, -1.0, -0.5];
-    % = 0
-    [i,j,s] = find(prob.blc);
-    sz = size(prob.blc)+[2,0];
-    prob.blc = sparse(i,j,s,sz(1),sz(2));
-    [i,j,s] = find(prob.buc);
-    prob.buc = sparse(i,j,s,sz(1),sz(2));
-    
-    % add rotated quadratic cone constraint between the scalar variables
-    % 2*x2*1 >= x1^2
-    % prob.f = sparse(2,2);
-
-    % equality constraints between scalar vars and vl_i, (vl_i^2)
-
-
-    % RPLUS is the only domain this seems to support
-    % prob.accs = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE 2];
-
-    % prob.bara
-    
-    
-    % prob.barf.subi = [1]; % 1st acc
-    % prob.barf.subj = [1]; % 1st semidefinite variable
-    % prob.barf.subk = [21*L-9+2]; % 1st is vl_i (k >= l)
-    % prob.barf.subl = [1];
-    % prob.barf.val  = [-0.5];
 end

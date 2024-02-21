@@ -64,15 +64,6 @@ end
 %% Pull out relevant results
 f_val = soln.raw.obj(1);
 info.soln = soln;
-
-% ef = eig(soln.raw.Xopt{1});
-% if (ef(end-4) > 1e-6)
-%     disp("Not convergent")
-% end
-% bar(eig(soln.raw.Xopt{1}));
-
-% info must have:
-% - residuals
 info.residuals = reshape(soln.residuals, problem.N_VAR*problem.L,1);
 
 % for ROBIN: remove ROBIN outliers from residuals

@@ -36,7 +36,6 @@ else
     base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
     problem.kappa_rotrate  = ones(L-2,1)*(2/base);
 end
-% problem.covar_velocity(1) = Inf;
 
 %% Run solver!
 % default to body frame
@@ -46,7 +45,7 @@ end
 
 % redirect to appropriate solver
 if strcmp(problem.velprior, "body")
-    soln = solve_tracking_body2(problem);
+    soln = solve_tracking_body(problem);
 elseif strcmp(problem.velprior,"body-sym")
     soln = solve_tracking_body_sym(problem);
 elseif strcmp(problem.velprior, "world")

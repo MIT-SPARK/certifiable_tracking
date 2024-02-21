@@ -1,6 +1,7 @@
 function [R_est,t_est,c_est,out] = outlier_free_category_registration(problem,varargin)
 %% Solve outlier-free category registration problem as weighted least squares
-%% Using a small SDP relaxation of fixed size
+% Using a small SDP relaxation of fixed size
+% (PACE baseline)
 params = inputParser;
 params.CaseSensitive = false;
 params.addParameter('lambda',0.1, @(x) isscalar(x));
