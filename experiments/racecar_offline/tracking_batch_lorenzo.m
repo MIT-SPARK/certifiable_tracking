@@ -9,17 +9,17 @@ clc; clear; close all
 
 %% Define settings for batch processing
 problem.json = "../datasets/racecar_offline/racecar_fullsize_metrics.json";
-problem.L = 5; % batch size
+problem.L = 10; % batch size
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_metrics_ours.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
-problem.velocityBound = 1.0; % [m/s]
-problem.noiseBound_GNC = 0.01;
+problem.velocityBound = 2.0; % [m/s]
+problem.noiseBound_GNC = 0.025;
 problem.noiseBound_GRAPH = 0.05;
 problem.noiseBound = 0.01;
-problem.covar_velocity_base = 20^2;
-problem.kappa_rotrate_base = 0.0001^2;
+problem.covar_velocity_base = 1^2;
+% problem.kappa_rotrate_base = 0.1^2;
 
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity

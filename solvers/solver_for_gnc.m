@@ -27,16 +27,22 @@ problem.covar_measure = reshape(w.^(-1),[problem.N_VAR, problem.L]);
 
 %% Set weights
 L = problem.L;
-noiseBoundSq = problem.noiseBound^2;
-problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
+% multiplying by a constant amount (noiseBound) does nothing to
+% optimization problem.
+% noiseBoundSq = problem.noiseBound^2;
+% problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
 if (isfield(problem,"covar_velocity_base"))
     problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
+elseif (isfield(problem,"velocity_weight_multiplier"))
+    problem.covar_velocity = ones(L-2,1)*(1/problem.velocity_weight_multiplier);
 else
     base = mean(problem.covar_measure(~isinf(problem.covar_measure)));
     problem.covar_velocity = ones(L-2,1)*base;
 end
 if (isfield(problem,"kappa_rotrate_base"))
     problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+elseif (isfield(problem,"rotrate_kappa_multiplier"))
+    problem.kappa_rotrate = 2*ones(L-2,1)*problem.rotrate_kappa_multiplier;
 else
     base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
     problem.kappa_rotrate  = ones(L-2,1)*(2/base);

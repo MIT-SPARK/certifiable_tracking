@@ -12,7 +12,27 @@ function soln = pace_ekf(problem, pace)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Define covariances and noise
+% state covariance
+if (isfield(problem,"covar_velocity_base"))
+    covar_velocity = ones(1,3)*problem.covar_velocity_base;
+else
+    covar_velocity = ones(1,3)*(problem.noiseBound/3)^2;
+end
+covarState = covar_velocity(1);
 
+% process noise (noise added to const. vel. model)
+if (isfield(problem,"processNoise"))
+    pn = problem.processNoise;
+else
+    pn = 0.01;
+end
+processNoise = repmat([0,pn^2],1,2);
+processNoise = [processNoise, pn^2, 0, pn^2];
+processNoise = diag(processNoise);
+
+% Measurement noise
+measureNoise = repmat((problem.noiseBound/3)^2, 1,3);
+measureNoise = diag(measureNoise);
 
 %% Convert PACE data into EKF form
 L = problem.L;
@@ -39,18 +59,6 @@ state0(5) = gtaxang(4)*180/pi;
 state0(6) = p_aligned(3,1);
 state0(7) = 0;
 
-% temp = rotm2axang(R(:,:,2));
-% temp = axang2rotm([0,0,1,temp(4)]);
-% vhat = temp(1:2,1); % wrong
-% omega = rotm2axang(R(:,:,2)'*R(:,:,1)); % wrong
-% omega = omega(4) / dt;
-% r = norm(p_aligned(1:2,1) - p_aligned(1:2,2));
-% r = sqrt(r^2/(2*(1-cos(omega*dt))));
-% v0 = r*omega*vhat;
-% state0(2) = v0(1);
-% state0(4) = v0(2);
-
-
 state0(2) = 0;
 state0(4) = 0;
 
@@ -58,7 +66,10 @@ state0(4) = 0;
 % Create EKF
 EKF = trackingEKF(@constturn,@ctmeas,state0, ...
     'StateTransitionJacobianFcn',@constturnjac, ...
-    'MeasurementJacobianFcn',@ctmeasjac);
+    'MeasurementJacobianFcn',@ctmeasjac,...
+    'MeasurementNoise', measureNoise,...
+    'StateCovariance', covarState,...
+    'ProcessNoise', processNoise);
 
 % Smooth measurements with EKF
 p_smoothed = zeros(3,1,L);

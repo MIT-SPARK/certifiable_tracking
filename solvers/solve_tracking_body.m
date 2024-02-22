@@ -304,7 +304,7 @@ end
 
 % compute gap
 % obj_est = dmsubs(prob_obj,x,x_proj); % slow
-obj_est = x_proj'*(Q'*Q)*x_proj;
+obj_est = x_proj'*(Q'*Q)*x_proj + v_est_corrected'*(Av'*Av)*v_est_corrected;
 gap = (obj_est - obj(1)) / obj_est;
 
 % compute residuals

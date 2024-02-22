@@ -5,7 +5,7 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-clc; clear; close all
+% clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
@@ -15,8 +15,12 @@ problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.1; % [m]
-problem.noiseBound = 0.01; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
-problem.processNoise = 0.05;
+problem.velocity_weight_multiplier = 1;
+problem.rotrate_kappa_multiplier = 1;
+
+problem.noiseBound = 0.5; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
+problem.processNoise = 0.1;
+
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
