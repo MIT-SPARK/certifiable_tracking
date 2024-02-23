@@ -265,9 +265,9 @@ g_v_allinone = vBoundSq*L - v'*v;
 % g = [g_c];
 % g = [g_c;g_v];
 % g = [g_s_first; g_v; g_c]; % only use if regenerating each time.
-g = [g_s_first; g_v_allinone];
+% g = [g_s_first; g_v_allinone];
 % g = [g_s; g_v];
-% g = [];
+g = [];
 
 % save("data/constraints.mat","g","h");
 % else

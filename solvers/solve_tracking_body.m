@@ -29,7 +29,7 @@ lambda = problem.lambda; % scalar
 wv = problem.covar_velocity.^(-1); % L-2 vector
 wd = problem.kappa_rotrate;  % L-1 vector
 
-pBound = problem.translationBound;
+% pBound = problem.translationBound;
 vBound = problem.velocityBound;
 
 % check lambda

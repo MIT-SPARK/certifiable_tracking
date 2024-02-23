@@ -7,14 +7,14 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
-problem.category = "aeroplane";
+problem.category = "car";
 problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.01; % [m]
+problem.noiseSigmaSqrt = 0.3; % [m]
 problem.noiseBound = 0.1;
 % problem.processNoise = 0.01;
 problem.translationBound = 10.0;
@@ -46,7 +46,7 @@ problem.lambda = lambda;
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
 paceukf = pace_py_UKF(problem,pace);
-paceekf = pace_lin_EKF(problem,pace);
+paceekf = pace_ekf(problem,pace);
 
 %% Check solutions
 % eigenvalue plot
