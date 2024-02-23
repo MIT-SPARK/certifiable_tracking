@@ -95,8 +95,6 @@ eukf.p = norm(gt.p_gt(:,:,end) - paceukf.p(:,:,end));
 eekf.p = norm(gt.p_gt(:,:,end) - paceekf.p(:,:,end));
 eours.p = norm(gt.p_gt(:,:,end) - ours.p_est(:,:,end));
 
-pagenorm(gt.p_gt - pace.p)
-
 % compare rotation
 epace.R = zeros(L,1);
 eukf.R = zeros(L,1);
