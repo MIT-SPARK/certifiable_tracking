@@ -1,4 +1,4 @@
-function soln = solve_tracking_body(problem)
+function soln = solve_tracking_body_vSDP(problem)
 % Solves const. vel. (body frame) optimization exactly via SDP
 %   Assume the *body frame* velocity is constant and object is spinning.
 %   Result: spiral trajectory.
@@ -254,13 +254,11 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
                             SDP.sedumi.b,...
                             SDP.sedumi.c,...
                             SDP.sedumi.K);
-% prob = add_v(prob,Av,L,dt,vBound);
-prob = add_quad_v_constraints(prob,Av,L,dt,vBound);
+prob = add_v(prob,Av,L,dt,vBound);
 tic
-[~,res] = mosekopt('minimize echo(0)',prob);
+[~,res] = mosekopt('minimize info echo(0)',prob);
 soln.solvetime = toc;
-% blk = {SDP.blk{1}, SDP.blk{2}; SDP.blk{1}, [1+3*(L-1)]};
-blk = SDP.blk;
+blk = {SDP.blk{1}, SDP.blk{2}; SDP.blk{1}, [1+3*(L-1)]};
 [Xopt,yopt,Sopt,obj] = recover_mosek_sol_blk(res,blk);
 
 %% Compare to ground truth
@@ -280,7 +278,7 @@ dRs = projectRList(drs);
 % s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
 s_est = reshape(x_est((18*L-9+1):(18*L-9+3*L)),[3,1,L]);
 % v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
-v_est = reshape(res.sol.itr.xx(2:end),[3,1,L-1]); % not using eigenvalue: expect rank 3 solution
+v_est = reshape(Xopt{2}((2):(3*L-3+1)),[3,1,L-1]); % not using eigenvalue: expect rank 3 solution
 % c_est = full(dmsubs(c,x,x_est));
 c_est = Cr*reshape(Rs,9*L,1,1) - Cs*reshape(s_est,3*L,1,1) + gbar;
 % c = Cr*r - Cs*s + gbar;
@@ -417,67 +415,4 @@ function prob = add_v(prob,Av,L,dt, vBound)
     prob.bara.val = [prob.bara.val, 1,1,1];
 
     prob.a = sparse([], [], [], length(prob.blc), 0); 
-end
-
-%% add v constraints, but quadratic
-function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
-    % add new scalar (non-SDP) variables:
-    % sh (dim 1) and v (dim 3*L-3)
-    % in objective: sh replaces v'*(Av'*Av)*v
-    % in constraints: add constraint v'*(Av'*Av)*v <= sh
-    % result: minimizing sh -> sh = (v'*(Av'*Av)*v)
-    [~, res] = mosekopt('symbcon');
-    symbcon = res.symbcon;
-
-    % objective: add sh
-    prob.c = [1, zeros(1,3*(L-1))];
-    % define 1 + 3*(L-1) scalar variables with 3*(L-1) new constraints
-    prob.a = sparse([], [], [], length(prob.blc) + 3*(L-1), 1 + 3*(L-1));
-    % bounds: [-vBound, vBound]
-    prob.blx = [0, -vBound*ones(1,3*(L-1))]; % TODO: -vBound?
-    prob.bux = [vBound*vBound,  vBound*ones(1,3*(L-1))];
-    
-    % conic constraint: v'*(Av'*Av)*v <= sh
-    % (sh, 1, (sqrt(2)*Av)*v) in Q^(2 + 3*(L-1))
-    k = size(Av,1);
-    fQ = sparse([1, zeros(1,3*L-3);zeros(1,1+3*L-3); zeros(k,1) sparse(sqrt(2)*Av)]);
-    gQ = [0, 1, zeros(1,k)]';
-    accQ = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE, 2 + k];
-
-    % vbound constraint: (vBound, v) in Q^(1 + 3)
-    fV = sparse([zeros(1,1+3*L-3); zeros(3, 1), speye(3), zeros(3,3*L-6)]);
-    gV = [vBound^2, zeros(1,3)]';
-    accV = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE, 1 + 3];
-    % fV = []; gV = []; accV = [];
-
-    prob.f = [fQ; fV];
-    prob.g = [gQ; gV];
-    prob.accs = [accQ, accV];
-
-    % add constraints between v & semidefinite variable
-    slices_d = 1+((9*L+1):(9*L+9*(L-1)));
-    slices_s = 1+((18*L-9+1):(18*L-9+3*L));
-    slices_v = 1+(1:3*(L-1));
-    for l = 1:L-1
-        % A1: dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) 
-        r1 = [repmat(slices_s(ib3(l+1)),[1,3]),slices_s(ib3(l))];
-        c1 = [slices_d([1,4,7]+9*(l-1)),slices_d([2,5,8]+9*(l-1)),slices_d([3,6,9]+9*(l-1)),ones(1,3)];
-        v1 = [1*ones(1,9),-1*ones(1,3)];
-        % A2: -v(ib3(l-1))*dt
-        c2 = [slices_v(ib3(l))];
-        r2 = [prob.bara.subi(end) + (1:3)];
-        v2 = [-2*dt*eye(3)];
-        prob.a(r2, c2) = v2;
-
-        prob.blc = [prob.blc; zeros(3,1)];
-        prob.buc = [prob.buc; zeros(3,1)];
-        prob.bara.subi = [prob.bara.subi, ...
-                            repelem(prob.bara.subi(end) + (1:3),3), ...
-                            prob.bara.subi(end) + (1:3)];
-        prob.bara.subj = [prob.bara.subj, 1*ones(1,12)];
-        prob.bara.subk = [prob.bara.subk, r1];
-        prob.bara.subl = [prob.bara.subl, c1];
-        prob.bara.val  = [prob.bara.val , v1];
-    end
-
 end

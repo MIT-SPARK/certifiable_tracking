@@ -106,7 +106,7 @@ end
 figure
 plot3(traj_gt(1,:),traj_gt(2,:),traj_gt(3,:),'DisplayName','Ground Truth')
 hold on
-% plot3(traj_est(1,:),traj_est(2,:),traj_est(3,:), 'DisplayName','Estimate')
+plot3(traj_est(1,:),traj_est(2,:),traj_est(3,:), 'DisplayName','Estimate')
 
 if (plot_pace)
     t_pace = linspace(0,dt*(L-1), L);

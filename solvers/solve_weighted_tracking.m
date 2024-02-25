@@ -19,6 +19,9 @@ elseif isfield(problem,'covar_measure')
     % use only for testing: skipping points or other tests
 else
     problem.covar_measure = ones(problem.N_VAR,L);
+    if (isfield(problem,"covar_measure_base"))
+        problem.covar_measure = problem.covar_measure*problem.covar_measure_base;
+    end
 end
 
 %% Set weights
@@ -28,16 +31,14 @@ end
 % problem.covar_measure = problem.covar_measure.*((noiseBoundSq/9));
 if (isfield(problem,"covar_velocity_base"))
     problem.covar_velocity = ones(L-2,1)*problem.covar_velocity_base;
-elseif (isfield(problem,"velocity_weight_multiplier"))
-    problem.covar_velocity = ones(L-2,1)*(1/problem.velocity_weight_multiplier);
 else
     base = mean(problem.covar_measure(~isinf(problem.covar_measure)));
     problem.covar_velocity = ones(L-2,1)*base;
 end
 if (isfield(problem,"kappa_rotrate_base"))
     problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
-elseif (isfield(problem,"rotrate_kappa_multiplier"))
-    problem.kappa_rotrate = 2*ones(L-2,1)*problem.rotrate_kappa_multiplier;
+elseif (isfield(problem,"covar_rotrate_base"))
+    problem.kappa_rotrate = ones(L-2,1)*(2/problem.covar_rotrate_base);
 else
     base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
     problem.kappa_rotrate  = ones(L-2,1)*(2/base);
@@ -51,7 +52,7 @@ end
 
 % redirect to appropriate solver
 if strcmp(problem.velprior, "body")
-    soln = solve_tracking_body(problem);
+    soln = solve_tracking_body_dense(problem);
 elseif strcmp(problem.velprior,"body-sym")
     soln = solve_tracking_body_sym(problem);
 elseif strcmp(problem.velprior, "world")

@@ -6,17 +6,18 @@
 % Lorenzo Shaikewitz for SPARK Lab
 
 clc; clear; close all
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
-problem.K = 1; % nr of shapes
-problem.L = 3; % nr of keyframes in horizon
+problem.K = 3; % nr of shapes
+problem.L = 10; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.; % [m]
-problem.velocity_weight_multiplier = 1;
-problem.rotrate_kappa_multiplier = 1;
+problem.noiseSigmaSqrt = 0.3; % [m]
+problem.covar_measure_base = 0.5^2;
+problem.covar_velocity_base = 1.5^2;
+problem.covar_rotrate_base = 3^2;
 
 problem.noiseBound = 0.5; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
 problem.processNoise = 0.1;
@@ -28,7 +29,7 @@ problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
 
-problem.accelerationNoiseBoundSqrt = 0;%0.5;
+problem.accelerationNoiseBoundSqrt = 0;%0.6;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
