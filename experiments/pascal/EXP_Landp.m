@@ -29,8 +29,10 @@ resultsIV.p_err_ekf = zeros(num_repeats,1);
 resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.c_err_pace = zeros(num_repeats,1);
-resultsIV.gap_ours = zeros(num_repeats,1);
-resultsIV.time_ours = zeros(num_repeats,1);
+resultsIV.gap_ours = zeros(num_repeats,length(Ldomain));
+resultsIV.gap_pace = zeros(num_repeats,1);
+resultsIV.time_ours = zeros(num_repeats,length(Ldomain));
+resultsIV.time_pace = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
@@ -74,6 +76,9 @@ p_err_ekf = norm(problem.p_gt(:,:,end) - paceekf.p(:,:,end));
 p_err_pace = norm(problem.p_gt(:,:,end) - pace.p(:,:,end));
 % shape error
 c_err_pace = norm(problem.c_gt - pace.c(:,:,end));
+% time and gap
+gap_pace = pace.gaps(end);
+time_pace = pace.times(end);
 
 R_err_ours = zeros(1,length(Ldomain));
 p_err_ours = zeros(1,length(Ldomain));
@@ -109,7 +114,9 @@ resultsIV.p_err_pace(j) = p_err_pace;
 resultsIV.c_err_ours(j,:) = c_err_ours;
 resultsIV.c_err_pace(j) = c_err_pace;
 resultsIV.gap_ours(j,:) = gap_ours;
+resultsIV.gap_pace(j) = gap_pace;
 resultsIV.time_ours(j,:) = time_ours;
+resultsIV.time_pace(j) = time_pace;
 end
 results{index} = resultsIV;
 end
@@ -129,6 +136,9 @@ figure
 tiledlayout(2,2);
 set(0,'DefaultLineLineWidth',2)
 
+display_range = 1:length(domain);
+Llist = [1,4,7,10];
+
 % Rotation figure
 nexttile
 hold on
@@ -137,7 +147,7 @@ errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 % b=plot([results.(indepVar)],median([results.R_err_ekf]),'x-',settings.PACEEKF{:});
 % errorshade([results.(indepVar)],[results.R_err_ekf],get(b,'Color'));
 res = [results.R_err_ours];
-for lidx = 1:length(Ldomain)
+for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(domain)-1);
 plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
@@ -156,7 +166,7 @@ errorshade([results.(indepVar)],[results.p_err_ekf]/0.3,get(b,'Color'));
 c=plot([results.(indepVar)],median([results.p_err_pace])/0.3,'x-',settings.PACERAW{:});
 errorshade([results.(indepVar)],[results.p_err_pace]/0.3,get(c,'Color'));
 res = [results.p_err_ours];
-for lidx = 1:length(Ldomain)
+for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(domain)-1);
 plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
@@ -175,7 +185,7 @@ hold on
 b=plot([results.(indepVar)],median([results.c_err_pace]),'x-',settings.PACERAW{:});
 errorshade([results.(indepVar)],[results.c_err_pace],get(b,'Color'));
 res = [results.c_err_ours];
-for lidx = 1:length(Ldomain)
+for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(domain)-1);
 plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
@@ -186,34 +196,34 @@ xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
 % gap figure
-% nexttile
-% hold on
-% res = abs([results.gap_ours]);
-% for lidx = 1:length(Ldomain)
-% L = Ldomain(lidx);
-% lrange = lidx + length(Ldomain)*(0:length(domain)-1);
-% plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
-% a=semilogy([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
-% errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
-% end
-% xlabel(indepVar); ylabel("Gap");
-% title("Suboptimality Gaps")
-
-% time figure
 nexttile
 hold on
-res = [results.time_ours];
-for lidx = 1:length(Ldomain)
+res = abs([results.gap_ours]);
+for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(domain)-1);
 plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
-a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
+a=semilogy([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
-xlabel(indepVar); ylabel("Time (s)");
-title("Solve Time")
+xlabel(indepVar); ylabel("Gap");
+title("Suboptimality Gaps")
 
-%% Change results
+% time figure
+% nexttile
+% hold on
+% res = [results.time_ours];
+% for lidx = Llist
+% L = Ldomain(lidx);
+% lrange = lidx + length(Ldomain)*(0:length(domain)-1);
+% plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
+% a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
+% errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
+% end
+% xlabel(indepVar); ylabel("Time (s)");
+% title("Solve Time")
+
+%% Change results format
 % for i = 1:length(results)
 %     results(i).R_err_ekf = results(i).R_err_ekf';
 %     results(i).R_err_pace = results(i).R_err_pace';

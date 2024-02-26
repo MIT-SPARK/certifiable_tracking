@@ -29,7 +29,9 @@ resultsIV.p_err_pace = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,1);
 resultsIV.c_err_pace = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,1);
+resultsIV.gap_pace = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,1);
+resultsIV.time_pace = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
@@ -71,14 +73,16 @@ pace = pace_raw(problem);
 paceekf = pace_ekf(problem,pace);
 
 % Save solutions: only use last error
-% projected errors
+% rotation error
 R_err_ours = getAngularError(problem.R_gt(:,:,L), soln.R_est(:,:,L));
 R_err_ekf = getAngularError(problem.R_gt(:,:,L), paceekf.R(:,:,L));
 R_err_pace = getAngularError(problem.R_gt(:,:,L), pace.R(:,:,L));
-
 % shape error
 c_err_ours = norm(problem.c_gt - soln.c_est);
 c_err_pace = norm(problem.c_gt - pace.c(:,:,L));
+% time and gap
+gap_pace = pace.gaps(end);
+time_pace = pace.times(end);
 
 % save
 resultsIV.R_err_ours(j) = R_err_ours;
@@ -89,8 +93,10 @@ resultsIV.p_err_ekf(j)  = norm(problem.p_gt(:,:,L) - paceekf.p(:,:,L));
 resultsIV.p_err_pace(j) = norm(problem.p_gt(:,:,L) - pace.p(:,:,L));
 resultsIV.c_err_ours(j) = c_err_ours;
 resultsIV.c_err_pace(j) = c_err_pace;
-resultsIV.gap_ours(j) = soln.gap;
-resultsIV.time_ours(j) = soln.solvetime;
+resultsIV.gap_ours(j) = gap_ours;
+resultsIV.gap_pace(j) = gap_pace;
+resultsIV.time_ours(j) = time_ours;
+resultsIV.time_pace(j) = time_pace;
 end
 results{index} = resultsIV;
 end

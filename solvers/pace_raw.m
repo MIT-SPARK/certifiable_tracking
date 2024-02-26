@@ -72,5 +72,6 @@ L = problem.L;
 soln.p = reshape([soln_pace.p_est],[3,1,L]);
 soln.R = reshape([soln_pace.R_est],[3,3,L]);
 soln.c = reshape([soln_pace.c_est],[K,1,L]);
+soln.gaps = reshape([soln_pace.gap],[L,1]);
 
 end

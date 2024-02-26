@@ -10,8 +10,8 @@ rng("default")
 
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
-problem.K = 3; % nr of shapes
-problem.L = 10; % nr of keyframes in horizon
+problem.K = 1; % nr of shapes
+problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.3; % [m]
@@ -84,7 +84,7 @@ end
 c_err = norm(problem.c_gt - soln.c_est);
 
 % Plot trajectory!
-plot_trajectory(problem,soln)
+plot_trajectory2(problem,soln)
 
 compare(problem, soln, pace, paceukf, paceekf);
 
