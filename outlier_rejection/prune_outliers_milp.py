@@ -12,67 +12,10 @@ import pickle
 import sys
 import mosek
 
-# cvx version
-def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
-    '''
-    y: 3N x L matrix of each keypoint location at each time
-    '''
-    N = int(y.shape[0] / 3)
-    L = y.shape[1]
-    y_list = y.T.reshape([N*L,3]).T
-
-    # define variables, objective
-    x = cp.Variable(N*L, boolean=True)
-
-    objective = cp.Maximize(cp.sum(x))
-
-    constraints_shape = []
-    constraints_time = []
-
-    # prior outliers
-    if len(prioroutliers) > 0:
-        # TODO: check if this is right
-        constraints_prioroutliers = [x[prioroutliers] == 0]
-    else:
-        constraints_prioroutliers = []
-
-    # shape constraints
-    for l in range(L):
-        yl = y[:,l].reshape((N,3)).T
-        yis, yjs = shape_consistency(yl, cad_dist_min, cad_dist_max, noise_bound)
-        yis += N*l
-        yjs += N*l
-        for i in range(len(yis)):
-            constraints_shape.append(x[yis[i]]+x[yjs[i]] <= 1)
-
-    # rigid body constraints
-    for l1 in range(L-1):
-        for l2 in range(l1+1,L):
-            for i1 in range(N-1):
-                for i2 in range(i1+1,N):
-                    p1 = l1*N + i1
-                    p2 = l1*N + i2
-                    q1 = l2*N + i1
-                    q2 = l2*N + i2
-                    d1 = np.linalg.norm(y_list[:,p1]-y_list[:,p2])
-                    d2 = np.linalg.norm(y_list[:,q1]-y_list[:,q2])
-                    if (abs(d1-d2) >= 4*noise_bound_time):
-                        constraints_time.append(x[p1]+x[p2]+x[q1]+x[q2] <= 3)
-
-    # solve!
-    prob = cp.Problem(objective, 
-                      constraints_prioroutliers + 
-                      constraints_shape + constraints_time)
-    prob.solve(solver='MOSEK', verbose=False)
-    # prob.solve(verbose=True)
-
-    # pull out inlier indicies
-    inliers = np.array(range(N*L))
-    inliers = inliers[x.value == 1]
-    return inliers
+from prune_outliers_weighted import prune_outliers as clique_pruning
 
 # native mosek version
-def prune_outliers2(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
     '''
     y: 3N x L matrix of each keypoint location at each time
     '''
@@ -108,8 +51,13 @@ def prune_outliers2(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time
                         p1s = np.append(p1s,p1); p2s = np.append(p2s,p2)
                         q1s = np.append(q1s,q1); q2s = np.append(q2s,q2)
 
+    # warmstart
+    warm_indicies = clique_pruning(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers)
+    warmstart = np.zeros(N*L)
+    warmstart[warm_indicies] = 1.0
+
     # solve!
-    x = solve_mosek_native(N*L, prioroutliers, [all_yis, all_yjs], [p1s, p2s, q1s, q2s])
+    x = solve_mosek_native(N*L, prioroutliers, [all_yis, all_yjs], [p1s, p2s, q1s, q2s], warmstart)
     # prob.solve(verbose=True)
 
     # pull out inlier indicies
@@ -123,15 +71,15 @@ def streamprinter(text):
     sys.stdout.flush()
 inf = 0.0 # for symbolic purposes
 
-def solve_mosek_native(numvar, prior_indicies, shape_indicies, time_indicies):
+def solve_mosek_native(numvar, prior_indicies, shape_indicies, time_indicies, warmstart):
     # Make a MOSEK environment
     with mosek.Env() as env:
         # Attach a printer to the environment
-        env.set_Stream(mosek.streamtype.log, None)
+        env.set_Stream(mosek.streamtype.log, streamprinter)
         # Create a task
         with env.Task(0, 0) as task:
             # Attach a printer to the task
-            task.set_Stream(mosek.streamtype.log, None)
+            task.set_Stream(mosek.streamtype.log, streamprinter)
 
             # add empty variables/constraints
             numcon = len(shape_indicies[0]) + len(time_indicies[0])
@@ -194,6 +142,9 @@ def solve_mosek_native(numvar, prior_indicies, shape_indicies, time_indicies):
 
             # Set max solution time
             task.putdouparam(mosek.dparam.mio_max_time, 60.0);
+
+            # warm start
+            task.putxx(mosek.soltype.itg, warmstart)
 
             # Optimize!
             task.optimize()

@@ -144,15 +144,20 @@ def save(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutl
     db['noise_bound_time'] = noise_bound_time
     db['prioroutliers'] = prioroutliers
     
-    dbfile = open('examplePickle', 'ab')
+    dbfile = open('test_pickle', 'wb')
     # source, destination
     pickle.dump(db, dbfile)                    
     dbfile.close()
     
+import time
+
 if __name__ == '__main__':
-    dbfile = open('examplePickle', 'rb')    
+    dbfile = open('test_pickle', 'rb')    
     db = pickle.load(dbfile)
     dbfile.close()
-    
+
+    start = time.time()
     inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'])
+    end = time.time()
     print(np.sort(inliers))
+    print(end - start)
