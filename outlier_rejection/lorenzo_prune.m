@@ -31,7 +31,7 @@ else
     noiseBound = problem.noiseBound;
 end
 
-out = py.outlier_rejection.prune_outliers_milp.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
+out = py.outlier_rejection.prune_outliers_milp2.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
 priorinliers = sort(double(out))+1;
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
 

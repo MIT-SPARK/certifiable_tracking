@@ -12,6 +12,7 @@ certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
 mosekpath   = '../mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
+coptpath = '/opt/copt71';
 
 if (experiment == "pascal")
     cadpath = "../datasets/pascal3d";
@@ -29,6 +30,8 @@ addpath(genpath(gncpath)) % optional if no outliers
 
 addpath(genpath(mosekpath))
 addpath(genpath(stridepath))
+% addpath("/opt/copt71")
+setenv("COPT_LICENSE_DIR", "/opt/copt71")
 
 %% add internal paths
 addpath('./outlier_rejection')

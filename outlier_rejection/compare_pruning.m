@@ -7,13 +7,13 @@ clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
-n = 50;
+n = 100;
 counts = zeros(n,3); % robin, milp, clique
 robin_time = 0;
 milp_time = 0;
 clique_time = 0;
 
-for iii = 1:100
+for iii = 1:n
 
 %% Generate random tracking problem
 problem.N_VAR = 11; % nr of keypoints
