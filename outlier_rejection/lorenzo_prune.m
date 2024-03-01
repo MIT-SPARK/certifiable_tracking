@@ -31,7 +31,9 @@ else
     noiseBound = problem.noiseBound;
 end
 
-out = py.outlier_rejection.prune_outliers_milp2.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
+% Change to prune_outliers_milp_mosek if you do not have COPT installed.
+% Note: this will run slower.
+out = py.outlier_rejection.prune_outliers_milp_copt.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
 priorinliers = sort(double(out))+1;
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
 

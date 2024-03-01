@@ -7,7 +7,8 @@ To run the solver, this repository has the following dependencies:
 - [SDPNAL+](https://blog.nus.edu.sg/mattohkc/softwares/sdpnalplus/)
 
 For outlier rejection, there are two further dependencies:
-- [GNC](https://github.com/MIT-SPARK/GNC-and-ADAPT) (only for tracking with outliers)
+- [GNC](https://github.com/MIT-SPARK/GNC-and-ADAPT)
+- [COPT](https://www.copt.de/) (we also provide a cvx version that works with MOSEK, it is just slower)
 
 Reproducing results also requires the following datasets:
 - [PASCAL3D+](https://cvgl.stanford.edu/projects/pascal3d.html)
