@@ -1,9 +1,8 @@
 '''
-prune_outliers.py
+prune_outliers_weighted.py
 
 A graph-theoretic approach to excluding outliers.
 Use compatibility test to determine if two points can simultaneously be inliers.
-TODO: NO SUPPORT FOR MISSING KEYPOINTS
 
 Lorenzo Shaikewitz for SPARK Lab
 Adapted from code written by Jingnan Shi.

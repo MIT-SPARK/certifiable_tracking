@@ -41,7 +41,9 @@ for l = 1:problem.L
         % Relax and solve
         SDP = relax_category_registration_v2(pace_problem,'lambda',problem.lambda,'checkMonomials',false);
         try
+            tic
             out = gnc_category_registration(pace_problem,SDP,path,'lambda',problem.lambda);
+            pace_time = toc;
             [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
             c_est = out.c_est;
             gap = out.gap;
@@ -52,17 +54,21 @@ for l = 1:problem.L
             R_est = ones(3,3)*NaN;
             c_est = ones(problem.K,1)*NaN;
             gap = NaN;
+            pace_time = NaN;
             disp("PACE GNC Failed.")
         end
     else
         % Run without GNC
+        tic
         [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, 'lambda',problem.lambda);
+        pace_time = toc;
         gap = out.gap;
     end
     s.R_est = R_est; s.p_est = t_est;
     s.c_est = c_est; s.out = out;
     s.s_est = R_est'*t_est;
     s.gap = gap;
+    s.time = pace_time;
     soln_pace = [soln_pace; s];
 end
 
@@ -73,5 +79,6 @@ soln.p = reshape([soln_pace.p_est],[3,1,L]);
 soln.R = reshape([soln_pace.R_est],[3,3,L]);
 soln.c = reshape([soln_pace.c_est],[K,1,L]);
 soln.gaps = reshape([soln_pace.gap],[L,1]);
+soln.times = reshape([soln_pace.time],[L,1]);
 
 end

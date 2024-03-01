@@ -1,4 +1,4 @@
-function problem = lorenzo_prune(problem, min_max_dists)
+function problem = lorenzo_graph_prune(problem, min_max_dists)
 % Uses maximum weighted clique calculation to reject inliers efficiently.
 % 
 % Lorenzo Shaikewitz for SPARK Lab
@@ -31,7 +31,7 @@ else
     noiseBound = problem.noiseBound;
 end
 
-out = py.outlier_rejection.prune_outliers_milp.prune_outliers2(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
+out = py.outlier_rejection.prune_outliers_weighted.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
 priorinliers = sort(double(out))+1;
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
 

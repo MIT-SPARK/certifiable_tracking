@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "K";
-savename = "synthetic2_" + indepVar;
+savename = "synthetic3_" + indepVar;
 domain = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000];
 num_repeats = 100;
 
@@ -64,7 +64,7 @@ problem.regen_sdp = (j == 1);
 
 % add shape, measurements, outliers
 problem = gen_random_tracking(problem);
-lambda = 250; %0.5*iv;
+lambda = sqrt(iv/problem.N_VAR);
 problem.lambda = lambda;
 
 % Solve!
@@ -93,9 +93,9 @@ resultsIV.p_err_ekf(j)  = norm(problem.p_gt(:,:,L) - paceekf.p(:,:,L));
 resultsIV.p_err_pace(j) = norm(problem.p_gt(:,:,L) - pace.p(:,:,L));
 resultsIV.c_err_ours(j) = c_err_ours;
 resultsIV.c_err_pace(j) = c_err_pace;
-resultsIV.gap_ours(j) = gap_ours;
+resultsIV.gap_ours(j) = soln.gap;
 resultsIV.gap_pace(j) = gap_pace;
-resultsIV.time_ours(j) = time_ours;
+resultsIV.time_ours(j) = soln.solvetime;
 resultsIV.time_pace(j) = time_pace;
 end
 results{index} = resultsIV;

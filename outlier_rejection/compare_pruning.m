@@ -7,10 +7,12 @@ clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
-robinct = 0;
-lorenzoct = 0;
-robinwin = 0;
-lorenzowin = 0;
+n = 50;
+counts = zeros(n,3); % robin, milp, clique
+robin_time = 0;
+milp_time = 0;
+clique_time = 0;
+
 for iii = 1:100
 
 %% Generate random tracking problem
@@ -48,24 +50,30 @@ problem.lambda = lambda;
 
 %% Solve!
 % prune outliers with ROBIN
+tic
 problem_robin = robin_prune(problem);
+robin_time = robin_time + toc;
+
+% prune outliers with MILP
+tic
+problem_lorenzo = lorenzo_prune(problem);
+milp_time = milp_time + toc;
 
 % prune outliers with max weighted clique
-problem_lorenzo = lorenzo_prune(problem);
+tic
+problem_lorenzo_graph = lorenzo_graph_prune(problem);
+clique_time = clique_time + toc;
 
 %% Check solutions
 disp(iii)
 if isequal(problem.inliers_gt,problem_robin.priorinliers)
-    robinct = robinct + 1;
-    if ~isequal(problem.inliers_gt,problem_lorenzo.priorinliers)
-        robinwin = robinwin + 1;
-    end
+    counts(iii,1) = 1;
 end
 if isequal(problem.inliers_gt,problem_lorenzo.priorinliers)
-    lorenzoct = lorenzoct + 1;
-    if ~isequal(problem.inliers_gt,problem_robin.priorinliers)
-        lorenzowin = lorenzowin + 1;
-    end
+    counts(iii,2) = 1;
+end
+if isequal(problem.inliers_gt,problem_lorenzo_graph.priorinliers)
+    counts(iii,3) = 1;
 end
 
 end
