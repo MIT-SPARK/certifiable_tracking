@@ -11,12 +11,11 @@ import cvxpy as cp
 import pickle
 import coptpy as cpt
 from coptpy import COPT
-import mosek
 
 import networkx as nx
 
 # native copt version
-def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers, warmstart):
     '''
     y: 3N x L matrix of each keypoint location at each time
     '''
@@ -25,15 +24,22 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
     y_list = y.T.reshape([N*L,3]).T
     
     # Make a COPT environment
-    env = cpt.Envr()
+    envconfig = cpt.EnvrConfig()
+    envconfig.set('nobanner', '1')
+    env = cpt.Envr(envconfig)
+
     # set up model
     model = env.createModel("prune")
+
+    # turn off prints
+    model.setParam(COPT.Param.Logging,False)
     # add variables
     x = model.addMVar(N*L, vtype=COPT.BINARY)
     model.setObjective(x.sum(),sense=COPT.MAXIMIZE)
 
     # prior outliers
-    # TODO
+    for i in prioroutliers:
+        x[i].setInfo(COPT.Info.UB,0.0)
 
     # shape constraints
     for l in range(L):
@@ -57,10 +63,79 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
                     if (abs(d1-d2) >= 4*noise_bound_time):
                         model.addConstrs(x[p1] + x[p2] + x[q1] + x[q2] <= 3)
 
-    # warmstart (TODO)
-    # warm_indicies = prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers)
-    # warmstart = np.zeros(N*L)
-    # warmstart[warm_indicies] = 1.0
+    # warmstart
+    if warmstart:
+        warm_indicies = prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers)
+        warmstart = np.zeros(N*L)
+        warmstart[warm_indicies] = 1.0
+        model.setMipStart(x,warmstart)
+
+    # solve!
+    model.setParam(COPT.Param.TimeLimit, 10.0)
+    model.solve()
+    x = np.round(model.getValues())
+    # prob.solve(verbose=True)
+
+    # pull out inlier indicies
+    inliers = np.array(range(N*L))
+    inliers = inliers[x == 1]
+    return inliers
+
+# version with magnitude + direction
+def prune_outliers2(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers, warmstart):
+    '''
+    y: 3N x L matrix of each keypoint location at each time
+    '''
+    N = int(y.shape[0] / 3)
+    L = y.shape[1]
+    y_list = y.T.reshape([N*L,3]).T
+    
+    # Make a COPT environment
+    envconfig = cpt.EnvrConfig()
+    envconfig.set('nobanner', '1')
+    env = cpt.Envr(envconfig)
+
+    # set up model
+    model = env.createModel("prune")
+
+    # turn off prints
+    model.setParam(COPT.Param.Logging,False)
+    # add variables
+    x = model.addMVar(N*L, vtype=COPT.BINARY)
+    model.setObjective(x.sum(),sense=COPT.MAXIMIZE)
+
+    # prior outliers
+    for i in prioroutliers:
+        x[i].setInfo(COPT.Info.UB,0.0)
+
+    # shape constraints
+    for l in range(L):
+        yl = y[:,l].reshape((N,3)).T
+        yis, yjs = shape_consistency(yl, cad_dist_min, cad_dist_max, noise_bound)
+        yis += N*l
+        yjs += N*l
+        model.addConstrs(x[yis] + x[yjs] <= 1)
+
+    # rigid body constraints
+    for l1 in range(L-1):
+        for l2 in range(l1+1,L):
+            for i1 in range(N-1):
+                for i2 in range(i1+1,N):
+                    p1 = l1*N + i1
+                    p2 = l1*N + i2
+                    q1 = l2*N + i1
+                    q2 = l2*N + i2
+                    d1 = y_list[:,p1]-y_list[:,p2]
+                    d2 = y_list[:,q1]-y_list[:,q2]
+                    if (np.linalg.norm(d1-d2) >= 4*noise_bound_time):
+                        model.addConstrs(x[p1] + x[p2] + x[q1] + x[q2] <= 3)
+
+    # warmstart
+    if warmstart:
+        warm_indicies = prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers)
+        warmstart = np.zeros(N*L)
+        warmstart[warm_indicies] = 1.0
+        model.setMipStart(x,warmstart)
 
     # solve!
     model.setParam(COPT.Param.TimeLimit, 10.0)
@@ -101,64 +176,103 @@ def shape_consistency(tgt, cad_dist_min, cad_dist_max, noise_bound):
     yjs = sj[invalidEdges]
     return yis, yjs
 
-# cvx version
-def prune_outliers_cvx(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
+def prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
     '''
-    y: 3N x L matrix of each keypoint location at each time
+    Compute an approximate inlier set using ROBIN
     '''
-    N = int(y.shape[0] / 3)
+    N = int(y.shape[0]/3)
     L = y.shape[1]
     y_list = y.T.reshape([N*L,3]).T
 
-    # define variables, objective
-    x = cp.Variable(N*L, boolean=True)
-
-    objective = cp.Maximize(cp.sum(x))
-
-    constraints_shape = []
-    constraints_time = []
-
-    # prior outliers
-    if len(prioroutliers) > 0:
-        # TODO: check if this is right
-        constraints_prioroutliers = [x[prioroutliers] == 0]
-    else:
-        constraints_prioroutliers = []
-
-    # shape constraints
+    # Graph of single-time compatibility with shape lib
+    graphs = {}
     for l in range(L):
-        yl = y[:,l].reshape((N,3)).T
-        yis, yjs = shape_consistency(yl, cad_dist_min, cad_dist_max, noise_bound)
-        yis += N*l
-        yjs += N*l
-        for i in range(len(yis)):
-            constraints_shape.append(x[yis[i]]+x[yjs[i]] <= 1)
+        g = nx.Graph()
+        yl = y[:,l].reshape([N,3]).T
+        if (len(prioroutliers) < l + 1):
+            outliers = []
+        else:
+            outliers = prioroutliers[l]
+        shape_consistency_clique(g, yl, cad_dist_min, cad_dist_max, noise_bound, outliers)
+        graphs[l] = g
 
-    # rigid body constraints
+    # Graph of keypoint compatbility across times
     for l1 in range(L-1):
         for l2 in range(l1+1,L):
             for i1 in range(N-1):
                 for i2 in range(i1+1,N):
+                    if not (graphs[l1].has_edge(i1,i2) and graphs[l2].has_edge(i1,i2)):
+                        continue
+
                     p1 = l1*N + i1
                     p2 = l1*N + i2
+                    d1 = np.linalg.norm(y_list[:,p1]-y_list[:,p2])
                     q1 = l2*N + i1
                     q2 = l2*N + i2
-                    d1 = np.linalg.norm(y_list[:,p1]-y_list[:,p2])
                     d2 = np.linalg.norm(y_list[:,q1]-y_list[:,q2])
-                    if (abs(d1-d2) >= 4*noise_bound_time):
-                        constraints_time.append(x[p1]+x[p2]+x[q1]+x[q2] <= 3)
+                    if (abs(d1-d2) < 4*noise_bound_time):
+                        graphs[l1].nodes[i1]['weight'] += 1.0
+                        graphs[l1].nodes[i2]['weight'] += 1.0
+                        graphs[l2].nodes[i1]['weight'] += 1.0
+                        graphs[l2].nodes[i2]['weight'] += 1.0
 
-    # solve!
-    prob = cp.Problem(objective, 
-                      constraints_prioroutliers + 
-                      constraints_shape + constraints_time)
-    prob.solve(solver='COPT', verbose=True)
-    # prob.solve(verbose=True)
+                    graphs[l1].nodes[i1]['count'] += 1
+                    graphs[l1].nodes[i2]['count'] += 1
+                    graphs[l2].nodes[i1]['count'] += 1
+                    graphs[l2].nodes[i2]['count'] += 1
 
-    # pull out inlier indicies
-    inliers = np.array(range(N*L))
-    inliers = inliers[x.value == 1]
-    return inliers
+    ## solve
+    inlier_indices = []
+    for l in range(L):
+        g = graphs[l]
+        for n in range(len(g.nodes())):
+            g.nodes[n]['weight'] = int(g.nodes[n]['weight'] / g.nodes[n]['count'] * 100)
+
+        [clique, _] = nx.max_weight_clique(g)
+        for n in clique:
+            inlier_indices.append(n + l*N)
+        # print(l+1)
+        # inlier_indices.sort()
+        # print(inlier_indices)
+        # draw(g)
+
+    return inlier_indices
+
+def shape_consistency_clique(g, tgt, cad_dist_min, cad_dist_max, noise_bound, prioroutliers):
+    '''
+    Build graph of keypoint measurements by consistency with shape library
+    '''
+    N = tgt.shape[1]
+    si, sj = np.meshgrid(np.arange(N), np.arange(N))
+    mask_uppertri = (sj > si)
+    si = si[mask_uppertri]
+    sj = sj[mask_uppertri]
+
+    # distances || tgt_j - tgt_i ||
+    tgt_dist_ij = np.linalg.norm(
+        tgt[:, sj] - tgt[:, si], axis=0)  # shape (n-1)_tri
+
+    allEdges = np.arange(si.shape[0])
+    check1 = tgt_dist_ij >= (cad_dist_min - 2 * noise_bound)
+    check2 = tgt_dist_ij <= (cad_dist_max + 2 * noise_bound)
+    mask_compatible = check1 & check2
+    validEdges = allEdges[mask_compatible]
+    sdata = np.zeros_like(si)
+    sdata[mask_compatible] = 1
+
+    comp_mat = np.zeros((N, N))
+    comp_mat[si, sj] = sdata
+
+    nodes = {}
+    # creating a Graph in robin
+    for i in range(N):
+        g.add_node(i,weight=1.0,count=1)
+
+    for edge_idx in validEdges:
+        # print(f'Add edge between {si[edge_idx] + lidx} and {sj[edge_idx] + lidx}.')
+        if (si[edge_idx] in prioroutliers) or (sj[edge_idx] in prioroutliers):
+            continue
+        g.add_edge(si[edge_idx], sj[edge_idx])
 
 def save(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
     db = {}
@@ -182,7 +296,7 @@ if __name__ == '__main__':
     dbfile.close()
     
     start = time.time()
-    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'])
+    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], True)
     end = time.time()
     print(np.sort(inliers))
     print(end - start)

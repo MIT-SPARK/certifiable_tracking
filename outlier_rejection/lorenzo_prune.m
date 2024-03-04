@@ -31,9 +31,11 @@ else
     noiseBound = problem.noiseBound;
 end
 
+warmstart = true;
 % Change to prune_outliers_milp_mosek if you do not have COPT installed.
+% there is also a cvxpy version (see file)
 % Note: this will run slower.
-out = py.outlier_rejection.prune_outliers_milp_copt.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers));
+out = py.outlier_rejection.prune_outliers_milp_copt.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(prioroutliers), warmstart);
 priorinliers = sort(double(out))+1;
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
 
