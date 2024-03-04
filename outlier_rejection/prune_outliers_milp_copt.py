@@ -81,74 +81,6 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
     inliers = inliers[x == 1]
     return inliers
 
-# version with magnitude + direction
-def prune_outliers2(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers, warmstart):
-    '''
-    y: 3N x L matrix of each keypoint location at each time
-    '''
-    N = int(y.shape[0] / 3)
-    L = y.shape[1]
-    y_list = y.T.reshape([N*L,3]).T
-    
-    # Make a COPT environment
-    envconfig = cpt.EnvrConfig()
-    envconfig.set('nobanner', '1')
-    env = cpt.Envr(envconfig)
-
-    # set up model
-    model = env.createModel("prune")
-
-    # turn off prints
-    model.setParam(COPT.Param.Logging,False)
-    # add variables
-    x = model.addMVar(N*L, vtype=COPT.BINARY)
-    model.setObjective(x.sum(),sense=COPT.MAXIMIZE)
-
-    # prior outliers
-    for i in prioroutliers:
-        x[i].setInfo(COPT.Info.UB,0.0)
-
-    # shape constraints
-    for l in range(L):
-        yl = y[:,l].reshape((N,3)).T
-        yis, yjs = shape_consistency(yl, cad_dist_min, cad_dist_max, noise_bound)
-        yis += N*l
-        yjs += N*l
-        model.addConstrs(x[yis] + x[yjs] <= 1)
-
-    # rigid body constraints
-    for l1 in range(L-1):
-        for l2 in range(l1+1,L):
-            for i1 in range(N-1):
-                for i2 in range(i1+1,N):
-                    p1 = l1*N + i1
-                    p2 = l1*N + i2
-                    q1 = l2*N + i1
-                    q2 = l2*N + i2
-                    d1 = y_list[:,p1]-y_list[:,p2]
-                    d2 = y_list[:,q1]-y_list[:,q2]
-                    if (np.linalg.norm(d1-d2) >= 4*noise_bound_time):
-                        model.addConstrs(x[p1] + x[p2] + x[q1] + x[q2] <= 3)
-
-    # warmstart
-    if warmstart:
-        warm_indicies = prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers)
-        warmstart = np.zeros(N*L)
-        warmstart[warm_indicies] = 1.0
-        model.setMipStart(x,warmstart)
-
-    # solve!
-    model.setParam(COPT.Param.TimeLimit, 10.0)
-    model.solve()
-    x = np.round(model.getValues())
-    # prob.solve(verbose=True)
-
-    # pull out inlier indicies
-    inliers = np.array(range(N*L))
-    inliers = inliers[x == 1]
-    return inliers
-
-
 
 def shape_consistency(tgt, cad_dist_min, cad_dist_max, noise_bound):
     N = tgt.shape[1]
@@ -296,7 +228,7 @@ if __name__ == '__main__':
     dbfile.close()
     
     start = time.time()
-    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], True)
+    inliers = prune_outliers2(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], True)
     end = time.time()
     print(np.sort(inliers))
     print(end - start)
