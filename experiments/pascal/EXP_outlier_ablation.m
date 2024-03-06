@@ -6,6 +6,8 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
+% problem: much too slow with PACE
+
 clc; clear; close all
 
 %% Experiment settings
@@ -34,8 +36,6 @@ resultsIV.time_ours = zeros(num_repeats,1);
 resultsIV.time_pace = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
-    tstart = tic;
-
 problem = struct();
 problem.category = "car";
 problem.L = 8;
@@ -123,7 +123,6 @@ resultsIV.gap_pace(j) = gap_pace;
 resultsIV.time_ours(j) = time_ours;
 resultsIV.time_pace(j) = time_pace;
 
-toc(tstart)
 end
 results{index} = resultsIV;
 end
