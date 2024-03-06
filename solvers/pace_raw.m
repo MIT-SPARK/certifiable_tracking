@@ -44,7 +44,9 @@ for l = 1:problem.L
             tic
             out = gnc_category_registration(pace_problem,SDP,path,'lambda',problem.lambda);
             pace_time = toc;
-            [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
+            % [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
+            R_est = out.R_est;
+            t_est = out.t_est;
             c_est = out.c_est;
             gap = out.gap;
         catch

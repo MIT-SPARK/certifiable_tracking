@@ -47,7 +47,8 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
         yis, yjs = shape_consistency(yl, cad_dist_min, cad_dist_max, noise_bound)
         yis += N*l
         yjs += N*l
-        model.addConstrs(x[yis] + x[yjs] <= 1)
+        if (len(yis) > 0):
+            model.addConstrs(x[yis] + x[yjs] <= 1)
 
     # rigid body constraints
     for l1 in range(L-1):
@@ -228,7 +229,7 @@ if __name__ == '__main__':
     dbfile.close()
     
     start = time.time()
-    inliers = prune_outliers2(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], True)
+    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], True)
     end = time.time()
     print(np.sort(inliers))
     print(end - start)
