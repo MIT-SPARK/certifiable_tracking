@@ -64,8 +64,9 @@ problem.rotationNoiseBound = 0; % rad
 problem.regen_sdp = (j == 1);
 
 % add shape, measurements, outliers
+problem.true_rand = true; % don't use a mean shape
 problem = gen_random_tracking(problem);
-lambda = sqrt(iv/problem.N_VAR);
+lambda = iv^2/problem.N_VAR;
 problem.lambda = lambda;
 
 % Solve!
@@ -116,26 +117,24 @@ set(0,'DefaultLineLineWidth',2)
 
 % Rotation figure
 nexttile
-hold on
-c=plot([results.(indepVar)],median([results.R_err_pace]),'x-',settings.PACERAW{:});
-% errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
+c=loglog([results.(indepVar)],median([results.R_err_pace]),'x-',settings.PACERAW{:}); hold on;
+errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 % b=plot([results.(indepVar)],median([results.R_err_ekf]),'x-',settings.PACEEKF{:});
 % errorshade([results.(indepVar)],[results.R_err_ekf],get(b,'Color'));
-% a=plot([results.(indepVar)],median([results.R_err_ours]),'x-',settings.OURS{:});
-% errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
+a=plot([results.(indepVar)],median([results.R_err_ours]),'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
 
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
 nexttile
-hold on
-% b=plot([results.(indepVar)],median([results.p_err_ekf]),'x-',settings.PACEEKF{:});
-% errorshade([results.(indepVar)],[results.p_err_ekf],get(b,'Color'));
-c=plot([results.(indepVar)],median([results.p_err_pace]),'x-',settings.PACERAW{:});
-% errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
-% a=plot([results.(indepVar)],median([results.p_err_ours]),'x-',settings.OURS{:});
-% errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
+b=loglog([results.(indepVar)],median([results.p_err_ekf]),'x-',settings.PACEEKF{:}); hold on;
+errorshade([results.(indepVar)],[results.p_err_ekf],get(b,'Color'));
+c=plot([results.(indepVar)],median([results.p_err_pace]),'x-',settings.PACERAW{:}); hold on;
+errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
+a=plot([results.(indepVar)],median([results.p_err_ours]),'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
 xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")
 
@@ -144,28 +143,30 @@ lg.Layout.Tile = 'south';
 
 % shape figure
 nexttile
+b=loglog([results.(indepVar)],median([results.c_err_pace]),'x-',settings.PACERAW{:});
 hold on
-b=plot([results.(indepVar)],median([results.c_err_pace]),'x-',settings.PACERAW{:});
 errorshade([results.(indepVar)],[results.c_err_pace],get(b,'Color'));
-% a=plot([results.(indepVar)],median([results.c_err_ours]),'x-',settings.OURS{:});
-% errorshade([results.(indepVar)],[results.c_err_ours],get(a,'Color'));
+a=plot([results.(indepVar)],median([results.c_err_ours]),'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.c_err_ours],get(a,'Color'));
 xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
 % gap figure
-% nexttile
-% hold on
-% a=semilogy([results.(indepVar)],abs(median([results.gap_ours])),'x-',settings.OURS{:});
-% errorshade([results.(indepVar)],abs([results.gap_ours]),get(a,'Color'));
-% xlabel(indepVar); ylabel("Gap");
-% title("Suboptimality Gaps")
+nexttile
+a=loglog([results.(indepVar)],abs(median([results.gap_ours])),'x-',settings.OURS{:});
+hold on
+errorshade([results.(indepVar)],abs([results.gap_ours]),get(a,'Color'));
+b=plot([results.(indepVar)],abs(median([results.gap_pace])),'x-',settings.PACERAW{:});
+errorshade([results.(indepVar)],abs([results.gap_pace]),get(b,'Color'));
+xlabel(indepVar); ylabel("Gap");
+title("Suboptimality Gaps")
 
 % time figure
-nexttile
-hold on
-% a=plot([results.(indepVar)],median([results.time_ours]),'x-',settings.OURS{:});
-% errorshade([results.(indepVar)],[results.time_ours],get(a,'Color'));
-b=plot([results.(indepVar)],median([results.time_pace]),'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],[results.time_pace],get(b,'Color'));
-xlabel(indepVar); ylabel("Time (s)");
-title("Solve Time")
+% nexttile
+% hold on
+% % a=plot([results.(indepVar)],median([results.time_ours]),'x-',settings.OURS{:});
+% % errorshade([results.(indepVar)],[results.time_ours],get(a,'Color'));
+% b=plot([results.(indepVar)],median([results.time_pace]),'x-',settings.PACERAW{:});
+% errorshade([results.(indepVar)],[results.time_pace],get(b,'Color'));
+% xlabel(indepVar); ylabel("Time (s)");
+% title("Solve Time")

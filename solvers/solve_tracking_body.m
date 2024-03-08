@@ -307,7 +307,7 @@ end
 % compute gap
 % obj_est = dmsubs(prob_obj,x,x_proj); % slow
 obj_est = x_proj'*(Q'*Q)*x_proj + v_est_corrected'*(Av'*Av)*v_est_corrected;
-gap = (obj_est - obj(1)) / obj_est;
+gap = (obj_est - obj(2)) / obj_est;
 
 % compute residuals
 residuals = zeros(N, L);
@@ -445,10 +445,10 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
     gQ = [0, 1, zeros(1,k)]';
     accQ = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE, 2 + k];
 
-    % vbound constraint: (vBound, v) in Q^(1 + 3)
-    fV = sparse([zeros(1,1+3*L-3); zeros(3, 1), speye(3), zeros(3,3*L-6)]);
-    gV = [vBound^2, zeros(1,3)]';
-    accV = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE, 1 + 3];
+    % vbound constraint: (1/2, vBound, v) in Qr^(1 + 3)
+    fV = sparse([zeros(2,1+3*L-3); zeros(3, 1), speye(3), zeros(3,3*L-6)]);
+    gV = [1/2, vBound^2, zeros(1,3)]';
+    accV = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE, 2 + 3];
     % fV = []; gV = []; accV = [];
 
     prob.f = [fQ; fV];

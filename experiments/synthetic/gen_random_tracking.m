@@ -49,6 +49,11 @@ if ~isfield(problem,'B')
     end
     B = reshape(shapes, 3*N, K);
 
+    if isfield(problem,'true_rand')
+    shapes = randn(3,N,K);
+    B = reshape(shapes, 3*N,K);
+    end
+
 else
     B = problem.B;
     shapes = problem.shapes;
