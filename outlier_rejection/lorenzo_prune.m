@@ -15,6 +15,7 @@ cdmin = min_max_dists{1};
 cdmax = min_max_dists{2};
 
 prioroutliers_warm = {};
+prioroutliers = [];
 if isfield(problem,'prioroutliers')
     prioroutliers = sort(problem.prioroutliers)-1;
 
@@ -48,6 +49,7 @@ out = py.outlier_rejection.prune_outliers_milp_copt.prune_outliers(py.numpy.arra
 priorinliers = sort(double(out))+1;
 catch
 priorinliers = 1:problem.N_VAR*problem.L;
+disp("Pruning failed!")
 end
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);
 

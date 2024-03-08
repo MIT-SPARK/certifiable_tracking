@@ -11,16 +11,16 @@ clc; clear; close all
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 10; % nr of keyframes in horizon
+problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.01; % [m]
-problem.covar_measure_base = 0.05^2;
-problem.covar_velocity_base = 0.05^2;
-problem.covar_rotrate_base = 0.05^2;
+problem.noiseSigmaSqrt = 0.1; % [m]
+% problem.covar_measure_base = 0.05^2;
+% problem.covar_velocity_base = 0.05^2;
+% problem.covar_rotrate_base = 0.05^2;
 
-problem.noiseBound = 0.02; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
-problem.processNoise = 0.1;
+problem.noiseBound = 0.3; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
+problem.processNoise = 0.01;
 
 problem.intraRadius = 0.2; 
 problem.translationBound = 10.0;

@@ -71,7 +71,8 @@ r_est          = R_est(:);
 f_est          = [1;r_est]' * C{1} * [1;r_est];
 c_est          = M * (br * r_est);
 t_est          = yw - R_est * (bw * c_est);
-gap            = abs(f_est - obj(1))/(1+abs(f_est)+abs(obj(1)));
+% gap            = abs(f_est - obj(1))/(1+abs(f_est)+abs(obj(1)));
+gap = (f_est - obj(2))/obj(2);
 
 out.f_est      = f_est;
 out.f_sdp      = obj(1);

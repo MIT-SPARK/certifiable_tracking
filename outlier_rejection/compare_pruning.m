@@ -7,7 +7,7 @@ clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
-n = 100;
+n = 50;
 counts = zeros(n,3); % robin, milp, clique
 robin_time = 0;
 milp_time = 0;
@@ -77,3 +77,4 @@ if isequal(problem.inliers_gt,problem_lorenzo_graph.priorinliers)
 end
 
 end
+sum(counts)

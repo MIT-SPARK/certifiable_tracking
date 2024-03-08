@@ -10,15 +10,14 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "K";
-savename = "synthetic4_" + indepVar;
-% domain = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000];
-domain = [10, 50, 100, 200, 500, 1000, 2000];
+savename = "syntheticN10_" + indepVar;
+domain = [1,2,4,8,16,32,64,128,256,512,1024,2048];
 num_repeats = 100;
 
 %% Loop
 results = cell(length(domain),1);
 parfor index = 1:length(domain)
-iv = domain(index)
+iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
 resultsIV.R_err_ours = zeros(num_repeats,1);
@@ -37,20 +36,18 @@ disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 problem = struct();
-problem.N_VAR = 100; % nr of keypoints
+problem.N_VAR = 10;%100; % nr of keypoints
 problem.K = iv; % nr of shapes
 problem.L = 3; %10; % nr of keyframes in horizon
 L = problem.L;
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.01; %0.1; % [m]
-problem.velocity_weight_multiplier = 1;
-problem.rotrate_kappa_multiplier = 1;
+problem.noiseSigmaSqrt = 0.01; % [m]
 
-problem.noiseBound = 0.05; %0.3; %chi2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
-problem.processNoise = 0.1;
+problem.noiseBound = 0.03; %chi``2inv(0.95,3*problem.N_VAR*problem.L)*problem.noiseSigmaSqrt^2;
+problem.processNoise = 0.03;
 
-problem.intraRadius = 0.1; %0.2; 
+problem.intraRadius = 0.2; % not relevant
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -72,6 +69,7 @@ problem.lambda = lambda;
 % Solve!
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
+% paceekf = pace_py_UKF(problem,pace); % this works well, but is kinda slow
 paceekf = pace_ekf(problem,pace);
 
 % Save solutions: only use last error
@@ -117,24 +115,26 @@ set(0,'DefaultLineLineWidth',2)
 
 % Rotation figure
 nexttile
+errorshade([results.(indepVar)],[results.R_err_pace],hex2rgb(settings.PACERAW{4})); hold on;
+errorshade([results.(indepVar)],[results.R_err_ours],hex2rgb(settings.OURS{4}));
 c=loglog([results.(indepVar)],median([results.R_err_pace]),'x-',settings.PACERAW{:}); hold on;
-errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
 % b=plot([results.(indepVar)],median([results.R_err_ekf]),'x-',settings.PACEEKF{:});
-% errorshade([results.(indepVar)],[results.R_err_ekf],get(b,'Color'));
+% errorshade([results.(indepVar)],[results.R_err_ekf],hex2rgb(settings.PACEEKF{4}));
 a=plot([results.(indepVar)],median([results.R_err_ours]),'x-',settings.OURS{:});
-errorshade([results.(indepVar)],[results.R_err_ours],get(a,'Color'));
 
+yscale log; xscale log
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
 nexttile
-b=loglog([results.(indepVar)],median([results.p_err_ekf]),'x-',settings.PACEEKF{:}); hold on;
-errorshade([results.(indepVar)],[results.p_err_ekf],get(b,'Color'));
+errorshade([results.(indepVar)],[results.p_err_pace],hex2rgb(settings.PACERAW{4})); hold on;
+errorshade([results.(indepVar)],[results.p_err_ours],hex2rgb(settings.OURS{4}));
+% b=loglog([results.(indepVar)],median([results.p_err_ekf]),'x-',settings.PACEEKF{:}); hold on;
+% errorshade([results.(indepVar)],[results.p_err_ekf],hex2rgb(settings.PACEEKF{4}));
 c=plot([results.(indepVar)],median([results.p_err_pace]),'x-',settings.PACERAW{:}); hold on;
-errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
 a=plot([results.(indepVar)],median([results.p_err_ours]),'x-',settings.OURS{:});
-errorshade([results.(indepVar)],[results.p_err_ours],get(a,'Color'));
+yscale log; xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")
 
@@ -143,11 +143,12 @@ lg.Layout.Tile = 'south';
 
 % shape figure
 nexttile
+errorshade([results.(indepVar)],[results.c_err_pace],hex2rgb(settings.PACERAW{4})); hold on;
+errorshade([results.(indepVar)],[results.c_err_ours],hex2rgb(settings.OURS{4}));
 b=loglog([results.(indepVar)],median([results.c_err_pace]),'x-',settings.PACERAW{:});
 hold on
-errorshade([results.(indepVar)],[results.c_err_pace],get(b,'Color'));
 a=plot([results.(indepVar)],median([results.c_err_ours]),'x-',settings.OURS{:});
-errorshade([results.(indepVar)],[results.c_err_ours],get(a,'Color'));
+yscale log; xscale log
 xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
@@ -155,9 +156,10 @@ title("Shape Errors")
 nexttile
 a=loglog([results.(indepVar)],abs(median([results.gap_ours])),'x-',settings.OURS{:});
 hold on
-errorshade([results.(indepVar)],abs([results.gap_ours]),get(a,'Color'));
 b=plot([results.(indepVar)],abs(median([results.gap_pace])),'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],abs([results.gap_pace]),get(b,'Color'));
+errorshade([results.(indepVar)],abs([results.gap_ours]),hex2rgb(settings.OURS{4}));
+errorshade([results.(indepVar)],abs([results.gap_pace]),hex2rgb(settings.PACERAW{4}));
+yscale log; xscale log
 xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
@@ -165,8 +167,8 @@ title("Suboptimality Gaps")
 % nexttile
 % hold on
 % % a=plot([results.(indepVar)],median([results.time_ours]),'x-',settings.OURS{:});
-% % errorshade([results.(indepVar)],[results.time_ours],get(a,'Color'));
+% % errorshade([results.(indepVar)],[results.time_ours],hex2rgb(settings.OURS{4}));
 % b=plot([results.(indepVar)],median([results.time_pace]),'x-',settings.PACERAW{:});
-% errorshade([results.(indepVar)],[results.time_pace],get(b,'Color'));
+% errorshade([results.(indepVar)],[results.time_pace],hex2rgb(settings.PACERAW{4}));
 % xlabel(indepVar); ylabel("Time (s)");
 % title("Solve Time")

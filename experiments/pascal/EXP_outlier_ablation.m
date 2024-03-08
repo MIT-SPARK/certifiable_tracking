@@ -18,27 +18,17 @@ num_repeats = 50;
 
 %% Loop
 results = cell(length(domain),1);
+all_problems = {};
+all_pruned_problems = {};
 for index = 1:length(domain)
 iv = domain(index);
-resultsIV = struct();
-resultsIV.(indepVar) = iv;
-resultsIV.R_err_ours = zeros(num_repeats,1);
-resultsIV.R_err_ekf = zeros(num_repeats,1);
-resultsIV.R_err_pace = zeros(num_repeats,1);
-resultsIV.p_err_ours = zeros(num_repeats,1);
-resultsIV.p_err_ekf = zeros(num_repeats,1);
-resultsIV.p_err_pace = zeros(num_repeats,1);
-resultsIV.c_err_ours = zeros(num_repeats,1);
-resultsIV.c_err_pace = zeros(num_repeats,1);
-resultsIV.gap_ours = zeros(num_repeats,1);
-resultsIV.gap_pace = zeros(num_repeats,1);
-resultsIV.time_ours = zeros(num_repeats,1);
-resultsIV.time_pace = zeros(num_repeats,1);
-disp("Starting " + indepVar + "=" + string(iv));
+
+problems = {};
+problems_pruned = {};
 for j = 1:num_repeats
 problem = struct();
 problem.category = "car";
-problem.L = 8;
+problem.L = 5;
 
 problem.outlierRatio = iv;
 problem.noiseSigmaSqrt = 0.1*0.3; % [m] (0.3 is length scale for car)
@@ -46,7 +36,7 @@ problem.velocity_weight_multiplier = 1;
 problem.rotrate_kappa_multiplier = 1;
 problem.noiseBound = 0.1;
 problem.noiseBound_GNC = 0.1; % TODO: set!
-problem.noiseBound_GRAPH = 0.11;
+problem.noiseBound_GRAPH = 0.15;
 problem.processNoise = 0.1;
 
 problem.translationBound = 10.0;
@@ -69,61 +59,131 @@ problem.outliers = []; % outlier indicies
 problem.priors = [];
 problem.dof = 3;
 
-% Solve!
-pace = pace_raw(problem, true, true); % GNC+ROBIN
-paceekf = pace_ekf(problem,pace);
+% pre-prune problems
+problem_milp = lorenzo_prune(problem);
 
-% Save solutions: only use last error
-% rotation error
-R_err_ekf = getAngularError(problem.R_gt(:,:,end), paceekf.R(:,:,end));
-R_err_pace = getAngularError(problem.R_gt(:,:,end), pace.R(:,:,end));
-% position error
-p_err_ekf = norm(problem.p_gt(:,:,end) - paceekf.p(:,:,end));
-p_err_pace = norm(problem.p_gt(:,:,end) - pace.p(:,:,end));
-% shape error
-c_err_pace = norm(problem.c_gt - pace.c(:,:,end));
-% time and gap
-gap_pace = pace.gaps(end);
-time_pace = pace.times(end);
+% save
+problems{j} = problem;
+problems_pruned{j} = problem_milp;
+end
+% save
+all_problems{index} = problems;
+all_pruned_problems{index} = problems_pruned;
+end
+
+% can be parfor
+for index = 1:length(domain)
+iv = domain(index);
+problems = all_problems{index};
+problems_pruned = all_pruned_problems{index};
+
+resultsIV = struct();
+resultsIV.(indepVar) = iv;
+resultsIV.R_err_ours = zeros(num_repeats,1);
+resultsIV.R_err_gnc = zeros(num_repeats,1);
+resultsIV.R_err_milp = zeros(num_repeats,1);
+resultsIV.p_err_ours = zeros(num_repeats,1);
+resultsIV.p_err_gnc = zeros(num_repeats,1);
+resultsIV.p_err_milp = zeros(num_repeats,1);
+resultsIV.c_err_ours = zeros(num_repeats,1);
+resultsIV.c_err_gnc = zeros(num_repeats,1);
+resultsIV.c_err_milp = zeros(num_repeats,1);
+resultsIV.iter_ours = zeros(num_repeats,1);
+resultsIV.iter_gnc = zeros(num_repeats,1);
+resultsIV.iter_milp = zeros(num_repeats,1);
+resultsIV.time_ours = zeros(num_repeats,1);
+resultsIV.time_gnc = zeros(num_repeats,1);
+resultsIV.time_milp = zeros(num_repeats,1);
+disp("Starting " + indepVar + "=" + string(iv));
+
+for j = 1:num_repeats
+problem = problems{j};
+problem_milp = problems_pruned{j};
 
 % regen only first time
 problem.regen_sdp = (j == 1);
-problem = lorenzo_prune(problem);
-try
-    [inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
-    disp("GNC finished " + string(j))
+problem_milp.regen_sdp = (j==1);
+% try
+    t = tic;
+    [inliers, info] = gnc_custom(problem_milp, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    soln_ours = info.f_info.soln;
+    soln_ours.iters = info.Iterations;
+    soln_ours.time = toc(t);
+% catch
+%     soln_ours.p_est = ones(3,1,1)*NaN;
+%     soln_ours.R_est = ones(3,3,1)*NaN;
+%     soln_ours.c_est = ones(problem.K,1)*NaN;
+%     soln_ours.iters = NaN;
+%     soln_ours.time = NaN;
+% end
 
-    soln = info.f_info.soln;
+% GNC only
+try
+    t = tic;
+    [inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    soln_gnc = info.f_info.soln;
+    soln_gnc.iters = info.Iterations;
+    soln_gnc.time = toc(t);
 catch
-    soln.p_est = ones(3,1,1)*NaN;
-    soln.R_est = ones(3,3,1)*NaN;
-    soln.c_est = ones(problem.K,1)*NaN;
-    soln.gap = NaN;
-    soln.solvetime = NaN;
-    disp("\nGNC failed " + string(j))
+    soln_gnc.p_est = ones(3,1,1)*NaN;
+    soln_gnc.R_est = ones(3,3,1)*NaN;
+    soln_gnc.c_est = ones(problem.K,1)*NaN;
+    soln_gnc.iters = NaN;
+    soln_gnc.time = NaN;
 end
 
-R_err_ours = getAngularError(problem.R_gt(:,:,end), soln.R_est(:,:,end));
-p_err_ours = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
-c_err_ours = norm(problem.c_gt - soln.c_est);
-gap_ours = soln.gap;
-time_ours = soln.solvetime;
+% MILP only
+try
+    t = tic;
+    soln = solve_weighted_tracking(problem_milp);
+    soln_milp = info.f_info.soln;
+    soln_milp.iters = 1;
+    soln_milp.time = toc(t);
+catch
+    soln_milp.p_est = ones(3,1,1)*NaN;
+    soln_milp.R_est = ones(3,3,1)*NaN;
+    soln_milp.c_est = ones(problem.K,1)*NaN;
+    soln_milp.iters = NaN;
+    soln_milp.time = NaN;
+end
+disp("Finished iv="+iv+" ("+j+")");
+
+R_err_ours = getAngularError(problem.R_gt(:,:,end), soln_ours.R_est(:,:,end));
+p_err_ours = norm(problem.p_gt(:,:,end) - soln_ours.p_est(:,:,end));
+c_err_ours = norm(problem.c_gt - soln_ours.c_est);
+iters_ours = soln_ours.iters;
+time_ours = soln_ours.time;
+
+R_err_gnc = getAngularError(problem.R_gt(:,:,end), soln_gnc.R_est(:,:,end));
+p_err_gnc = norm(problem.p_gt(:,:,end) - soln_gnc.p_est(:,:,end));
+c_err_gnc = norm(problem.c_gt - soln_gnc.c_est);
+iters_gnc = soln_gnc.iters;
+time_gnc = soln_gnc.time;
+
+R_err_milp = getAngularError(problem.R_gt(:,:,end), soln_milp.R_est(:,:,end));
+p_err_milp = norm(problem.p_gt(:,:,end) - soln_milp.p_est(:,:,end));
+c_err_milp = norm(problem.c_gt - soln_milp.c_est);
+iters_milp = soln_milp.iters;
+time_milp = soln_milp.time;
 
 % save
 resultsIV.R_err_ours(j) = R_err_ours;
-resultsIV.R_err_ekf(j)  = R_err_ekf;
-resultsIV.R_err_pace(j) = R_err_pace;
+resultsIV.R_err_gnc(j)  = R_err_gnc;
+resultsIV.R_err_milp(j) = R_err_milp;
 resultsIV.p_err_ours(j) = p_err_ours;
-resultsIV.p_err_ekf(j)  = p_err_ekf;
-resultsIV.p_err_pace(j) = p_err_pace;
+resultsIV.p_err_gnc(j)  = p_err_gnc;
+resultsIV.p_err_milp(j) = p_err_milp;
 resultsIV.c_err_ours(j) = c_err_ours;
-resultsIV.c_err_pace(j) = c_err_pace;
-resultsIV.gap_ours(j) = gap_ours;
-resultsIV.gap_pace(j) = gap_pace;
+resultsIV.c_err_gnc(j) = c_err_gnc;
+resultsIV.c_err_milp(j) = c_err_milp;
+resultsIV.c_err_ours(j) = c_err_ours;
+resultsIV.c_err_gnc(j) = c_err_gnc;
+resultsIV.c_err_milp(j) = c_err_milp;
 resultsIV.time_ours(j) = time_ours;
-resultsIV.time_pace(j) = time_pace;
-
+resultsIV.time_gnc(j) = time_gnc;
+resultsIV.time_milp(j) = time_milp;
 end
+
 results{index} = resultsIV;
 end
 results = [results{:}];

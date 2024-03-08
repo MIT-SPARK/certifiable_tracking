@@ -9,13 +9,13 @@ clc; clear; close all
 
 %% Generate random tracking problem
 problem.category = "car";
-problem.L = 11; % nr of keyframes in horizon
+problem.L = 5; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.5;
-problem.noiseSigmaSqrt = 0.05; % [m]
+problem.outlierRatio = 0.05;
+problem.noiseSigmaSqrt = 0.01; % [m]
 problem.noiseBound = 3*problem.noiseSigmaSqrt;
-problem.noiseBound_GNC = 0.15;
-problem.noiseBound_GRAPH = 0.15;
+problem.noiseBound_GNC = 0.05;
+problem.noiseBound_GRAPH = 0.05;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

@@ -1,11 +1,31 @@
 %% Plotting Helper
-function errorshade(x,y,color)
+function errorshade(x,y,color,type)
+
+if nargin < 4
+    type = "shade";
+end
 
 curve1 = prctile(y,75);
 curve2 = prctile(y,25);
 x2 = [x, fliplr(x)];
 inBetween = [curve1, fliplr(curve2)];
-obj = fill(x2, inBetween,color,'FaceAlpha',0.2,'EdgeColor','none');
+
+if (type=="shade")
+    % shade
+    obj = fill(x2, inBetween,color,'FaceAlpha',0.15,'EdgeColor','none');
+    % obj1 = plot(x,curve1,'--','Color',color);
+    % obj2 = plot(x,curve2,'--','Color',color);
+    % obj1.Annotation.LegendInformation.IconDisplayStyle = "off";
+    % obj2.Annotation.LegendInformation.IconDisplayStyle = "off";
+elseif (type=="bar")
+    % error bar
+    med = median(y);
+    obj = errorbar(x, med, med - curve2, curve1 - med,"LineStyle","none",'Color',color,'LineWidth',2);
+elseif (type=="dotted")
+    % dotted boundary lines
+    obj = plot(x,curve1,'--','Color',color);
+end
+
 obj.Annotation.LegendInformation.IconDisplayStyle = "off";
 
 % TF = isoutlier(y);
