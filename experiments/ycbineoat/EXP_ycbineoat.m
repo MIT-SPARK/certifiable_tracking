@@ -6,7 +6,7 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-% TODO:
+% NOTES:
 % 1) json2frameproblem needs to be updated to load the shape
 % 2) results processing isn't smart, doesn't support multiple domains
 
@@ -20,100 +20,100 @@ domain = ["cracker_box_reorient", "cracker_box_yalehand0", ...
           "mustard0", "mustard_easy_00_02", ...
           "bleach0", "bleach_hard_00_03_chaitanya", ...
           "tomato_soup_can_yalehand0"];
-domain = domain(5); % just do one for now
+domain = domain(1); % just do one for now
 % directories
 jsondir = "../datasets/ycbineoat/";
 
-%% Loop
+%% Setup Runs
 solns = cell(length(domain),1);
-for iv = domain
-    % Define json, generate problem
-    problem = struct();
-    problem.json = jsondir + iv + ".json";
-    problem.L = 10; % batch size
-    problem.savefile = jsondir + iv + "_ours.json";
-    problem.velprior = "body";
+iv = domain;
+% Define json, generate problem
+problem = struct();
+problem.json = jsondir + iv + ".json";
+problem.L = 10; % batch size
+problem.savefile = jsondir + iv + "_ours.json";
+problem.velprior = "body";
 
-    % Parameters
-    problem.translationBound = 5.0;
-    problem.velocityBound = 1.5;
-    problem.noiseBound_GNC = 0.01; % TODO: tune?
-    problem.noiseBound_GRAPH = 0.05; % TODO: tune?
-    problem.noiseBound = 0.01; % TODO: tune?
-    problem.covar_velocity_base = 0.05^2; % TODO: tune?
-    skip = 1; % TODO: experiment with different skip?
+% Parameters
+problem.translationBound = 5.0;
+problem.velocityBound = 1.5;
+problem.noiseBound_GNC = 0.01; % TODO: tune?
+problem.noiseBound_GRAPH = 0.05; % TODO: tune?
+problem.noiseBound = 0.01; % TODO: tune?
+problem.covar_velocity_base = 0.05^2; % TODO: tune?
+skip = 1; % TODO: experiment with different skip?
 
-    % Add shape, split into batches
-    [problems, gt, teaser, shapes] = json2frameproblem(problem, skip);
-    disp("Computing max/min distances...")
-    min_max_dists = robin_min_max_dists(problems{1}.shapes);
-    disp("Finished computing max/min distances")
+% Add shape, split into batches
+[problems, gt, teaser, shapes] = json2frameproblem(problem, skip);
+disp("Computing max/min distances...")
+min_max_dists = robin_min_max_dists(problems{1}.shapes, true);
+disp("Finished computing max/min distances")
 
-    % For testing: limit to small set of problems
-    numProblemsToSolve = length(problems);
+% For testing: limit to small set of problems
+numProblemsToSolve = length(problems);
 
-    % define solution variable
-    solnsIV = cell(numProblemsToSolve,1);
+% define solution variable
+solnsIV = cell(numProblemsToSolve,1);
 
-    % now we can start!
-    disp("Starting " + string(iv));
+%% Prune
+disp("Starting " + string(iv) + " (" + numProblemsToSolve + " problems)");
     
-    % we need to prune using serial processing
-    % disp("Pruning " + string(numProblemsToSolve) + " problems...")
-    for batch = 1:numProblemsToSolve
-        curproblem = problems{batch};
-        % data for GNC/pruning
-        curproblem.type = "tracking";
-        curproblem.N = curproblem.N_VAR*curproblem.L; % How many measurements this problem has (updated by ROBIN)
-        curproblem.outliers = []; % outlier indicies
-        curproblem.priors = [];
-        curproblem.dof = 0;
-        % run pruning!
-        curproblem = lorenzo_prune(curproblem, min_max_dists);
-        % save pruned problem
-        problems{batch} = curproblem;
-        disp("Finished " + string(batch));
-    end
-
-    disp("Solving " + string(numProblemsToSolve) + " problems...")
-
-    % L should change for the first problem.L - 2 problems
-    parfor batch = 1:min(problem.L-2, numProblemsToSolve)
-        curproblem = problems{batch};
-        curproblem.sdp_filename = "sdpdata" + curproblem.L;
-        curproblem.regen_sdp = true;
-
-        soln = solveBatch(curproblem);
-        solnsIV{batch} = soln;
-
-        % report bad results
-        if (soln.gap_nov > 1e-2)
-            fprintf("Batch %d failed: %.4e\n",batch,soln.gap_nov)
-        elseif (isnan(soln.gap))
-            fprintf("Batch %d failed: NaN\n",batch)
-        end
-    end
-    
-    % Now that L is fixed, run through the remainder of the problems
-    parfor batch = min(problem.L-2, numProblemsToSolve):numProblemsToSolve
-        curproblem = problems{batch};
-        curproblem.sdp_filename = "sdpdata" + curproblem.L;
-        curproblem.regen_sdp = false;
-
-        soln = solveBatch(curproblem);
-        solnsIV{batch} = soln;
-
-        % report bad results
-        if (soln.gap_nov > 1e-2)
-            fprintf("Batch %d failed: %.4e\n",batch,soln.gap_nov)
-        elseif (isnan(soln.gap))
-            fprintf("Batch %d failed: NaN\n",batch)
-        end
-    end
-
-    % save in solns
-    solns{domain == iv} = [solnsIV{:}];
+% we need to prune using serial processing
+% disp("Pruning " + string(numProblemsToSolve) + " problems...")
+for batch = 1:numProblemsToSolve
+    curproblem = problems{batch};
+    % data for GNC/pruning
+    curproblem.type = "tracking";
+    curproblem.N = curproblem.N_VAR*curproblem.L; % How many measurements this problem has (updated by ROBIN)
+    curproblem.outliers = []; % outlier indicies
+    curproblem.priors = [];
+    curproblem.dof = 0;
+    % run pruning!
+    curproblem = lorenzo_prune(curproblem, min_max_dists, false);
+    % save pruned problem
+    problems{batch} = curproblem;
+    disp("Finished pruning " + string(batch));
 end
+
+%% Solve
+disp("Solving " + string(numProblemsToSolve) + " problems...")
+
+% L should change for the first problem.L - 2 problems
+parfor batch = 1:min(problem.L-2, numProblemsToSolve)
+    curproblem = problems{batch};
+    curproblem.sdp_filename = "sdpdata" + curproblem.L;
+    curproblem.regen_sdp = true;
+
+    soln = solveBatch(curproblem);
+    solnsIV{batch} = soln;
+
+    % report bad results
+    if (soln.gap_nov > 1e-2)
+        fprintf("Batch %d failed: %.4e\n",batch,soln.gap_nov)
+    elseif (isnan(soln.gap))
+        fprintf("Batch %d failed: NaN\n",batch)
+    end
+end
+
+% Now that L is fixed, run through the remainder of the problems
+parfor batch = min(problem.L-2, numProblemsToSolve):numProblemsToSolve
+    curproblem = problems{batch};
+    curproblem.sdp_filename = "sdpdata" + curproblem.L;
+    curproblem.regen_sdp = false;
+
+    soln = solveBatch(curproblem);
+    solnsIV{batch} = soln;
+
+    % report bad results
+    if (soln.gap_nov > 1e-2)
+        fprintf("Batch %d failed: %.4e\n",batch,soln.gap_nov)
+    elseif (isnan(soln.gap))
+        fprintf("Batch %d failed: NaN\n",batch)
+    end
+end
+
+% save in solns
+solns{domain == iv} = [solnsIV{:}];
 
 %% Check solutions
 solns = solnsIV;

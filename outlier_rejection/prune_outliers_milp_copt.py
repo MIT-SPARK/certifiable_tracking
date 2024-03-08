@@ -14,6 +14,8 @@ from coptpy import COPT
 
 import networkx as nx
 
+# from prune_outliers import prune_outliers as prune_outliers_clique
+
 # native copt version
 def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers, warmstart):
     '''
@@ -66,7 +68,7 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
 
     # warmstart
     if warmstart:
-        warm_indicies = prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers)
+        warm_indicies = prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, warmstart)
         warmstart = np.zeros(N*L)
         warmstart[warm_indicies] = 1.0
         model.setMipStart(x,warmstart)
@@ -207,7 +209,7 @@ def shape_consistency_clique(g, tgt, cad_dist_min, cad_dist_max, noise_bound, pr
             continue
         g.add_edge(si[edge_idx], sj[edge_idx])
 
-def save(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
+def save(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers, warmstart):
     db = {}
     db['y'] = y
     db['cad_dist_min'] = cad_dist_min
@@ -215,6 +217,7 @@ def save(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutl
     db['noise_bound'] = noise_bound
     db['noise_bound_time'] = noise_bound_time
     db['prioroutliers'] = prioroutliers
+    db['warmstart'] = warmstart
     
     dbfile = open('test_pickle', 'wb')
     # source, destination
@@ -229,7 +232,7 @@ if __name__ == '__main__':
     dbfile.close()
     
     start = time.time()
-    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], True)
+    inliers = prune_outliers(db['y'], db['cad_dist_min'], db['cad_dist_max'], db['noise_bound'], db['noise_bound_time'], db['prioroutliers'], db['warmstart'])
     end = time.time()
     print(np.sort(inliers))
     print(end - start)

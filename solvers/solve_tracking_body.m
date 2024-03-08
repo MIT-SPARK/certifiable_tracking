@@ -432,10 +432,11 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
     % objective: add sh
     prob.c = [1, zeros(1,3*(L-1))];
     % define 1 + 3*(L-1) scalar variables with 3*(L-1) new constraints
-    prob.a = sparse([], [], [], length(prob.blc) + 3*(L-1), 1 + 3*(L-1));
+    % prob.a = sparse([], [], [], length(prob.blc) + 3*(L-1), 1 + 3*(L-1));
+    prob.a = sparse([], [], [], length(prob.blc), 1 + 3*(L-1));
     % bounds: [-vBound, vBound]
-    prob.blx = [0, -vBound*ones(1,3*(L-1))]; % TODO: -vBound?
-    prob.bux = [vBound*vBound,  vBound*ones(1,3*(L-1))];
+    prob.blx = [0, -vBound*ones(1,3*(L-1))];
+    prob.bux = [Inf,  vBound*ones(1,3*(L-1))];
     
     % conic constraint: v'*(Av'*Av)*v <= sh
     % (sh, 1, (sqrt(2)*Av)*v) in Q^(2 + 3*(L-1))
@@ -459,14 +460,14 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
     slices_s = 1+((18*L-9+1):(18*L-9+3*L));
     slices_v = 1+(1:3*(L-1));
     for l = 1:L-1
-        % A1: dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1)) 
+        % A1: dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1))
         r1 = [repmat(slices_s(ib3(l+1)),[1,3]),slices_s(ib3(l))];
         c1 = [slices_d([1,4,7]+9*(l-1)),slices_d([2,5,8]+9*(l-1)),slices_d([3,6,9]+9*(l-1)),ones(1,3)];
         v1 = [1*ones(1,9),-1*ones(1,3)];
         % A2: -v(ib3(l-1))*dt
         c2 = [slices_v(ib3(l))];
         r2 = [prob.bara.subi(end) + (1:3)];
-        v2 = [-2*dt*eye(3)];
+        v2 = [-2*dt*speye(3)];
         prob.a(r2, c2) = v2;
 
         prob.blc = [prob.blc; zeros(3,1)];
@@ -479,5 +480,45 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
         prob.bara.subl = [prob.bara.subl, c1];
         prob.bara.val  = [prob.bara.val , v1];
     end
+
+    % add constraints between v and semidefinite variable (acc version)
+    % slices_d = 1+((9*L+1):(9*L+9*(L-1)));
+    % slices_s = 1+((18*L-9+1):(18*L-9+3*L));
+    % slices_v = 1+(1:3*(L-1));
+    % for l = 1:L-1
+    %     % A1: dR(ib3(l-1),:)*s(ib3(l)) - s(ib3(l-1))
+    %     r1 = [repmat(slices_s(ib3(l+1)),[1,3]),slices_s(ib3(l))];
+    %     c1 = [slices_d([1,4,7]+9*(l-1)),slices_d([2,5,8]+9*(l-1)),slices_d([3,6,9]+9*(l-1)),ones(1,3)];
+    %     v1 = [1*ones(1,9),-1*ones(1,3)];
+    %     % A2: -v(ib3(l-1))*dt
+    %     c2 = [slices_v(ib3(l))];
+    %     if l == 1
+    %         r2 = [size(prob.f, 1) + (1:3)];
+    %     else
+    %         r2 = [prob.barf.subi(end) + (1:3)];
+    %     end
+    %     v2 = [-dt*eye(3)];
+    % 
+    %     prob.g = [prob.g; zeros(3,1)];
+    %     prob.accs = [prob.accs, symbcon.MSK_DOMAIN_RZERO, 3];
+    % 
+    %     if l == 1
+    %         prob.barf.subi = [size(prob.f,1) + repelem((1:3),3), size(prob.f,1) + (1:3)];
+    %         prob.barf.subj = [ones(1,12)];
+    %         prob.barf.subk = [r1];
+    %         prob.barf.subl = [c1];
+    %         prob.barf.val  = [v1];
+    %     else
+    %         prob.barf.subi = [prob.barf.subi, ...
+    %                             repelem(prob.barf.subi(end) + (1:3),3), ...
+    %                             prob.barf.subi(end) + (1:3)];
+    %         prob.barf.subj = [prob.barf.subj, 1*ones(1,12)];
+    %         prob.barf.subk = [prob.barf.subk, r1];
+    %         prob.barf.subl = [prob.barf.subl, c1];
+    %         prob.barf.val  = [prob.barf.val , v1];
+    %     end
+    % 
+    %     prob.f(r2, c2) = v2;
+    % end
 
 end

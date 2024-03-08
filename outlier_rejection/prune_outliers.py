@@ -128,7 +128,7 @@ def minimum_distance_to_convex_hull(A):
 Invariance-based outlier pruning for time series
 TODO: FIX
 '''
-def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, method="maxclique"):
+def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers, method="maxclique"):
     '''
     Compute an approximate inlier set using ROBIN
     '''
@@ -140,6 +140,10 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
     # Graph of single-time compatibility with shape lib
     for l in range(L):
         yl = y[:,l].reshape([N,3]).T
+        if (len(prioroutliers) < l + 1):
+            outliers = []
+        else:
+            outliers = prioroutliers[l]
         shape_consistency(g, l*N, yl, cad_dist_min, cad_dist_max, noise_bound)
 
     test = g.GetAdjMat()
