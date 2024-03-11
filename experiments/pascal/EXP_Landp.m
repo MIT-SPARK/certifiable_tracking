@@ -17,7 +17,7 @@ num_repeats = 100;
 
 %% Loop
 results = cell(length(domain),1);
-parfor index = 1:length(domain)
+for index = 1:length(domain)
 iv = domain(index)
 resultsIV = struct();
 resultsIV.(indepVar) = iv;

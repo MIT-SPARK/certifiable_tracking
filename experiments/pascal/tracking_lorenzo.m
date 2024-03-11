@@ -12,10 +12,10 @@ problem.category = "car";
 problem.L = 5; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.05;
-problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBound = 3*problem.noiseSigmaSqrt;
-problem.noiseBound_GNC = 0.05;
-problem.noiseBound_GRAPH = 0.05;
+problem.noiseSigmaSqrt = 0.1*0.3; % [m]
+problem.noiseBound = 0.1;
+problem.noiseBound_GNC = 0.1;
+problem.noiseBound_GRAPH = 0.1;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -51,7 +51,7 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-problem = lorenzo_prune(problem);
+% problem = lorenzo_prune(problem);
 
 % run GNC
 [inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',true);

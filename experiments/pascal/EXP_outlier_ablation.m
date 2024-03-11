@@ -103,19 +103,19 @@ problem_milp = problems_pruned{j};
 % regen only first time
 problem.regen_sdp = (j == 1);
 problem_milp.regen_sdp = (j==1);
-% try
+try
     t = tic;
     [inliers, info] = gnc_custom(problem_milp, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
     soln_ours = info.f_info.soln;
     soln_ours.iters = info.Iterations;
     soln_ours.time = toc(t);
-% catch
-%     soln_ours.p_est = ones(3,1,1)*NaN;
-%     soln_ours.R_est = ones(3,3,1)*NaN;
-%     soln_ours.c_est = ones(problem.K,1)*NaN;
-%     soln_ours.iters = NaN;
-%     soln_ours.time = NaN;
-% end
+catch
+    soln_ours.p_est = ones(3,1,1)*NaN;
+    soln_ours.R_est = ones(3,3,1)*NaN;
+    soln_ours.c_est = ones(problem.K,1)*NaN;
+    soln_ours.iters = NaN;
+    soln_ours.time = NaN;
+end
 
 % GNC only
 try
@@ -192,46 +192,37 @@ save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
-% settings.OURS = {'DisplayName', 'OURS','LineWidth',3};
-ours_colors = ["#000000", "#002e4c", "#00395f", "#004471", "#005084",...
-               "#005b97", "#0067aa","#0072bd", "#1a80c4", "#338eca",...
-               "#4d9cd1","#66aad7","#80b9de"];
+settings.OURS = {'DisplayName', 'OURS', 'Color', "#0072BD",'LineWidth',3};
 settings.PACEEKF = {'DisplayName', 'PACE-EKF', 'Color', "#D95319"};
 settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
+settings.GNC  = {'DisplayName', 'OURS-GNC', 'Color', "#D95319"}; % TODO: change colors
+settings.MILP = {'DisplayName', 'OURS-MILP', 'Color', "#EDB120"};
 figure
 tiledlayout(2,2);
 set(0,'DefaultLineLineWidth',2)
 
-display_range = 1:length(domain);
-L = 10;
-
 % Rotation figure
 nexttile
-hold on
-c=plot([results.(indepVar)],median([results.R_err_pace]),'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],[results.R_err_pace],get(c,'Color'));
-% b=plot([results.(indepVar)],median([results.R_err_ekf]),'x-',settings.PACEEKF{:});
-% errorshade([results.(indepVar)],[results.R_err_ekf],get(b,'Color'));
-res = [results.R_err_ours];
-plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(1)};
-a=plot([results.(indepVar)],median(res),'x-',plotsettings{:});
-errorshade([results.(indepVar)],res,get(a,'Color'));
+errorshade([results.(indepVar)],[results.R_err_gnc],hex2rgb(settings.GNC{4})); hold on;
+errorshade([results.(indepVar)],[results.R_err_ours],hex2rgb(settings.OURS{4}));
+errorshade([results.(indepVar)],[results.R_err_milp],hex2rgb(settings.MILP{4}));
+c=loglog([results.(indepVar)],median([results.R_err_gnc],"omitmissing"),'x-',settings.GNC{:}); hold on;
+b=plot([results.(indepVar)],median([results.R_err_milp],"omitmissing"),'x-',settings.MILP{:});
+a=plot([results.(indepVar)],median([results.R_err_ours],"omitmissing"),'x-',settings.OURS{:});
 
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % position figure
 nexttile
-hold on
-b=plot([results.(indepVar)],median([results.p_err_ekf])/0.3,'x-',settings.PACEEKF{:});
-errorshade([results.(indepVar)],[results.p_err_ekf]/0.3,get(b,'Color'));
-c=plot([results.(indepVar)],median([results.p_err_pace])/0.3,'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],[results.p_err_pace]/0.3,get(c,'Color'));
-res = [results.p_err_ours];
-plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(1)};
-a=plot([results.(indepVar)],median(res),'x-',plotsettings{:});
-errorshade([results.(indepVar)],res,get(a,'Color'));
-
+errorshade([results.(indepVar)],[results.p_err_gnc],hex2rgb(settings.GNC{4})); hold on;
+errorshade([results.(indepVar)],[results.p_err_ours],hex2rgb(settings.OURS{4}));
+errorshade([results.(indepVar)],[results.p_err_milp],hex2rgb(settings.MILP{4}));
+b=loglog([results.(indepVar)],median([results.p_err_milp],"omitmissing"),'x-',settings.MILP{:}); hold on;
+c=plot([results.(indepVar)],median([results.p_err_gnc],"omitmissing"),'x-',settings.GNC{:}); hold on;
+a=plot([results.(indepVar)],median([results.p_err_ours],"omitmissing"),'x-',settings.OURS{:});
+yscale log; %xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")
 
@@ -240,38 +231,40 @@ lg.Layout.Tile = 'south';
 
 % shape figure
 nexttile
-hold on
-b=plot([results.(indepVar)],median([results.c_err_pace]),'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],[results.c_err_pace],get(b,'Color'));
-res = [results.c_err_ours];
-plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(1)};
-a=plot([results.(indepVar)],median(res),'x-',plotsettings{:});
-errorshade([results.(indepVar)],res,get(a,'Color'));
-
+errorshade([results.(indepVar)],[results.c_err_gnc],hex2rgb(settings.GNC{4})); hold on;
+errorshade([results.(indepVar)],[results.c_err_milp],hex2rgb(settings.MILP{4}));
+errorshade([results.(indepVar)],[results.c_err_ours],hex2rgb(settings.OURS{4}));
+b=loglog([results.(indepVar)],median([results.c_err_gnc],"omitmissing"),'x-',settings.GNC{:});
+b=loglog([results.(indepVar)],median([results.c_err_milp],"omitmissing"),'x-',settings.MILP{:});
+a=plot([results.(indepVar)],median([results.c_err_ours],"omitmissing"),'x-',settings.OURS{:});
+yscale log; %xscale log
 xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
-% gap figure
-nexttile
-hold on
-res = abs([results.gap_ours]);
-plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(1)};
-a=plot([results.(indepVar)],median(res),'x-',plotsettings{:});
-errorshade([results.(indepVar)],res,get(a,'Color'));
-
-xlabel(indepVar); ylabel("Gap");
-title("Suboptimality Gaps")
+% Iterations figure
+% nexttile
+% a=loglog([results.(indepVar)],abs(median([results.iter_ours])),'x-',settings.OURS{:}); hold on;
+% b=plot([results.(indepVar)],abs(median([results.iter_gnc])),'x-',settings.GNC{:});
+% b=plot([results.(indepVar)],abs(median([results.iter_milp])),'x-',settings.MILP{:});
+% errorshade([results.(indepVar)],abs([results.iter_ours]),hex2rgb(settings.OURS{4}));
+% errorshade([results.(indepVar)],abs([results.iter_gnc]),hex2rgb(settings.GNC{4}));
+% errorshade([results.(indepVar)],abs([results.iter_milp]),hex2rgb(settings.MILP{4}));
+% yscale log; xscale log
+% xlabel(indepVar); ylabel("Gap");
+% title("Suboptimality Gaps")
 
 % time figure
-% nexttile
-% hold on
-% res = [results.time_ours];
-% plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(1)};
-% a=plot([results.(indepVar)],median(res),'x-',plotsettings{:});
-% errorshade([results.(indepVar)],res,get(a,'Color'));
-% 
-% xlabel(indepVar); ylabel("Time (s)");
-% title("Solve Time")
+nexttile
+hold on
+a=plot([results.(indepVar)],median([results.time_ours],"omitmissing"),'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.time_ours],hex2rgb(settings.OURS{4}));
+b=plot([results.(indepVar)],median([results.time_gnc],"omitmissing"),'x-',settings.GNC{:});
+errorshade([results.(indepVar)],[results.time_gnc],hex2rgb(settings.GNC{4}));
+b=plot([results.(indepVar)],median([results.time_milp],"omitmissing"),'x-',settings.MILP{:});
+errorshade([results.(indepVar)],[results.time_milp],hex2rgb(settings.MILP{4}));
+xlabel(indepVar); ylabel("Time (s)");
+title("Solve Time")
+yscale log;
 
 %% Change results format
 % for i = 1:length(results)
