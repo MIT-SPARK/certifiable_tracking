@@ -11,6 +11,7 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
 savename = "pascalcar_fixed_" + indepVar;
+lengthScale = 0.2; % smallest dimension
 domain = 0:0.025:1;
 Ldomain = 3:12;
 num_repeats = 100;
@@ -41,7 +42,7 @@ problem.category = "car";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = iv*0.7; % [m] (0.7 is length scale for aeroplane)
+problem.noiseSigmaSqrt = iv*lengthScale; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
@@ -65,7 +66,7 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_py_UKF(problem,pace);
+paceekf = pace_ekf(problem,pace); % try pace_py_ukf (issues with parfor)
 
 % Save solutions: only use last error
 % rotation error
@@ -164,10 +165,10 @@ title("Rotation Errors")
 % position figure
 nexttile
 hold on
-b=plot([results.(indepVar)],median([results.p_err_ekf])/0.3,'x-',settings.PACEEKF{:});
-errorshade([results.(indepVar)],[results.p_err_ekf]/0.3,get(b,'Color'));
-c=plot([results.(indepVar)],median([results.p_err_pace])/0.3,'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],[results.p_err_pace]/0.3,get(c,'Color'));
+b=plot([results.(indepVar)],median([results.p_err_ekf])/lengthScale,'x-',settings.PACEEKF{:});
+errorshade([results.(indepVar)],[results.p_err_ekf]/lengthScale,get(b,'Color'));
+c=plot([results.(indepVar)],median([results.p_err_pace])/lengthScale,'x-',settings.PACERAW{:});
+errorshade([results.(indepVar)],[results.p_err_pace]/lengthScale,get(c,'Color'));
 res = [results.p_err_ours];
 for lidx = Llist
 L = Ldomain(lidx);

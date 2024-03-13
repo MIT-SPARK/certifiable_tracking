@@ -9,7 +9,7 @@ if nargin == 1
     min_max_dists = robin_min_max_dists(problem.shapes);
 end
 if nargin <= 2
-    warmstart = true;
+    warmstart = false;
 end
 cdmin = min_max_dists{1};
 cdmax = min_max_dists{2};

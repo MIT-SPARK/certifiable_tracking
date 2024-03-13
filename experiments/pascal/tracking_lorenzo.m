@@ -11,15 +11,15 @@ clc; clear; close all
 problem.category = "aeroplane";
 problem.L = 3; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.3;
-problem.noiseSigmaSqrt = 0.05*0.7; % [m]
+problem.outlierRatio = 0.2;
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.15*0.7;
-% problem.noiseBound_GNC = 0.09^2;
-problem.noiseBound_GRAPH = 0.15*0.7;
+problem.noiseBound = 0.15*0.2;
+problem.noiseBound_GNC = (0.2*0.15)^2;
+problem.noiseBound_GRAPH = 0.15*0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -34,14 +34,14 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
-problem.cBound = true;
+problem.cBound = false;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.0;
+lambda = 0.1;
 problem.lambda = lambda;
 
 % for GNC
@@ -56,13 +56,12 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-problem = lorenzo_prune(problem);
+% problem = lorenzo_prune(problem);
 
 % run GNC
-% problem.noiseBound_GNC = 0.7*0.15;
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100);
+[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
 % convert to true inliers
-inliers = problem.priorinliers(inliers);
+% inliers = problem.priorinliers(inliers);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)

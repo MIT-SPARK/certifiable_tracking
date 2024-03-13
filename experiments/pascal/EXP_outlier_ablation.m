@@ -6,15 +6,14 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-% problem: much too slow with PACE
-
 clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalaeroplane_" + indepVar;
-domain = [0.05:0.025:0.95];
-num_repeats = 50;
+savename = "pascalaeroplane2_" + indepVar;
+lengthScale = 0.2; % smallest dimension
+domain = 0.05; %[0.05:0.025:0.95];
+num_repeats = 1;
 
 %% Loop
 results = cell(length(domain),1);
@@ -31,14 +30,14 @@ problem.category = "aeroplane";
 problem.L = 6;
 
 problem.outlierRatio = iv;
-problem.noiseSigmaSqrt = 0.05*0.7; % [m] (0.7 is length scale for aeroplane)
+problem.noiseSigmaSqrt = 0.05*lengthScale; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.15*0.7;
-problem.noiseBound_GNC = 0.15*0.7;
-problem.noiseBound_GRAPH = 0.15*0.7;
+problem.noiseBound = 0.15*lengthScale;
+problem.noiseBound_GNC = 0.15*lengthScale;
+problem.noiseBound_GRAPH = 0.15*lengthScale;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -72,8 +71,8 @@ all_problems{index} = problems;
 all_pruned_problems{index} = problems_pruned;
 end
 
-% can be parfor
-parfor index = 1:length(domain)
+% can be parfor TODO
+for index = 1:length(domain)
 iv = domain(index);
 problems = all_problems{index};
 problems_pruned = all_pruned_problems{index};
@@ -217,12 +216,12 @@ title("Rotation Errors")
 
 % position figure
 nexttile
-errorshade([results.(indepVar)],[results.p_err_gnc],hex2rgb(settings.GNC{4})); hold on;
-errorshade([results.(indepVar)],[results.p_err_ours],hex2rgb(settings.OURS{4}));
-errorshade([results.(indepVar)],[results.p_err_milp],hex2rgb(settings.MILP{4}));
-b=loglog([results.(indepVar)],median([results.p_err_milp],"omitmissing"),'x-',settings.MILP{:}); hold on;
-c=plot([results.(indepVar)],median([results.p_err_gnc],"omitmissing"),'x-',settings.GNC{:}); hold on;
-a=plot([results.(indepVar)],median([results.p_err_ours],"omitmissing"),'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.p_err_gnc]/lengthScale,hex2rgb(settings.GNC{4})); hold on;
+errorshade([results.(indepVar)],[results.p_err_ours]/lengthScale,hex2rgb(settings.OURS{4}));
+errorshade([results.(indepVar)],[results.p_err_milp]/lengthScale,hex2rgb(settings.MILP{4}));
+b=loglog([results.(indepVar)],median([results.p_err_milp],"omitmissing")/lengthScale,'x-',settings.MILP{:}); hold on;
+c=plot([results.(indepVar)],median([results.p_err_gnc],"omitmissing")/lengthScale,'x-',settings.GNC{:}); hold on;
+a=plot([results.(indepVar)],median([results.p_err_ours],"omitmissing")/lengthScale,'x-',settings.OURS{:});
 yscale log; %xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")

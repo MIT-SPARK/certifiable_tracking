@@ -7,14 +7,14 @@
 
 clc; clear; close all
 % restoredefaultpath
-rng("default")
+% rng("default")
 
 %% Generate random tracking problem
-problem.category = "car";
-problem.L = 10; % nr of keyframes in horizon
+problem.category = "aeroplane";
+problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
-problem.noiseSigmaSqrt = 0.3; % [m]
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.noiseBound = 0.1;
 % problem.processNoise = 0.01;
 problem.translationBound = 10.0;

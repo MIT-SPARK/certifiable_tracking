@@ -11,6 +11,7 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
 savename = "pascalaeroplane_fixed_" + indepVar;
+lengthScale = 0.2; % smallest dimension
 domain = 0:0.05:2;
 Ldomain = 3:12;
 num_repeats = 100;
@@ -41,12 +42,12 @@ problem.category = "car";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05*0.7; % [m] (0.7 is length scale for aeroplane)
+problem.noiseSigmaSqrt = 0.05*lengthScale; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.15*0.7;
+problem.noiseBound = 0.15*lengthScale;
 problem.processNoise = 0.1;
 
 problem.translationBound = 10.0;
@@ -55,7 +56,7 @@ problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
 
-problem.accelerationNoiseBoundSqrt = iv*0.3;
+problem.accelerationNoiseBoundSqrt = iv*lengthScale;
 problem.rotationNoiseBound = 0; % rad
 
 % add shape, measurements, outliers
@@ -65,7 +66,7 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_py_ukf(problem,pace);
+paceekf = pace_ekf(problem,pace); % try pace_py_ukf (issues with parfor)
 
 % Save solutions: only use last error
 % rotation error
@@ -161,10 +162,10 @@ title("Rotation Errors")
 % position figure
 nexttile
 hold on
-b=plot([results.(indepVar)],median([results.p_err_ekf])/0.3,'x-',settings.PACEEKF{:});
-errorshade([results.(indepVar)],[results.p_err_ekf]/0.3,get(b,'Color'));
-c=plot([results.(indepVar)],median([results.p_err_pace])/0.3,'x-',settings.PACERAW{:});
-errorshade([results.(indepVar)],[results.p_err_pace]/0.3,get(c,'Color'));
+b=plot([results.(indepVar)],median([results.p_err_ekf])/lengthScale,'x-',settings.PACEEKF{:});
+errorshade([results.(indepVar)],[results.p_err_ekf]/lengthScale,get(b,'Color'));
+c=plot([results.(indepVar)],median([results.p_err_pace])/lengthScale,'x-',settings.PACERAW{:});
+errorshade([results.(indepVar)],[results.p_err_pace]/lengthScale,get(c,'Color'));
 res = [results.p_err_ours];
 for lidx = Llist
 L = Ldomain(lidx);
