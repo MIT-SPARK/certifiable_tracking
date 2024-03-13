@@ -8,14 +8,18 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.category = "car";
-problem.L = 5; % nr of keyframes in horizon
+problem.category = "aeroplane";
+problem.L = 3; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.05;
-problem.noiseSigmaSqrt = 0.1*0.3; % [m]
-problem.noiseBound = 0.1;
-problem.noiseBound_GNC = 0.1;
-problem.noiseBound_GRAPH = 0.1;
+problem.outlierRatio = 0.3;
+problem.noiseSigmaSqrt = 0.05*0.7; % [m]
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
+
+problem.noiseBound = 0.15*0.7;
+% problem.noiseBound_GNC = 0.09^2;
+problem.noiseBound_GRAPH = 0.15*0.7;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -30,6 +34,7 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
+problem.cBound = true;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -51,10 +56,11 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-% problem = lorenzo_prune(problem);
+problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',true);
+% problem.noiseBound_GNC = 0.7*0.15;
+[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100);
 % convert to true inliers
 inliers = problem.priorinliers(inliers);
 

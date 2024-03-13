@@ -12,13 +12,12 @@ clc; clear; close all
 indepVar = "noiseSigmaSqrt";
 savename = "pascalcar_fixed_" + indepVar;
 domain = 0:0.025:1;
-% domain = 1.025:0.025:2;
 Ldomain = 3:12;
 num_repeats = 100;
 
 %% Loop
 results = cell(length(domain),1);
-parfor index = 1:length(domain)
+parfor (index = 1:length(domain))
 iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
@@ -42,9 +41,10 @@ problem.category = "car";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = iv*0.3; % [m] (0.3 is length scale for car)
-problem.velocity_weight_multiplier = 1;
-problem.rotrate_kappa_multiplier = 1;
+problem.noiseSigmaSqrt = iv*0.7; % [m] (0.7 is length scale for aeroplane)
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
 
 problem.noiseBound = 0.5;
 problem.processNoise = 0.1;

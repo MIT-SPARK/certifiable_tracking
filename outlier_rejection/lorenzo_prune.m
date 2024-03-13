@@ -46,9 +46,12 @@ end
 % there is also a cvxpy version (see file). These alternatives are slower.
 try
 out = py.outlier_rejection.prune_outliers_milp_copt.prune_outliers(py.numpy.array(problem.y), cdmin, cdmax, noiseBound, noiseBound, py.list(int32(prioroutliers)), prioroutliers_warm);
-priorinliers = sort(double(out))+1;
+out = cell(out);
+problem.milptime = double(out{2});
+priorinliers = sort(double(out{1}))+1;
 catch
 priorinliers = 1:problem.N_VAR*problem.L;
+problem.milptime = NaN;
 disp("Pruning failed!")
 end
 prioroutliers = setdiff(1:problem.N_VAR*problem.L,priorinliers);

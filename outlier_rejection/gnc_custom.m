@@ -75,13 +75,13 @@ if params.Results.Debug
 end
 
 if ismember('init_', params.UsingDefaults)
-    try
-        [~, f_info] = f(problem);
-        problem.regen_sdp = false; % CHANGE
-    catch err
-        fprintf('Error message: %s', err.message)
-        error("Could not run the global solver")
-    end
+    % try % REMOVED TRY CATCH (it is pointless)
+    [~, f_info] = f(problem);
+    problem.regen_sdp = false; % CHANGE
+    % catch err
+    %     fprintf('Error message: %s', err.message)
+    %     error("Could not run the global solver")
+    % end
     assert(isfield(f_info, 'residuals'), 'f should compute residuals');
 else
     f_info = params.Results.('init_');
@@ -110,12 +110,12 @@ while i < max_iterations
     if params.Results.FixPriorsWeights
         weights(problem.priors) = 1;
     end
-    try
+    % try % removed useless try catch
         [~, f_info] = f(problem, 'Weights', weights);
-    catch err
-        fprintf('Error message: %s', err.message)
-        error("Could not run the global solver")
-    end
+    % catch err
+        % fprintf('Error message: %s', err.message)
+        % error("Could not run the global solver")
+    % end
     f_cost = sum(f_info.residuals(:) .* weights(:));
     cost_diff = abs(f_cost - prev_f_cost);
     prev_f_cost = f_cost;

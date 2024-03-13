@@ -12,7 +12,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalcar_" + indepVar;
+savename = "pascalaeroplane_" + indepVar;
 domain = [0.05:0.025:0.95];
 num_repeats = 50;
 
@@ -27,17 +27,18 @@ problems = {};
 problems_pruned = {};
 for j = 1:num_repeats
 problem = struct();
-problem.category = "car";
-problem.L = 5;
+problem.category = "aeroplane";
+problem.L = 6;
 
 problem.outlierRatio = iv;
-problem.noiseSigmaSqrt = 0.1*0.3; % [m] (0.3 is length scale for car)
-problem.velocity_weight_multiplier = 1;
-problem.rotrate_kappa_multiplier = 1;
-problem.noiseBound = 0.1;
-problem.noiseBound_GNC = 0.1; % TODO: set!
-problem.noiseBound_GRAPH = 0.15;
-problem.processNoise = 0.1;
+problem.noiseSigmaSqrt = 0.05*0.7; % [m] (0.7 is length scale for aeroplane)
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
+
+problem.noiseBound = 0.15*0.7;
+problem.noiseBound_GNC = 0.15*0.7;
+problem.noiseBound_GRAPH = 0.15*0.7;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -72,7 +73,7 @@ all_pruned_problems{index} = problems_pruned;
 end
 
 % can be parfor
-for index = 1:length(domain)
+parfor index = 1:length(domain)
 iv = domain(index);
 problems = all_problems{index};
 problems_pruned = all_pruned_problems{index};
@@ -108,7 +109,7 @@ try
     [inliers, info] = gnc_custom(problem_milp, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
     soln_ours = info.f_info.soln;
     soln_ours.iters = info.Iterations;
-    soln_ours.time = toc(t);
+    soln_ours.time = toc(t) + problem_milp.milptime;
 catch
     soln_ours.p_est = ones(3,1,1)*NaN;
     soln_ours.R_est = ones(3,3,1)*NaN;
@@ -138,7 +139,7 @@ try
     soln = solve_weighted_tracking(problem_milp);
     soln_milp = info.f_info.soln;
     soln_milp.iters = 1;
-    soln_milp.time = toc(t);
+    soln_milp.time = toc(t) + problem_milp.milptime;
 catch
     soln_milp.p_est = ones(3,1,1)*NaN;
     soln_milp.R_est = ones(3,3,1)*NaN;

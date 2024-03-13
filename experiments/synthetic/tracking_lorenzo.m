@@ -8,13 +8,13 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.N_VAR = 10; % nr of keypoints
+problem.N_VAR = 11; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 11; % nr of keyframes in horizon
+problem.L = 3; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.5;
+problem.outlierRatio = 0.6;
 problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBound = 3*problem.noiseSigmaSqrt;
+problem.noiseBound = 0.05;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -48,12 +48,13 @@ problem.lambda = lambda;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-problem = lorenzo_prune(problem);
+% problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'FixPriorOutliers',true);
+gnc_noise = 0.05;
+[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', gnc_noise,'MaxIterations',100,'Debug',true);
 % convert to true inliers
-inliers = problem.priorinliers(inliers);
+% inliers = problem.priorinliers(inliers);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)

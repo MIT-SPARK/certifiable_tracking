@@ -10,14 +10,14 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalcar_fixed_" + indepVar;
+savename = "pascalaeroplane_fixed_" + indepVar;
 domain = 0:0.05:2;
 Ldomain = 3:12;
 num_repeats = 100;
 
 %% Loop
 results = cell(length(domain),1);
-for index = 1:length(domain)
+parfor index = 1:length(domain)
 iv = domain(index)
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
@@ -41,13 +41,13 @@ problem.category = "car";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.5*0.3; % [m] (0.3 is length scale for car)
-% 0.1*0.3 in original run
-problem.velocity_weight_multiplier = 1;
-problem.rotrate_kappa_multiplier = 1;
+problem.noiseSigmaSqrt = 0.05*0.7; % [m] (0.7 is length scale for aeroplane)
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.5;
-problem.processNoise = 0.5;
+problem.noiseBound = 0.15*0.7;
+problem.processNoise = 0.1;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -65,7 +65,7 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_py_UKF(problem,pace);
+paceekf = pace_py_ukf(problem,pace);
 
 % Save solutions: only use last error
 % rotation error

@@ -42,10 +42,14 @@ else
 end
 if (isfield(problem,"kappa_rotrate_base"))
     problem.kappa_rotrate = ones(L-2,1)*problem.kappa_rotrate_base;
+elseif (isfield(problem,"covar_rotrate_base"))
+    problem.kappa_rotrate = ones(L-2,1)*(2/problem.covar_rotrate_base);
 else
     base = mean(problem.covar_velocity(~isinf(problem.covar_velocity)));
     problem.kappa_rotrate  = ones(L-2,1)*(2/base);
 end
+% problem.kappa_rotrate  = ones(L-2,1);
+% problem.covar_velocity = ones(L-2,1);
 
 %% Redirect to appropriate solver
 % default to body frame

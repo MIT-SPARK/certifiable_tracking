@@ -77,12 +77,13 @@ def prune_outliers(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time,
     model.setParam(COPT.Param.TimeLimit, 10.0)
     model.solve()
     x = np.round(model.getValues())
+    milptime = model.getAttr(COPT.Attr.SolvingTime)
     # prob.solve(verbose=True)
 
     # pull out inlier indicies
     inliers = np.array(range(N*L))
     inliers = inliers[x == 1]
-    return inliers
+    return inliers, milptime
 
 
 def shape_consistency(tgt, cad_dist_min, cad_dist_max, noise_bound):

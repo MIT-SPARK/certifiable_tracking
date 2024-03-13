@@ -102,8 +102,6 @@ def compute_min_max_distances(cad_kpts):
 
     cad_dist_min_ij = np.array(cad_dist_min_ij)
 
-    print('Done')
-
     return cad_dist_min_ij, cad_dist_max_ij
 
 def minimum_distance_to_convex_hull(A):

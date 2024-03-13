@@ -224,7 +224,20 @@ end
 % for l = 1:L
 %     g_s = [g_s; pBoundSq - s(ib3(l))'*s(ib3(l))];
 % end
+
+if isfield(problem,"cBound")
+    if problem.cBound
+        % c bound (0<=c<=1)
+        cBoundSq = 1.0; % should just be 1
+        c = Cr*r - Cs*s + gbar;
+        g_c = [cBoundSq - c'*c;c];
+        g = g_c;
+    else
+        g = [];
+    end
+else
 g = []; % no constraints works just as well
+end
 
 end
 
@@ -257,7 +270,7 @@ prob = convert_sedumi2mosek(SDP.sedumi.At,...
 % prob = add_v(prob,Av,L,dt,vBound);
 prob = add_quad_v_constraints(prob,Av,L,dt,vBound);
 tic
-[~,res] = mosekopt('minimize echo(0)',prob);
+[~,res] = mosekopt('minimize info echo(0)',prob);
 soln.solvetime = toc;
 % blk = {SDP.blk{1}, SDP.blk{2}; SDP.blk{1}, [1+3*(L-1)]};
 blk = SDP.blk;

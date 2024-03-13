@@ -19,9 +19,9 @@ elseif isfield(problem,'covar_measure')
     % use only for testing: skipping points or other tests
 else
     problem.covar_measure = ones(problem.N_VAR,L);
-    if (isfield(problem,"covar_measure_base"))
-        problem.covar_measure = problem.covar_measure*problem.covar_measure_base;
-    end
+end
+if (isfield(problem,"covar_measure_base"))
+    problem.covar_measure = problem.covar_measure*problem.covar_measure_base;
 end
 
 %% Set weights
