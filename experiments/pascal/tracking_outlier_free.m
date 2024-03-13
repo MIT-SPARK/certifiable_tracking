@@ -11,12 +11,15 @@ clc; clear; close all
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
-problem.L = 3; % nr of keyframes in horizon
+problem.L = 1; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.noiseBound = 0.1;
-% problem.processNoise = 0.01;
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = Inf;
+problem.covar_rotrate_base = Inf;
+
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
@@ -44,9 +47,9 @@ problem.lambda = lambda;
 
 %% Solve!
 soln = solve_weighted_tracking(problem);
-pace = pace_raw(problem);
-paceukf = pace_py_UKF(problem,pace);
-paceekf = pace_ekf(problem,pace);
+% pace = pace_raw(problem);
+% paceukf = pace_py_UKF(problem,pace);
+% paceekf = pace_ekf(problem,pace);
 
 %% Check solutions
 % eigenvalue plot

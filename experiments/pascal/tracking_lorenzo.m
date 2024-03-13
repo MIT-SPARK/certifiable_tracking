@@ -11,14 +11,14 @@ clc; clear; close all
 problem.category = "aeroplane";
 problem.L = 3; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.2;
+problem.outlierRatio = 0.06;
 problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
 problem.noiseBound = 0.15*0.2;
-problem.noiseBound_GNC = (0.2*0.15)^2;
+problem.noiseBound_GNC = 0.1;%(0.2*0.15);
 problem.noiseBound_GRAPH = 0.15*0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
@@ -41,7 +41,7 @@ problem.cBound = false;
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.1;
+lambda = 0.5;
 problem.lambda = lambda;
 
 % for GNC
