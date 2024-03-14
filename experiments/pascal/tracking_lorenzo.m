@@ -12,10 +12,10 @@ problem.category = "aeroplane";
 problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.06;
-problem.noiseSigmaSqrt = 0;%0.05*0.2; % [m]
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.covar_measure_base = 1;
-problem.covar_velocity_base = Inf;
-problem.covar_rotrate_base = Inf;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
 
 problem.noiseBound = 0.15*0.2;
 problem.noiseBound_GNC = 0.1;%(0.2*0.15);
@@ -34,14 +34,14 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
-problem.cBound = true;
+problem.cBound = false;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.;
+lambda = 0.5;
 problem.lambda = lambda;
 
 % for GNC
@@ -73,5 +73,3 @@ else
         disp("Inliers not found after " + string(info.Iterations) + " iterations.");
     end
 end
-
-inliers = inliers'; % TYOD: REMOVE

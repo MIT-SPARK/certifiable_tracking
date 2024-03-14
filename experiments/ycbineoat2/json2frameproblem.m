@@ -125,15 +125,15 @@ data = jsondecode(str);
 if isfield(data, "interp_cad_keypoints")
     shapes = data(1).interp_cad_keypoints' / 1000.0;
 
-    % [C, ia, ic] = unique(shapes','stable','rows');
-    % % remove nonspherical keypoints/shapes
-    % % keep = [6,7,8,10,12,14,15,16];
-    % keep = [6,8,14,16];
-    % keepVec = ia;
-    % for n = 1:length(ia)
-    %     keepVec = [keepVec; length(ia) + 16*(n-1) + keep'];
-    % end
-    % shapes = shapes(:,keepVec,:);
+    [C, ia, ic] = unique(shapes','stable','rows');
+    % remove nonspherical keypoints/shapes
+    % keep = [6,7,8,10,12,14,15,16];
+    keep = [6,8,14,16];
+    keepVec = ia;
+    for n = 1:length(ia)
+        keepVec = [keepVec; length(ia) + 16*(n-1) + keep'];
+    end
+    shapes = shapes(:,keepVec,:);
 
     N = size(shapes,2);
     field = "est_interp_world_keypoints";
@@ -144,10 +144,10 @@ else
 end
 
 keypoints = [data.(field)];
-% if isfield(data,"interp_cad_keypoints")
-%     keypoints = reshape(keypoints,[length(ic),3,size(data,1)]);
-%     keypoints = keypoints(keepVec,:,:);
-% end
+if isfield(data,"interp_cad_keypoints")
+    keypoints = reshape(keypoints,[length(ic),3,size(data,1)]);
+    keypoints = keypoints(keepVec,:,:);
+end
 
 keypoints = reshape(keypoints,[N,3,size(data,1)]);
 keypoints = permute(keypoints,[2,1,3]) / 1000.0; % [m]
