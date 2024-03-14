@@ -49,6 +49,7 @@ for l = 1:problem.L
             t_est = out.t_est;
             c_est = out.c_est;
             gap = out.gap;
+            cost = out.f_est;
         catch
             % GNC may fail. Catch these and report NaN for pose estimate
             out = NaN;
@@ -57,12 +58,14 @@ for l = 1:problem.L
             c_est = ones(problem.K,1)*NaN;
             gap = NaN;
             pace_time = NaN;
+            cost = NaN;
             disp("PACE GNC Failed.")
         end
     else
         % Run without GNC
         tic
         [R_est,t_est,c_est,out] = outlier_free_category_registration(pace_problem, 'lambda',problem.lambda);
+        cost = out.f_est;
         pace_time = toc;
         gap = out.gap;
     end
@@ -71,6 +74,7 @@ for l = 1:problem.L
     s.s_est = R_est'*t_est;
     s.gap = gap;
     s.time = pace_time;
+    s.cost = cost;
     soln_pace = [soln_pace; s];
 end
 
@@ -82,5 +86,6 @@ soln.R = reshape([soln_pace.R_est],[3,3,L]);
 soln.c = reshape([soln_pace.c_est],[K,1,L]);
 soln.gaps = reshape([soln_pace.gap],[L,1]);
 soln.times = reshape([soln_pace.time],[L,1]);
+soln.cost = reshape([soln_pace.cost],[L,1]);
 
 end
