@@ -230,7 +230,8 @@ if isfield(problem,"cBound")
         % c bound (0<=c<=1)
         cBoundSq = 1.0; % should just be 1
         c = Cr*r - Cs*s + gbar;
-        g_c = [cBoundSq - c'*c;c];
+        % g_c = [cBoundSq - c'*c;c];
+        g_c = [c; 1-c; c.^2; 1-c.^2];
         g = g_c;
     else
         g = [];
