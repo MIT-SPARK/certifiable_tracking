@@ -10,11 +10,11 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalcar_fixed_" + indepVar;
+savename = "pascalaeroplane_fixed_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.025:1;
 Ldomain = 3:12;
-num_repeats = 100;
+num_repeats = 50;
 
 %% Loop
 results = cell(length(domain),1);
@@ -38,7 +38,7 @@ disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 problem = struct();
-problem.category = "car";
+problem.category = "aeroplane";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
@@ -47,7 +47,7 @@ problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.5;
+problem.noiseBound = 0.5*lengthScale;
 problem.processNoise = 0.1;
 
 problem.translationBound = 10.0;

@@ -12,8 +12,8 @@ clc; clear; close all
 indepVar = "outlierratio"; % name of independent variable
 savename = "pascalaeroplane2_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0.05; %[0.05:0.025:0.95];
-num_repeats = 1;
+domain = [0.05:0.025:0.95];
+num_repeats = 50;
 
 %% Loop
 results = cell(length(domain),1);
@@ -52,6 +52,7 @@ problem.rotationNoiseBound = 0; % rad
 problem = gen_pascal_tracking(problem);
 lambda = 0;
 problem.lambda = lambda;
+problem.useusecBound = false;
 
 % for GNC
 problem.N = problem.N_VAR*problem.L; % How many measurements this problem has (updated by ROBIN)
@@ -71,8 +72,8 @@ all_problems{index} = problems;
 all_pruned_problems{index} = problems_pruned;
 end
 
-% can be parfor TODO
-for index = 1:length(domain)
+%% can be parfor TODO
+parfor index = 1:length(domain)
 iv = domain(index);
 problems = all_problems{index};
 problems_pruned = all_pruned_problems{index};
@@ -136,7 +137,7 @@ end
 try
     t = tic;
     soln = solve_weighted_tracking(problem_milp);
-    soln_milp = info.f_info.soln;
+    soln_milp = soln;
     soln_milp.iters = 1;
     soln_milp.time = toc(t) + problem_milp.milptime;
 catch
@@ -179,6 +180,9 @@ resultsIV.c_err_milp(j) = c_err_milp;
 resultsIV.c_err_ours(j) = c_err_ours;
 resultsIV.c_err_gnc(j) = c_err_gnc;
 resultsIV.c_err_milp(j) = c_err_milp;
+resultsIV.iter_ours(j) = iters_ours;
+resultsIV.iter_gnc(j) = iters_gnc;
+resultsIV.iter_milp(j) = iters_milp;
 resultsIV.time_ours(j) = time_ours;
 resultsIV.time_gnc(j) = time_gnc;
 resultsIV.time_milp(j) = time_milp;

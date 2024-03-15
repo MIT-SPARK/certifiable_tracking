@@ -120,7 +120,7 @@ while i < max_iterations
     cost_diff = abs(f_cost - prev_f_cost);
     prev_f_cost = f_cost;
     
-    if (cost_diff < params.Results.CostThreshold) || areBinaryWeights(weights) 
+    if (cost_diff < params.Results.CostThreshold) || areBinaryWeights(weights) || (f_info.soln.gap < 1e-6)
         if params.Results.Debug
             residuals_history(i+1,:) = f_info.residuals(:)';
             weights_history(i+1, :) = weights;

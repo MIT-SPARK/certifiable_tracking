@@ -1,4 +1,4 @@
-%% Dense SDP relaxation for certifiable tracking
+% Dense SDP relaxation for certifiable tracking
 %  Version with outlier rejection through lorenzo+GNC
 %
 % Lorenzo Shaikewitz for SPARK Lab
@@ -8,12 +8,16 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.N_VAR = 11; % nr of keypoints
+problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
 problem.L = 3; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.6;
-problem.noiseSigmaSqrt = 0.01; % [m]
+problem.outlierRatio = 0.06;
+problem.noiseSigmaSqrt = 0.05; % [m]
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
+
 problem.noiseBound = 0.05;
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
@@ -51,8 +55,7 @@ problem.lambda = lambda;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-gnc_noise = 0.05;
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', gnc_noise,'MaxIterations',100,'Debug',true);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',0.15,'ContinuationFactor',1.4);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 

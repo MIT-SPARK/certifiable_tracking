@@ -225,12 +225,10 @@ end
 %     g_s = [g_s; pBoundSq - s(ib3(l))'*s(ib3(l))];
 % end
 
-if isfield(problem,"cBound")
-    if problem.cBound
+if isfield(problem,"usecBound")
+    if problem.usecBound
         % c bound (0<=c<=1)
-        cBoundSq = 1.0; % should just be 1
         c = Cr*r - Cs*s + gbar;
-        % g_c = [cBoundSq - c'*c;c];
         g_c = [c; 1-c; c.^2; 1-c.^2];
         g = g_c;
     else

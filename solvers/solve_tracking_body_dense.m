@@ -269,20 +269,6 @@ g_v_allinone = vBoundSq*L - v'*v;
 % g = [g_s; g_v];
 g = [];
 
-if isfield(problem,"cBound")
-    if problem.cBound
-        % c bound (0<=c<=1)
-        cBoundSq = 1.0; % should just be 1
-        c = Cr*r - Cs*s + gbar;
-        g_c = [cBoundSq - c'*c;c];
-        g = g_c;
-    else
-        g = [];
-    end
-else
-g = []; % no constraints works just as well
-end
-
 % save("data/constraints.mat","g","h");
 % else
     % this runs much faster

@@ -33,7 +33,7 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
-problem.cBound = true;
+problem.usecBound = true;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);

@@ -14,7 +14,7 @@ savename = "pascalaeroplane_fixed_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.05:2;
 Ldomain = 3:12;
-num_repeats = 100;
+num_repeats = 50;
 
 %% Loop
 results = cell(length(domain),1);
@@ -38,7 +38,7 @@ disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
 problem = struct();
-problem.category = "car";
+problem.category = "aeroplane";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;

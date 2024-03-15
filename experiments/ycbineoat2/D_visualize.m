@@ -114,16 +114,16 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:
 
 %% ADD and ADD-S scores
 models_dir = "~/tracking/datasets/ycbineoat/models/";
-pcfile = models_dir + "cracker" + ".ply";
+pcfile = models_dir + "bleach" + ".ply";
 pcfile_gt = pcfile;
 pcfile_est = pcfile;
 
 % Compute scores!
-[add_ours_legit, adds_ours_legit] = compute_scores(gt, est_legit, pcfile_gt, pcfile_est);
-[add_ours_ignoringbad, adds_ours_ignoringbad] = compute_scores(gt, est_ignoringbad, pcfile_gt, pcfile_est);
-[add_ours_bestrun, adds_ours_bestrun] = compute_scores(gt, est_bestrun, pcfile_gt, pcfile_est);
+[add_ours_legit, adds_ours_legit] = compute_scores(gt, est_legit, pcfile_gt, pcfile_est, 0.1);
+[add_ours_ignoringbad, adds_ours_ignoringbad] = compute_scores(gt, est_ignoringbad, pcfile_gt, pcfile_est, 0.1);
+[add_ours_bestrun, adds_ours_bestrun] = compute_scores(gt, est_bestrun, pcfile_gt, pcfile_est, 0.1);
 
-[add_teaser, adds_teaser] = compute_scores(gt, teaser, pcfile_gt, pcfile_est);
+[add_teaser, adds_teaser] = compute_scores(gt, teaser, pcfile_gt, pcfile_est, 0.1);
 
 scores.add_ours_legit = add_ours_legit;
 scores.adds_ours_legit = adds_ours_legit;

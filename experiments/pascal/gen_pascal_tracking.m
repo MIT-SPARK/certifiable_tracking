@@ -53,6 +53,11 @@ for i = 1:N
         shapes(:,i,k) = coord;
     end
 end
+if (cat == "car")
+    shapes(:,:,8) = [];
+    K = K-1;
+    problem.K = K;
+end
 B = reshape(shapes, 3*N, K);
 
 %% ground truth c, v, p, R, dR
@@ -190,7 +195,7 @@ problem.v_gt = v_gt;
 problem.R_gt = R_gt;
 problem.dR_gt = dR_gt;
 
-problem.cBound = 1.0;
+% problem.usecBound = 1.0;
 
 problem.noiseBoundSq = noiseBoundSq;
 problem.noiseBound = sqrt(problem.noiseBoundSq);

@@ -8,17 +8,17 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.category = "aeroplane";
+problem.category = "car";
 problem.L = 3; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.06;
-problem.noiseSigmaSqrt = 0;%0.05*0.2; % [m]
+problem.outlierRatio = 0.05;
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.covar_measure_base = 1;
-problem.covar_velocity_base = Inf;
-problem.covar_rotrate_base = Inf;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
 
 problem.noiseBound = 0.15*0.2;
-problem.noiseBound_GNC = 0.1;%(0.2*0.15);
+problem.noiseBound_GNC = (0.2*0.15);
 problem.noiseBound_GRAPH = 0.15*0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
@@ -34,7 +34,7 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
-problem.cBound = true;
+problem.usecBound = true;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
@@ -59,7 +59,7 @@ problem.dof = 3;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',1);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 
@@ -73,5 +73,3 @@ else
         disp("Inliers not found after " + string(info.Iterations) + " iterations.");
     end
 end
-
-inliers = inliers'; % TYOD: REMOVE

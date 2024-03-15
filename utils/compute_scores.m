@@ -1,4 +1,4 @@
-function [add,adds] = compute_scores(gt, est, pcfile_gt, pcfile_est)
+function [add,adds] = compute_scores(gt, est, pcfile_gt, pcfile_est, max_dist)
 %% Compute the ADD, ADD-S score.
 % 
 % Lorenzo Shaikewitz for SPARK Lab
@@ -39,7 +39,7 @@ for l = 1:L
     add(l) = mean(all_err(:,l),"omitmissing");
 end
 add = add(~isnan(add));
-add = VOCap(add)*100;
+add = VOCap(add, max_dist)*100;
 
 %% ADD-S score
 adds = zeros(L,1);
@@ -66,7 +66,7 @@ for l = 1:L
     % 
     % adds(l) = mean(vecnorm(e(:,nn_dists) - g(:,:,:)));
 end
-adds = VOCap(adds)*100;
+adds = VOCap(adds, max_dist)*100;
 end
 
 function ap = VOCap(rec, max_dist)
