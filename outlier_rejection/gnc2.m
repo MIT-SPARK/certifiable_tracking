@@ -60,7 +60,7 @@ for itr = 0:maxSteps
 
     % Run nonminimal solver
     [~, info] = f(problem,'Weights',weights);
-    residuals = info.residuals;% * problem.noiseBound;
+    residuals = info.residuals*problem.covar_measure_base;
     gap = info.soln.gap;
     f_cost = residuals(:)'*weights(:);
 

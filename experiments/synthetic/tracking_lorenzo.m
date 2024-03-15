@@ -8,15 +8,15 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.N_VAR = 10; % nr of keypoints
+problem.N_VAR = 100; % nr of keypoints
 problem.K = 3; % nr of shapes
 problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.06;
 problem.noiseSigmaSqrt = 0.05; % [m]
-problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.covar_measure_base = 0.05;
+problem.covar_velocity_base = 0.0001;
+problem.covar_rotrate_base = 0.0002;
 
 problem.noiseBound = 0.05;
 problem.intraRadius = 0.2;
@@ -55,7 +55,12 @@ problem.lambda = lambda;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',0.15,'ContinuationFactor',1.4);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',0.5,'ContinuationFactor',1.4,'MaxIterations',1e3);
+
+% ground truth version
+theta_gt = problem.theta_gt;
+theta_gt(theta_gt<0) = 0;
+[fgt, infogt] = solver_for_gnc(problem, 'Weights',theta_gt);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 
@@ -68,4 +73,10 @@ else
     else
         disp("Inliers not found after " + string(info.Iterations) + " iterations.");
     end
+end
+
+if fgt < info.soln.obj_est
+    fprintf("Converged to local minimum %3.2e > %3.2e.\n",info.soln.obj_est, fgt)
+else
+    fprintf("Global minimum: %3.2e <= %3.2e (diff: %1.1e).\n",info.soln.obj_est, fgt, fgt - info.soln.obj_est)
 end
