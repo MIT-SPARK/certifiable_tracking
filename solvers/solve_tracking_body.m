@@ -329,6 +329,18 @@ for i = 1:N
         residuals(i,l) = (residue'*residue);
     end
 end
+% % corrected c
+% c_est_corrected = c_est;
+% c_est_corrected(c_est < 0) = 0;
+% c_est_corrected(c_est > 1) = 1;
+% % compute residuals with corrected c
+% residuals = zeros(N, L);
+% for i = 1:N
+%     for l = 1:L
+%         residue = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est_corrected - s_est(:,:,l);
+%         residuals(i,l) = (residue'*residue);
+%     end
+% end
 
 %% Pack into struct
 % raw SDP/MOSEK data

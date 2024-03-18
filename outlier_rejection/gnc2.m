@@ -62,7 +62,7 @@ for itr = 0:maxSteps
     [~, info] = f(problem,'Weights',weights);
     residuals = info.residuals*problem.covar_measure_base;
     gap = info.soln.gap;
-    f_cost = residuals(:)'*weights(:);
+    f_cost = residuals(:)'*weights(:) + barc2*sum(weights==0);
 
     % Initialize mu
     if itr < 1

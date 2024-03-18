@@ -12,6 +12,9 @@ import pickle
 import coptpy as cpt
 from coptpy import COPT
 
+import math
+import itertools
+
 import networkx as nx
 
 # from prune_outliers import prune_outliers as prune_outliers_clique
@@ -111,6 +114,33 @@ def shape_consistency(tgt, cad_dist_min, cad_dist_max, noise_bound):
     yis = si[invalidEdges]
     yjs = sj[invalidEdges]
     return yis, yjs
+
+# def shape_coefficient_consistency(B, y, noise_bound):
+#     '''
+#     Compute the shape coefficient range for shape compatible measurements.
+
+#     B: 3 x K matrix of CAD library shape coefficients
+#     y: 3N x L matrix of each keypoint location at each time
+#     noise_bound: scalar > 0
+#     '''
+#     K = B.shape[1]
+#     L = y.shape[1]
+#     N = int(y.shape[0]/3)
+#     n = int(N*(N-1)/2)
+#     if n < (K-1):
+#         # need n >= K-1
+#         print("N choose 2 < K-1. Need traditional outlier pruning. (TODO)")
+#         return
+    
+#     combos = itertools.combinations(range(N), K-1)
+#     for l in range(L):
+#         # build N choose K-1 estimates of c, cerr
+#         c_list = np.zeros([K, combos])
+#         cerr_list = np.zeros([K,combos])
+
+
+
+
 
 def prune_outliers_clique(y, cad_dist_min, cad_dist_max, noise_bound, noise_bound_time, prioroutliers):
     '''
