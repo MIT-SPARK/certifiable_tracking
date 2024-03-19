@@ -48,7 +48,7 @@ problem.lambda = lambda;
 problem = robin_prune(problem);
 
 % run GNC
-[inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound,'MaxIterations',100,'FixPriorOutliers',true);
+[inliers, info] = gnc2(problem, @solver_for_gnc, 'barc2', problem.noiseBound,'MaxIterations',100);
 % convert to true inliers
 inliers = problem.priorinliers(inliers);
 

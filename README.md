@@ -6,8 +6,7 @@ To run the solver, this repository has the following dependencies:
 - [MOSEK](https://www.mosek.com/)
 - [SDPNAL+](https://blog.nus.edu.sg/mattohkc/softwares/sdpnalplus/)
 
-For outlier rejection, there are two further dependencies:
-- [GNC](https://github.com/MIT-SPARK/GNC-and-ADAPT)
+For outlier rejection, we use the COPT solver:
 - [COPT](https://www.copt.de/) (we also provide a cvx version that works with MOSEK, it is just slower)
 
 Reproducing results also requires the following datasets:
@@ -15,8 +14,8 @@ Reproducing results also requires the following datasets:
 - TODO: Link to other datasets
 
 Reproducing ablations requires the following dependencies:
-- [UKF-M](https://github.com/CAOR-MINES-ParisTech/ukfm/tree/master) (for PACE+UKF)
-- [ROBIN](https://github.com/MIT-SPARK/ROBIN) (for OURS+ROBIN)
+- [UKF-M](https://github.com/CAOR-MINES-ParisTech/ukfm/tree/master) (for PACE+UKF; use `pip install -e .`)
+- [ROBIN](https://github.com/MIT-SPARK/ROBIN) (for OURS+ROBIN; be sure turn OFF the unit tests in `cmakelists.txt`)
 
 You may set the paths to these dependencies in [setup.m](setup.m). I recommend cloning this repository and these dependencies in the same parent folder.
 
@@ -28,6 +27,7 @@ On my machine (Ubuntu 22.04) I needed to set the `LD_PRELOAD` environment variab
 ```
 LD_PRELOAD=/lib/x86_64-linux-gnu/libstdc++.so.6 matlab
 ```
+This appears to be necessary to run ROBIN.
 
 ### Quick Start
 Each time you start MATLAB you must run [setup.m](setup.m) to add the necessary paths. The setup file also allows you to select which experiment/dataset you wish to work with. Options are the subfolders within `experiments`.

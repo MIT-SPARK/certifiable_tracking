@@ -6,9 +6,6 @@ Lorenzo Shaikewitz for SPARK Lab
 import ukfm
 from ukfm.geometry import SO3
 import numpy as np
-from scipy.linalg import block_diag
-import matplotlib.pyplot as plt
-ukfm.utils.set_matplotlib_config()
 
 # MODEL CLASS
 class CONSTBODY:

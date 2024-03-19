@@ -20,7 +20,7 @@ end
 
 shapes = permute(shapes,[3,1,2]); % 3 x N x K -> K x 3 x N
 shapes_np = py.numpy.array(shapes);
-out = cell(py.outlier_rejection.prune_outliers.compute_min_max_distances(shapes_np));
+out = cell(py.outlier_rejection.max_min_dists.compute_min_max_distances(shapes_np));
 
 if interp
     % convert to full matrix for easier editing
