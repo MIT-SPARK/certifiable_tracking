@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalaeroplane2_" + indepVar;
+savename = "pascalaeroplane3_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = [0.05:0.025:0.95];
 num_repeats = 50;

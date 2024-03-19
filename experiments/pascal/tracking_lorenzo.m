@@ -12,14 +12,14 @@ problem.category = "car";
 problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.05;
-problem.noiseSigmaSqrt = 0.05*0.2; % [m]
+problem.noiseSigmaSqrt = 0.05*0.3; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.15*0.2;
-problem.noiseBound_GNC = (0.2*0.15);
-problem.noiseBound_GRAPH = 0.15*0.2;
+problem.noiseBound = 0.15*0.3;
+problem.noiseBound_GNC = .5*0.3;
+problem.noiseBound_GRAPH = 0.15*0.3;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -34,14 +34,14 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
-problem.usecBound = true;
+problem.usecBound = false;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.;
+lambda = 0.1;
 problem.lambda = lambda;
 
 % for GNC
@@ -59,7 +59,7 @@ problem.dof = 3;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',1);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 
@@ -73,3 +73,13 @@ else
         disp("Inliers not found after " + string(info.Iterations) + " iterations.");
     end
 end
+
+% % ground truth version
+% theta_gt = problem.theta_gt;
+% theta_gt(theta_gt<0) = 0;
+% [fgt, infogt] = solver_for_gnc(problem, 'Weights',theta_gt);
+% if fgt < info.soln.obj_est
+%     fprintf("Converged to local minimum %3.2e > %3.2e.\n",info.soln.obj_est, fgt)
+% else
+%     fprintf("Global minimum: %3.2e <= %3.2e (diff: %1.1e).\n",info.soln.obj_est, fgt, fgt - info.soln.obj_est)
+% end

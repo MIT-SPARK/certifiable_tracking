@@ -62,14 +62,16 @@ for itr = 0:maxSteps
     [~, info] = f(problem,'Weights',weights);
     residuals = info.residuals*problem.covar_measure_base;
     gap = info.soln.gap;
-    f_cost = residuals(:)'*weights(:) + barc2*sum(weights==0);
+    f_cost = residuals(:)'*weights(:) + barc2*sum(weights==0) + problem.lambda*norm(info.soln.c_est);
 
     % Initialize mu
     if itr < 1
         maxResidual = max(residuals);
         mu = barc2 / (2*maxResidual - barc2);
         history.mu = mu;
-        problem.regen_sdp = false;
+        if ~problem.usecBound
+            problem.regen_sdp = false;
+        end
     end
 
     % Weights update

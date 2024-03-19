@@ -18,7 +18,9 @@ problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.05;
+problem.noiseBound = 0.15;
+barc2 = problem.noiseBound*problem.covar_measure_base;
+
 problem.intraRadius = 0.2;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -55,7 +57,7 @@ problem.lambda = lambda;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',0.15,'ContinuationFactor',1.4,'MaxIterations',1e3);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',barc2,'ContinuationFactor',1.4,'MaxIterations',1e2);
 
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
