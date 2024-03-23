@@ -144,7 +144,7 @@ if nrOutliers > 0
     fprintf('Tracking: generate %d outliers.\n',nrOutliers);
 
     outlierIDs = randperm(N*L,nrOutliers);
-    outliers = randn(3,nrOutliers);
+    outliers = randn(3,nrOutliers)*problem.outlierVariance;
     
     curOutIdx = 1;
     for id = outlierIDs

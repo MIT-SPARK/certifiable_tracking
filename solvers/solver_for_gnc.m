@@ -15,7 +15,7 @@ params.parse(varargin{:});
 % assert(numel(params.Results.Weights) == problem.N, 'The weights should be a 1xN vector');
 
 %% Convert to weights--ignore ROBIN outliers
-w = params.Results.Weights;
+w = params.Results.Weights(:)';
 if isfield(problem,'prioroutliers')
     % add ROBIN priors to weights
     for i = 1:length(problem.prioroutliers)
@@ -73,7 +73,7 @@ end
 %% Pull out relevant results
 f_val = soln.raw.obj(1);
 info.soln = soln;
-info.residuals = reshape(soln.residuals, problem.N_VAR*problem.L,1);
+info.residuals = reshape(soln.residuals, problem.N_VAR*problem.L,1)*problem.noiseBound_GNC_residuals;
 
 % for ROBIN: remove ROBIN outliers from residuals
 if isfield(problem,'prioroutliers')

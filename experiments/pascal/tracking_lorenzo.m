@@ -12,13 +12,16 @@ problem.category = "car";
 problem.L = 3; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.05;
+problem.outlierVariance = 0.3;
+
 problem.noiseSigmaSqrt = 0.05*0.3; % [m]
 problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.covar_velocity_base = Inf;
+problem.covar_rotrate_base = Inf;
 
 problem.noiseBound = 0.15*0.3;
-problem.noiseBound_GNC = .5*0.3;
+problem.noiseBound_GNC = 0.05;%0.15*0.3;
+problem.noiseBound_GNC_residuals = 0.05*0.3;
 problem.noiseBound_GRAPH = 0.15*0.3;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
@@ -73,6 +76,8 @@ else
         disp("Inliers not found after " + string(info.Iterations) + " iterations.");
     end
 end
+
+view_gnc(problem,info);
 
 % % ground truth version
 % theta_gt = problem.theta_gt;

@@ -35,12 +35,15 @@ costDiff = 1e6;
 gap = 1e6;
 
 % for logging
-history.weights = weights;
-history.fcost = prevCost;
-history.costDiff = 0;
-history.gap = gap;
-history.mu = [];
-history.residuals = zeros(N,1);
+if debug
+    history.weights = weights;
+    history.fcost = prevCost;
+    history.costDiff = 0;
+    history.gap = gap;
+    history.mu = [];
+    history.residuals = zeros(N,1);
+    history.solns = {};
+end
 
 for itr = 0:maxSteps
     % Termination conditions
@@ -102,6 +105,7 @@ for itr = 0:maxSteps
         history.gap = [history.gap, gap];
         history.mu = [history.mu, mu];
         history.residuals = [history.residuals, residuals];
+        history.solns{end+1} = info.soln;
     end
 end
 
@@ -117,6 +121,7 @@ info.Iterations = itr;
 
 %% Debug: print history
 if debug
+    history.residuals = history.residuals(:,[2:end,1]);
     info.history = history;
 
     % replay history

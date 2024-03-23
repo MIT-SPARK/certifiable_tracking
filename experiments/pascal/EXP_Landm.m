@@ -10,15 +10,15 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane_fixed_" + indepVar;
-lengthScale = 0.2; % smallest dimension
+savename = "pascalcar_" + indepVar;
+lengthScale = 0.3; % smallest dimension
 domain = 0:0.025:1;
 Ldomain = 3:12;
 num_repeats = 50;
 
 %% Loop
 results = cell(length(domain),1);
-parfor (index = 1:length(domain))
+parfor (index = 1:length(domain), 20)
 iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
