@@ -10,8 +10,8 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalcar_" + indepVar;
-lengthScale = 0.3; % smallest dimension
+savename = "pascalaeroplane2_" + indepVar;
+lengthScale = 0.2; % smallest dimension
 domain = 0:0.025:1;
 Ldomain = 3:12;
 num_repeats = 50;
@@ -43,12 +43,12 @@ problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv*lengthScale; % [m]
-problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.covar_measure_base = 0.01;
+problem.covar_velocity_base = 0.001;
+problem.covar_rotrate_base = 0.001;
 
-problem.noiseBound = 0.5*lengthScale;
-problem.processNoise = 0.1;
+problem.noiseBound = 0.15*lengthScale; %0.5 for 1st save file
+problem.processNoise = 5e-4;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

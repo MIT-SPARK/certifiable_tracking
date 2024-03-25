@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane_fixed_" + indepVar;
+savename = "pascalaeroplane3_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.05:2;
 Ldomain = 3:12;
@@ -42,13 +42,13 @@ problem.category = "aeroplane";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05*lengthScale; % [m]
-problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.noiseSigmaSqrt = 0.01*lengthScale; % 2: 0.05
+problem.covar_measure_base = 0.01;
+problem.covar_velocity_base = 0.05; % 2: 0.01
+problem.covar_rotrate_base = 0.05; % 2: 0.01
 
-problem.noiseBound = 0.15*lengthScale;
-problem.processNoise = 0.1;
+problem.noiseBound = 0.05*lengthScale; % 2:0.15
+problem.processNoise = 0.05;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

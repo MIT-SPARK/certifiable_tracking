@@ -9,7 +9,7 @@ clc; clear; close all
 
 %% Generate random tracking problem
 problem.category = "car";
-problem.L = 3; % nr of keyframes in horizon
+problem.L = 6; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.05;
 problem.outlierVariance = 0.3;

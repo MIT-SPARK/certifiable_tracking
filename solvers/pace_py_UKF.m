@@ -21,6 +21,8 @@ else
 end
 if (isfield(problem,"kappa_rotrate_base"))
     covar_rotrate = ones(1,3)*(1/problem.kappa_rotrate_base*1/2)*rotBase;
+elseif (isfield(problem,"covar_rotrate_base"))
+    covar_rotrate = ones(1,3)*problem.covar_rotrate_base;
 else
     covar_rotrate  = ones(1,3)*(problem.noiseBound/3)^2*rotBase;
 end

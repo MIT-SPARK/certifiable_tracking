@@ -11,14 +11,16 @@ clc; clear; close all
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
-problem.L = 3; % nr of keyframes in horizon
+problem.L = 8; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.05; % TODO: no support for outliers
+problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.noiseBound = 0.1;
-problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.processNoise = 0.1;
+
+problem.covar_measure_base = 0.01;
+problem.covar_velocity_base = 0.001;
+problem.covar_rotrate_base = 0.001;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -33,11 +35,11 @@ problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
-problem.usecBound = true;
+problem.usecBound = false;
 
 % Optional: use a specified velocity trajectory
 % problem = make_trajectory(problem);
-problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
+% problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -49,8 +51,8 @@ problem.lambda = lambda;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
-% paceukf = pace_py_UKF(problem,pace);
-% paceekf = pace_ekf(problem,pace);
+paceukf = pace_py_UKF(problem,pace);
+paceekf = pace_ekf(problem,pace);
 
 %% Check solutions
 % eigenvalue plot

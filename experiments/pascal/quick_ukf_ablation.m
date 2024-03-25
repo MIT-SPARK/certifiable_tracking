@@ -11,13 +11,14 @@ clc; clear; close all
 %% Experiment settings
 indepVar = "processNoise"; % name of independent variable
 savename = "pascalcar_" + indepVar;
-domain = 0.1; % for quick results
-num_repeats = 50;
+domain = [1e-8, 1e-7, 1e-6, 0.00001, 0.0001, 0.0005, 0.00075, 0.001, 0.0025 0.005]; % for quick results
+num_repeats = 150;
 % SET INDEPENDENT VARIABLE, DEPENDENT VARS CORRECTLY IN LOOP
 
 %% Loop
 results = cell(length(domain),1);
-iv = domain(1);
+parfor index = 1:length(domain)
+iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
 R_err_ours = zeros(num_repeats,1);
@@ -30,19 +31,22 @@ c_err_ours = zeros(num_repeats,1);
 gap_ours = zeros(num_repeats,1);
 time_ours = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
-parfor j = 1:num_repeats
+for j = 1:num_repeats
 
 % Generate random tracking problem
 problem = struct();
-problem.L = 10; % nr of keyframes in horizon
+problem.L = 6; % nr of keyframes in horizon
 L = problem.L;
-problem.category = "car";
+problem.category = "aeroplane";
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.01; % [m]
-problem.noiseBound = 0.1;
+problem.noiseSigmaSqrt = 0.05*0.02; % [m]
+problem.noiseBound = 0.15*0.02;
+
+problem.covar_measure_base = 0.01;
 problem.covar_velocity_base = 0.001;
-problem.kappa_rotrate_base = 500;
+problem.covar_rotrate_base = 0.001;
+
 problem.processNoise = iv;
 
 problem.translationBound = 10.0;
@@ -57,8 +61,8 @@ problem.accelerationNoiseBoundSqrt = 0;%0.01;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
-problem.regen_sdp = (num_repeats == 1); % regen only first time
-problem.sdp_filename = "sdpdata" + indepVar;
+problem.regen_sdp = (j == 1); % regen only first time
+% problem.sdp_filename = "sdpdata" + indepVar;
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -68,7 +72,8 @@ problem.lambda = lambda;
 % Solve!
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
-paceukf = pace_py_UKF(problem,pace);
+% paceukf = pace_py_UKF(problem,pace);
+paceukf = pace_ekf(problem,pace);
 
 % Save solutions
 % projected errors
@@ -85,12 +90,12 @@ end
 c_err = norm(problem.c_gt - soln.c_est);
 
 % save
-R_err_ours(j) = norm(R_err_ours2)/L;
-R_err_ukf(j)  = norm(R_err_ukf2)/L;
-R_err_pace(j) = norm(R_err_pace2)/L;
-p_err_ours(j) = norm(problem.p_gt - soln.p_est,'fro')/L;
-p_err_ukf(j)  = norm(problem.p_gt - paceukf.p,'fro')/L;
-p_err_pace(j) = norm(problem.p_gt - pace.p,'fro')/L;
+R_err_ours(j) = R_err_ours2(end);
+R_err_ukf(j)  = R_err_ukf2(end);
+R_err_pace(j) = R_err_pace2(end);
+p_err_ours(j) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
+p_err_ukf(j)  = norm(problem.p_gt(:,:,end) - paceukf.p(:,:,end));
+p_err_pace(j) = norm(problem.p_gt(:,:,end) - pace.p(:,:,end));
 c_err_ours(j) = c_err;
 gap_ours(j) = soln.gap;
 time_ours(j) = soln.solvetime;
@@ -104,7 +109,8 @@ resultsIV.p_err_pace = p_err_pace;
 resultsIV.c_err_ours = c_err_ours;
 resultsIV.gap_ours   = gap_ours;
 resultsIV.time_ours  = time_ours;
-results{1} = resultsIV;
+results{index} = resultsIV;
+end
 results = [results{:}];
 % save
 save("../datasets/results/" + savename + ".mat","results")
@@ -140,6 +146,7 @@ errorshade([results.(indepVar)],[results.p_err_pace],get(c,'Color'));
 legend
 xlabel(indepVar); ylabel("Position Error (m)");
 title("Position Errors")
+xscale log
 
 % gap figure
 figure
