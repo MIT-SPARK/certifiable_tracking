@@ -10,15 +10,15 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane3_" + indepVar;
+savename = "pascalaeroplane4_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0:0.05:2;
-Ldomain = 3:12;
-num_repeats = 50;
+domain = 1.0; %0:0.05:2;
+Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
+num_repeats = 50; % 2,3: 50; 4: 500
 
 %% Loop
 results = cell(length(domain),1);
-parfor index = 1:length(domain)
+for index = 1:length(domain)
 iv = domain(index)
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
@@ -42,12 +42,12 @@ problem.category = "aeroplane";
 problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.01*lengthScale; % 2: 0.05
+problem.noiseSigmaSqrt = 0.05*lengthScale; % 2: 0.05, 3: 0.01, 4: 0.05
 problem.covar_measure_base = 0.01;
-problem.covar_velocity_base = 0.05; % 2: 0.01
-problem.covar_rotrate_base = 0.05; % 2: 0.01
+problem.covar_velocity_base = 0.01; % 2: 0.01, 3: 0.05, 4: 0.01
+problem.covar_rotrate_base = 0.01; % 2: 0.01, 3: 0.05, 4: 0.01
 
-problem.noiseBound = 0.05*lengthScale; % 2:0.15
+problem.noiseBound = 0.15*lengthScale; % 2:0.15, 3: 0.05, 4: 0.15
 problem.processNoise = 0.05;
 
 problem.translationBound = 10.0;
@@ -138,7 +138,7 @@ tiledlayout(2,2);
 set(0,'DefaultLineLineWidth',2)
 
 display_range = 1:length(domain);
-Llist = [1,4,7,10];
+Llist = [2,6,10];
 
 % Rotation figure
 nexttile
@@ -199,6 +199,8 @@ title("Shape Errors")
 % gap figure
 nexttile
 hold on
+b=plot([results.(indepVar)],median([results.gap_pace]),'x-',settings.PACERAW{:});
+errorshade([results.(indepVar)],[results.gap_pace],get(b,'Color'));
 res = abs([results.gap_ours]);
 for lidx = Llist
 L = Ldomain(lidx);
