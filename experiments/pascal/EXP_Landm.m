@@ -13,8 +13,8 @@ indepVar = "noiseSigmaSqrt";
 savename = "pascalaeroplane2_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.025:1;
-Ldomain = 3:12;
-num_repeats = 50;
+Ldomain = [4,8,12]; % 2: 3:12;
+num_repeats = 500; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
@@ -43,7 +43,7 @@ problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv*lengthScale; % [m]
-problem.covar_measure_base = 0.01;
+problem.covar_measure_base = 0.0001; % 2: 0.01
 problem.covar_velocity_base = 0.001;
 problem.covar_rotrate_base = 0.001;
 

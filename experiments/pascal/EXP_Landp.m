@@ -12,13 +12,13 @@ clc; clear; close all
 indepVar = "accelerationNoiseBoundSqrt";
 savename = "pascalaeroplane4_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 1.0; %0:0.05:2;
+domain = 0:0.05:2;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
-num_repeats = 50; % 2,3: 50; 4: 500
+num_repeats = 500; % 2,3: 50; 4: 500
 
 %% Loop
 results = cell(length(domain),1);
-for index = 1:length(domain)
+parfor index = 1:length(domain)
 iv = domain(index)
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
@@ -48,7 +48,7 @@ problem.covar_velocity_base = 0.01; % 2: 0.01, 3: 0.05, 4: 0.01
 problem.covar_rotrate_base = 0.01; % 2: 0.01, 3: 0.05, 4: 0.01
 
 problem.noiseBound = 0.15*lengthScale; % 2:0.15, 3: 0.05, 4: 0.15
-problem.processNoise = 0.05;
+problem.processNoise = 0.01; % 2,3: 0.05; % 4: 0.01
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
