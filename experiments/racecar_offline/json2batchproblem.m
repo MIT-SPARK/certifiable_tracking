@@ -119,22 +119,27 @@ else
     shapes = NaN;
 end
 
-keypoints = [data.est_world_keypoints];
+% keypoints = [data.est_world_keypoints];
+keypoints = [data.annotations.keypoints];
 % keypoints = [data.est_interp_world_keypoints];
-keypoints = reshape(keypoints,[N,3,size(data,1)]);
+% keypoints = reshape(keypoints,[N,3,size(data,1)]);
+keypoints = reshape(keypoints,[N,3,size(data.annotations,1)]);
 keypoints = permute(keypoints,[2,1,3]) / 1000.0; % [m]
 
-bigL = size(data,1);
+% bigL = size(data,1);
+bigL = size(data.annotations, 1);
 
 % gt poses
-poses = reshape([data.gt_teaser_pose],[4,4,bigL]);
+% poses = reshape([data.gt_teaser_pose],[4,4,bigL]);
+poses = zeros(4,4,bigL);    
 p_gt = poses(1:3,4,:) / 1000; % [m]
 R_gt = poses(1:3,1:3,:);
 gt.p = p_gt;
 gt.R = R_gt;
 
 % Teaser poses
-poses = reshape([data.est_teaser_pose],[4,4,bigL]);
+% poses = reshape([data.est_teaser_pose],[4,4,bigL]);
+poses = zeros(4,4,bigL);
 p_teaser = poses(1:3,4,:) / 1000; % [m]
 R_teaser = poses(1:3,1:3,:);
 teaser.p = p_teaser;

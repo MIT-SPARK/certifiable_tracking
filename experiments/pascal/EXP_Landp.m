@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane4_" + indepVar;
+savename = "pascalaeroplane5_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.05:2;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
@@ -19,7 +19,7 @@ num_repeats = 500; % 2,3: 50; 4: 500
 %% Loop
 results = cell(length(domain),1);
 parfor index = 1:length(domain)
-iv = domain(index)
+iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
 resultsIV.R_err_ours = zeros(num_repeats,length(Ldomain));
@@ -57,7 +57,7 @@ problem.dt = 1.0;
 problem.velprior = "body";       % constant body frame velocity
 
 problem.accelerationNoiseBoundSqrt = iv*lengthScale;
-problem.rotationNoiseBound = 0; % rad
+problem.rotationNoiseBound = iv/2; % rad
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -91,7 +91,7 @@ for lidx = 1:length(Ldomain)
     lproblem = problem;
     % regen only first time
     lproblem.regen_sdp = (j == 1);
-    pid = string(feature("getpid"))
+    pid = string(feature("getpid"));
     lproblem.sdp_filename = "sdpdata" + pid + L;
 
     lproblem.L = L;
@@ -99,9 +99,9 @@ for lidx = 1:length(Ldomain)
     soln = solve_weighted_tracking(lproblem);
 
     R_err_ours(lidx) = getAngularError(problem.R_gt(:,:,end), soln.R_est(:,:,end));
-    p_err_ours(lidx) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end))
+    p_err_ours(lidx) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
     c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
-    gap_ours(lidx) = soln.gap;
+    gap_ours(lidx) = soln.gap_stable;
     time_ours(lidx) = soln.solvetime;
 end
 
@@ -128,9 +128,7 @@ save("../datasets/results/" + savename + ".mat","results")
 %% Display Results
 % process into displayable form
 % settings.OURS = {'DisplayName', 'OURS','LineWidth',3};
-ours_colors = ["#000000", "#002e4c", "#00395f", "#004471", "#005084",...
-               "#005b97", "#0067aa","#0072bd", "#1a80c4", "#338eca",...
-               "#4d9cd1","#66aad7","#80b9de"];
+ours_colors = ["#002e4c", "#005b97","#338eca","#80b9de"];
 settings.PACEEKF = {'DisplayName', 'PACE-EKF', 'Color', "#D95319"};
 settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
 figure
@@ -138,7 +136,7 @@ tiledlayout(2,2);
 set(0,'DefaultLineLineWidth',2)
 
 display_range = 1:length(domain);
-Llist = [2,6,10];
+Llist = [1,2,3];
 
 % Rotation figure
 nexttile
@@ -155,7 +153,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
-
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
@@ -174,6 +172,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")
 
@@ -193,6 +192,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
@@ -209,6 +209,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=semilogy([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 

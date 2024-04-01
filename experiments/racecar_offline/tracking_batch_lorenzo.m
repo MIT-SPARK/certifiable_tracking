@@ -8,9 +8,9 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/racecar_offline/racecar_fullsize_metrics.json";
+problem.json = "../datasets/racecar_offline/racecar_test.json";
 problem.L = 10; % batch size
-problem.savefile = "../datasets/racecar_offline/racecar_fullsize_metrics_ours.json";
+problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
@@ -57,7 +57,7 @@ curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % run GNC
 try
-    [inliers, info] = gnc_custom(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    [inliers, info] = gnc2(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC);
     disp("GNC finished " + string(j) + " (" + info.Iterations + " iterations)")
 
     soln = info.f_info.soln;

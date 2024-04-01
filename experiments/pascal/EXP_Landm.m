@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane2_" + indepVar;
+savename = "pascalaeroplane4_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.025:1;
 Ldomain = [4,8,12]; % 2: 3:12;
@@ -101,7 +101,7 @@ for lidx = 1:length(Ldomain)
     R_err_ours(lidx) = getAngularError(problem.R_gt(:,:,end), soln.R_est(:,:,end));
     p_err_ours(lidx) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
     c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
-    gap_ours(lidx) = soln.gap;
+    gap_ours(lidx) = soln.gap_stable;
     time_ours(lidx) = soln.solvetime;
 end
 
@@ -128,9 +128,10 @@ save("../datasets/results/" + savename + ".mat","results")
 %% Display Results
 % process into displayable form
 % settings.OURS = {'DisplayName', 'OURS','LineWidth',3};
-ours_colors = ["#000000", "#002e4c", "#00395f", "#004471", "#005084",...
-               "#005b97", "#0067aa","#0072bd", "#1a80c4", "#338eca",...
-               "#4d9cd1","#66aad7","#80b9de"];
+% ours_colors = ["#000000", "#002e4c", "#00395f", "#004471", "#005084",...
+%                "#005b97", "#0067aa","#0072bd", "#1a80c4", "#338eca",...
+%                "#4d9cd1","#66aad7","#80b9de"];
+ours_colors = ["#002e4c", "#005b97","#338eca","#80b9de"];
 settings.PACEEKF = {'DisplayName', 'PACE-EKF', 'Color', "#D95319"};
 settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
 figure
@@ -141,7 +142,7 @@ set(0,'DefaultLineLineWidth',2)
 % display_range = 1:length(domain);
 display_range = 1:17;
 results = results(:,display_range);
-Llist = [1,4,7,10];
+Llist = [1,2,3];
 
 % Rotation figure
 nexttile
@@ -158,7 +159,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
-
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
@@ -177,6 +178,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")
 
@@ -196,15 +198,18 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
 % gap figure
 nexttile
+b=plot([results.(indepVar)],median([results.gap_pace]),'x-',settings.PACERAW{:});
 hold on
+errorshade([results.(indepVar)],[results.gap_pace],get(b,'Color'));
 res = [results.gap_ours];
 res(res < 0) = 0;
-res(res > 1) = 0;
+res(res > 1) = 1; % only affects first round
 for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
@@ -212,6 +217,7 @@ plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_co
 a=semilogy([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
 errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
 end
+yscale log;% xscale log
 xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 

@@ -320,6 +320,7 @@ end
 % obj_est = dmsubs(prob_obj,x,x_proj); % slow
 obj_est = x_proj'*(Q'*Q)*x_proj + v_est_corrected'*(Av'*Av)*v_est_corrected;
 gap = (obj_est - obj(2)) / obj_est;
+gap_stable = (obj_est - obj(2)) / (obj_est+1);
 
 % compute residuals
 residuals = zeros(N, L);
@@ -363,6 +364,7 @@ soln.R_est = Rs;
 soln.dR_est = dRs;
 
 soln.gap = gap;
+soln.gap_stable = gap_stable;
 soln.x_proj = x_proj;
 soln.obj_est = obj_est;
 

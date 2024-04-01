@@ -1,13 +1,13 @@
-setup_func("pascal")
+% setup_func("pascal")
+% try
+%     EXP_outlier_ablation;
+% catch
+% end
 try
-    EXP_outlier_ablation;
+    EXP_Landm;
 catch
 end
 try
-    EXP_Landm; % try changing to ukf
-catch
-end
-try
-    EXP_Landp; % try changing to ukf
+    EXP_Landp;
 catch
 end
