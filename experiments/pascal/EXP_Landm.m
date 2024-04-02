@@ -18,7 +18,7 @@ num_repeats = 500; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
-parfor (index = 1:length(domain), 20)
+parfor (index = 1:length(domain)) % PAR, 20)
 iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
@@ -208,8 +208,8 @@ b=plot([results.(indepVar)],median([results.gap_pace]),'x-',settings.PACERAW{:})
 hold on
 errorshade([results.(indepVar)],[results.gap_pace],get(b,'Color'));
 res = [results.gap_ours];
-res(res < 0) = 0;
-res(res > 1) = 1; % only affects first round
+% res(res < 0) = 0;
+% res(res > 1) = 1; % only affects first round
 for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(display_range)-1);

@@ -8,7 +8,7 @@ clc; clear; close all
 % rng("default")
 
 %% Generate random tracking problem
-problem.category = "car";
+problem.category = "aeroplane";
 problem.L = 6; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.05;

@@ -8,22 +8,24 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/racecar_offline/racecar_test.json";
-problem.L = 10; % batch size
+problem.json = "../datasets/racecar_offline/racecar.json";
+problem.L = 8; % batch size
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
 % Set bounds based on problem setting
 problem.translationBound = 5.0; % [m]
 problem.velocityBound = 2.0; % [m/s]
-problem.noiseBound_GNC = 0.025;
-problem.noiseBound_GRAPH = 0.05;
-problem.noiseBound = 0.01;
-problem.covar_velocity_base = 1^2;
-% problem.kappa_rotrate_base = 0.1^2;
+problem.noiseBound_GNC = 0.01;
+problem.noiseBound_GNC_residuals = 1;
+problem.noiseBound_GRAPH = 0.01;
+problem.noiseBound = 0.05;
+
+problem.covar_measure_base = 1;
+problem.covar_velocity_base = 1;
+problem.covar_rotrate_base = 1;
 
 problem.velprior = "body";       % constant body frame velocity
-% problem.velprior = "world";      % constant world frame velocity
-% problem.velprior = "grav-world"; % add gravity in z direction
+problem.usecBound = false;
 
 % add shape, measurements, outliers
 load("racecar_cad.mat");
@@ -57,7 +59,7 @@ curproblem = lorenzo_prune(curproblem, min_max_dists);
 
 % run GNC
 try
-    [inliers, info] = gnc2(curproblem, @solver_for_gnc, 'NoiseBound', curproblem.noiseBound_GNC);
+    [inliers, info] = gnc2(curproblem, @solver_for_gnc, 'barc2', curproblem.noiseBound_GNC);
     disp("GNC finished " + string(j) + " (" + info.Iterations + " iterations)")
 
     soln = info.f_info.soln;

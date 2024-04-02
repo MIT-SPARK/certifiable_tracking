@@ -14,11 +14,11 @@ problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05*0.2; % [m]
+problem.noiseSigmaSqrt = 0.0*0.2; % [m]
 problem.noiseBound = 0.1;
 problem.processNoise = 0.1;
 
-problem.covar_measure_base = 0.01;
+problem.covar_measure_base = 0.0001;
 problem.covar_velocity_base = 0.001;
 problem.covar_rotrate_base = 0.001;
 
@@ -30,7 +30,7 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = 1*0.2;
+problem.accelerationNoiseBoundSqrt = 0;%1*0.2;
 problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
