@@ -44,7 +44,7 @@ problem.usecBound = false;
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.1;
+lambda = 0.;
 problem.lambda = lambda;
 
 % for GNC
@@ -62,7 +62,7 @@ problem.dof = 3;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.4);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.8);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 
