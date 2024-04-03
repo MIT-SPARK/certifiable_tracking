@@ -5,12 +5,12 @@ clc; clear; close all; restoredefaultpath
 
 %% Select experiment
 % see 'experiments' folder
-experiment = "racecar_offline";
+experiment = "pascal";
 
 %% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
-mosekpath   = '/opt/mosek/10.1/toolbox/r2017a';
+mosekpath   = '../mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
 coptpath = '/opt/copt71';
 pyvenvpath = '~/research/tracking/trackvenv/bin/python3';
@@ -43,7 +43,7 @@ addpath('./visualization')
 %% Setup for python
 flag = int32(bitor(2, 8));
 py.sys.setdlopenflags(flag);
-pyenv('Version', pyvenvpath, 'ExecutionMode','OutOfProcess');
+% pyenv('Version', pyvenvpath, 'ExecutionMode','OutOfProcess');
 
 %% Setup experiments
 addpath("experiments/"+experiment);

@@ -144,13 +144,14 @@ if nrOutliers > 0
     fprintf('Tracking: generate %d outliers.\n',nrOutliers);
 
     outlierIDs = randperm(N*L,nrOutliers);
+    % Bound variance
     outliers = randn(3,nrOutliers)*problem.outlierVariance;
     
     curOutIdx = 1;
     for id = outlierIDs
         l = floor((id-1)/N) + 1;
         i = id - (l-1)*N;
-        y(ib3(i),l) = outliers(curOutIdx);
+        y(ib3(i),l) = outliers(curOutIdx) + p_gt(:,:,l);
         curOutIdx = curOutIdx + 1;
     end
 else
