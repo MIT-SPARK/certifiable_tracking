@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane5_" + indepVar;
+savename = "pascalaeroplane6_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.05:2;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
@@ -57,7 +57,7 @@ problem.dt = 1.0;
 problem.velprior = "body";       % constant body frame velocity
 
 problem.accelerationNoiseBoundSqrt = iv*lengthScale;
-problem.rotationNoiseBound = iv/2; % rad
+problem.rotationNoiseBound = iv/10; % rad
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);

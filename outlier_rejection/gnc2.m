@@ -75,6 +75,9 @@ for itr = 0:maxSteps
         if ~problem.usecBound
             problem.regen_sdp = false;
         end
+        if mu < 0
+            break;
+        end
     end
 
     % Weights update

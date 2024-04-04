@@ -8,28 +8,28 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/racecar_offline/racecar.json";
-problem.L = 8; % batch size
+problem.json = "../datasets/racecar_offline/racecar_fast2.json";
+problem.L = 3; % batch size
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
 % Set bounds based on problem setting
-problem.translationBound = 5.0; % [m]
-problem.velocityBound = 2.0; % [m/s]
-problem.noiseBound_GNC = 0.01;
+problem.translationBound = 10.0; % [m]
+problem.velocityBound = 5.0; % [m/s]
+problem.noiseBound_GNC = 0.05;
 problem.noiseBound_GNC_residuals = 1;
 problem.noiseBound_GRAPH = 0.01;
 problem.noiseBound = 0.05;
 
 problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.covar_velocity_base = 10;
+problem.covar_rotrate_base = 10;
 
 problem.velprior = "body";       % constant body frame velocity
 problem.usecBound = false;
 
 % add shape, measurements, outliers
-load("racecar_cad.mat");
-problem.shapes = racecar_cad' / 1000; % 3 x N x K [m]
+% load("racecar_cad.mat");
+% problem.shapes = racecar_cad' / 1000; % 3 x N x K [m]
 [problems, gt, teaser] = json2batchproblem(problem);
 min_max_dists = robin_min_max_dists(problems{1}.shapes);
 
@@ -65,8 +65,10 @@ try
     soln = info.f_info.soln;
     ef = eig(soln.raw.Xopt{1});
     if (ef(end-1) > 1e-4)
-        disp("**Not convergent: " + string(soln.gap))
+        disp("**Not convergent: " + string(soln.gap_stable))
     end
+
+    % view_gnc(curproblem,info);
 catch
     f = fieldnames(solns(1))';
     f{2,1} = {NaN};
@@ -104,14 +106,20 @@ idx = ((j-1)*L + 1):j*L;
 for l = 1:L
     p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
     R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
+
+    % if (p_err(idx(l)) > 10)
+    %     % don't plot
+    %     soln.gap = 1;
+    % end
 end
 
-if (soln.gap > 0.5)
-    % don't plot
-    est.p(:,:,idx) = NaN;
-    est.R(:,:,idx) = NaN;
-    continue
-end
+% if (soln.gap > 0.5)
+%     % don't plot
+%     est.p(:,:,idx) = NaN;
+%     est.R(:,:,idx) = NaN;
+%     continue
+% end
+
 est.p(:,:,idx) = soln.p_est;
 est.R(:,:,idx) = soln.R_est;
 
@@ -134,18 +142,45 @@ quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(
 end
 
 %% Plot Ground Truth
+plotgt = teaser;
 
 figure
-p_gt = reshape(gt.p,[3,size(gt.p,3),1]);
-R_gt = gt.R;
+p_gt = reshape(plotgt.p,[3,size(plotgt.p,3),1]);
+% p_gt = p_gt(:,12*8:15*8)
+R_gt = plotgt.R;
 plot3(p_gt(1,:),p_gt(2,:),p_gt(3,:),'.k', 'MarkerSize',10);
 hold on
 axis equal
 
-R_est = soln.R_est;
+% R_est = soln.R_est;
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(R_gt(1,1,:)),squeeze(R_gt(2,1,:)),squeeze(R_gt(3,1,:)),'r');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(R_gt(1,2,:)),squeeze(R_gt(2,2,:)),squeeze(R_gt(3,2,:)),'g');
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(R_gt(1,3,:)),squeeze(R_gt(2,3,:)),squeeze(R_gt(3,3,:)),'b');
+
+%% Plot Together
+t = 1:length(est.p);
+figure
+subplot(3,1,1)
+plot(t,p_gt(1,1:length(est.p)),'DisplayName','Ground Truth')
+hold on
+plot(t,est.p(1,:),'DisplayName','Estimate')
+ylabel("x")
+
+legend('Location','ne')
+title("Explict Comparison of Evaluated Trajectories")
+
+subplot(3,1,2)
+plot(t,p_gt(2,1:length(est.p)),'DisplayName','Ground Truth')
+hold on
+plot(t,est.p(2,:),'DisplayName','Estimate')
+ylabel("y")
+subplot(3,1,3)
+plot(t,p_gt(3,1:length(est.p)),'DisplayName','Ground Truth')
+hold on
+plot(t,est.p(3,:),'DisplayName','Estimate')
+xlabel("time")
+ylabel("z")
+
 
 %% Save Poses into JSON
 L_big = length(est.p);

@@ -140,8 +140,8 @@ title(t,'Measurement Noise')
 set(0,'DefaultLineLineWidth',2)
 
 % display_range = 1:length(domain);
-display_range = 1:17;
-results = results(:,display_range);
+% display_range = 1:17;
+% results = results(:,display_range);
 Llist = [1,2,3];
 
 % Rotation figure
@@ -234,6 +234,36 @@ title("Suboptimality Gaps")
 % end
 % xlabel(indepVar); ylabel("Time (s)");
 % title("Solve Time")
+
+%% Box and Whisker Display
+
+% parameters
+nBins = length(domain);
+
+% make bins
+domain = [results.(indepVar)];
+edges = linspace(domain(1),domain(end),nBins+1);
+bins = discretize(domain,edges);
+
+% generate figure
+figure
+% t=tiledlayout(2,2);
+% title(t,'Measurement Noise')
+
+% rotation figure
+% nexttile
+
+
+hold on
+L = Ldomain(lidx);
+lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
+res = [results.p_err_ours];
+boxplot(res(:,lrange), bins, 'Positions', 1:nBins ,'Symbol','','Colors','b','PlotStyle','compact')
+boxplot([results.p_err_pace], bins, 'Positions', (1:nBins) + 0.3,'Symbol','','Colors','r','PlotStyle','compact')
+hold off
+yscale log
+
+set(gca,'xticklabel',{'#1','#2','#3','#4','#5','#6','#7','#8'})
 
 %% Change results
 % for i = 1:length(results)

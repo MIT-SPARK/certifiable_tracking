@@ -4,6 +4,12 @@ function [problem_list, gt, teaser] = json2batchproblem(problem)
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
+%% Load and parse bag data
+[stamps, measurements, gt, teaser, shapes] = parseJson(problem.json);
+if (~isnan(shapes))
+    problem.shapes = shapes;
+end
+
 %% Define shape data
 % shapes is 3 x N x K
 problem.N_VAR = size(problem.shapes,2);
@@ -19,12 +25,6 @@ else
     problem.lambda = 0.0;
 end
 problem.B = reshape(problem.shapes, 3*N, K);
-
-%% Load and parse bag data
-[stamps, measurements, gt, teaser, shapes] = parseJson(problem.json, N);
-if (~isnan(shapes))
-    problem.shapes = shapes;
-end
 
 %% Parse into problem format
 tot_L = length(stamps);
@@ -94,14 +94,15 @@ for batch = 1:floor(tot_L/L)
     % curproblem.weights = weights;
     % curproblem.covar_velocity = covar_velocity;
     % curproblem.kappa_rotrate = kappa_rotrate;
-    curproblem.dt = dt;
+    % curproblem.dt = dt;
+    curproblem.dt = 1.0; % USE DT=1 for GREATER ROBUSTNESS
 
     problem_list{end+1} = curproblem;
 end
 
 end
 
-function [stamps, keypoints, gt, teaser, shapes] = parseJson(jsonfile, N)
+function [stamps, keypoints, gt, teaser, shapes] = parseJson(jsonfile)
 
 % Open the json file
 fid = fopen(jsonfile);
@@ -112,9 +113,10 @@ data = jsondecode(str);
 
 % get CAD keypoints if there
 if isfield(data, "interp_cad_keypoints")
-    % shapes = data(1).interp_cad_keypoints' / 1000.0;
-    % N = size(shapes,2);
-    shapes = NaN;
+    shapes = data(1).interp_cad_keypoints' / 1000.0;
+    shapes = shapes(:,1:7); % not interp
+    N = size(shapes,2);
+    % shapes = NaN;
 else
     shapes = NaN;
 end
@@ -126,21 +128,51 @@ keypoints = permute(keypoints,[2,1,3]) / 1000.0; % [m]
 
 bigL = size(data,1);
 
+% transform keypoints
+cam_wrt_world = [data.cam_wrt_world];
+cam_wrt_world = reshape(cam_wrt_world, [4,4,size(data,1)]);
+cam_wrt_world(1:3,4,:) = cam_wrt_world(1:3,4,:) / 1000.0; % [m]
+for l = 1:bigL
+    kpts = keypoints(:,:,l);
+    T = cam_wrt_world(:,:,l);
+    kpts = [kpts; ones(1,N)];
+    kpts = T * kpts;
+    keypoints(:,:,l) = kpts(1:3,:);
+end
+
 % gt poses
 poses = reshape([data.gt_teaser_pose],[4,4,bigL]);
-p_gt = poses(1:3,4,:) / 1000; % [m]
+poses(1:3,4,:) = poses(1:3,4,:) / 1000.0; % [m]
+for l = 1:bigL
+    T = cam_wrt_world(:,:,l);
+    poses(:,:,l) = T*poses(:,:,l);
+end
+p_gt = poses(1:3,4,:); % [m]
 R_gt = poses(1:3,1:3,:);
 gt.p = p_gt;
 gt.R = R_gt;
 
 % Teaser poses
 poses = reshape([data.est_teaser_pose],[4,4,bigL]);
-p_teaser = poses(1:3,4,:) / 1000; % [m]
+poses(1:3,4,:) = poses(1:3,4,:) / 1000.0; % [m]
+for l = 1:bigL
+    T = cam_wrt_world(:,:,l);
+    poses(:,:,l) = T*poses(:,:,l);
+end
+p_teaser = poses(1:3,4,:); % [m]
 R_teaser = poses(1:3,1:3,:);
 teaser.p = p_teaser;
 teaser.R = R_teaser;
 
 % make up stamps
-stamps = 0:(1/30):(1/30*(bigL-1));
+% stamps = 0:(1/30):(1/30*(bigL-1));
+stamps = [data.timestamp];
+stamps = stamps - stamps(1);
+
+% gt poses to velocity estimate
+% v_gt = zeros(3,1,bigL);
+% for l = 1:bigL-1
+%     v_gt(:,:,l) = (p_gt(:,:,l+1) - p_gt(:,:,l)) / (stamps(l+1) - stamps(l));
+% end
 
 end
