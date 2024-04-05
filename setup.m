@@ -32,7 +32,7 @@ addpath(genpath(gncpath)) % optional if no outliers
 addpath(genpath(mosekpath))
 addpath(genpath(stridepath))
 % addpath("/opt/copt71")
-setenv("COPT_LICENSE_DIR", "~/copt")
+setenv("COPT_LICENSE_DIR", "/opt/copt71")
 
 %% add internal paths
 addpath('./outlier_rejection')

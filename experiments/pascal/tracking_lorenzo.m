@@ -12,17 +12,17 @@ problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.05;
-problem.outlierVariance = 1.6;
+problem.outlierVariance = 1.0;
 
-problem.noiseSigmaSqrt = 0.05*0.2; % [m]
+problem.noiseSigmaSqrt = 0.03*0.2; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.15*0.2;
-problem.noiseBound_GNC = 0.01;%0.15*0.3;
+problem.noiseBound = 0.1*0.2;
+problem.noiseBound_GNC = 0.03*0.2;%0.15*0.3;
 problem.noiseBound_GNC_residuals = 1;
-problem.noiseBound_GRAPH = 0.15*0.2;
+problem.noiseBound_GRAPH = 0.03*0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -59,10 +59,10 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-% problem = lorenzo_prune(problem);
+problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.8);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 
