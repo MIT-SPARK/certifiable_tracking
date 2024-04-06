@@ -62,7 +62,7 @@ problem.dof = 3;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC,'Debug',true);%, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100, 'Debug', true);
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);
 

@@ -15,7 +15,8 @@ params.addParameter('StopThreshold', 1e-6, @(x) isscalar(x));
 params.addParameter('TightnessThreshold', 1e-6, @(x) isscalar(x));
 params.addParameter('ContinuationFactor', 1.4, @(x) isscalar(x));
 params.addParameter('barc2', 1, @(x) isscalar(x));
-params.addParameter('Debug', true, @(x) islogical(x));
+params.addParameter('FailGracefully', true, @(x) islogical(x)) % return first run if failure
+params.addParameter('Debug', false, @(x) islogical(x));
 params.parse(varargin{:});
 
 maxSteps = params.Results.MaxIterations;
@@ -44,6 +45,8 @@ if debug
     history.residuals = zeros(N,1);
     history.solns = {};
 end
+history.infos = {};
+failed = false;
 
 for itr = 0:maxSteps
     % Termination conditions
@@ -58,6 +61,7 @@ for itr = 0:maxSteps
     % end
     if (max(abs(weights)) < 1e-6)
         fprintf("GNC encounters numerical issues. The solution is likely wrong.\n");
+        failed = true;
         break;
     end
 
@@ -110,6 +114,12 @@ for itr = 0:maxSteps
         history.residuals = [history.residuals, residuals];
         history.solns{end+1} = info.soln;
     end
+    history.infos{end+1} = info;
+end
+
+if (failed) && (params.Results.FailGracefully)
+    info = history.info{1};
+    info.failed = true;
 end
 
 %% Convert to output
