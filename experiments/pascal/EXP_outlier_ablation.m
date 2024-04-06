@@ -10,10 +10,10 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalaeroplane3_" + indepVar;
+savename = "pascalaeroplane2_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = [0.05:0.025:0.95];
-num_repeats = 50;
+num_repeats = 500;
 
 %% Loop
 results = cell(length(domain),1);
@@ -27,23 +27,27 @@ problems_pruned = {};
 for j = 1:num_repeats
 problem = struct();
 problem.category = "aeroplane";
-problem.L = 6;
+problem.L = 8;
 
 problem.outlierRatio = iv;
-problem.noiseSigmaSqrt = 0.05*lengthScale; % [m]
+problem.outlierVariance = 1.0;
+
+problem.noiseSigmaSqrt = 0.03*lengthScale; % [m]
 problem.covar_measure_base = 1;
 problem.covar_velocity_base = 1;
 problem.covar_rotrate_base = 1;
 
-problem.noiseBound = 0.15*lengthScale;
-problem.noiseBound_GNC = 0.15*lengthScale;
-problem.noiseBound_GRAPH = 0.15*lengthScale;
+problem.noiseBound = 0.1*lengthScale;
+problem.noiseBound_GNC = 0.03*lengthScale;
+problem.noiseBound_GNC_residuals = 1;
+problem.noiseBound_GRAPH = 0.03*lengthScale;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
+problem.usecBound = false;
 
 problem.accelerationNoiseBoundSqrt = 0;
 problem.rotationNoiseBound = 0; % rad
@@ -106,7 +110,7 @@ problem.regen_sdp = (j == 1);
 problem_milp.regen_sdp = (j==1);
 try
     t = tic;
-    [inliers, info] = gnc_custom(problem_milp, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    [inliers, info] = gnc2(problem_milp, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);
     soln_ours = info.f_info.soln;
     soln_ours.iters = info.Iterations;
     soln_ours.time = toc(t) + problem_milp.milptime;
@@ -121,7 +125,7 @@ end
 % GNC only
 try
     t = tic;
-    [inliers, info] = gnc_custom(problem, @solver_for_gnc, 'NoiseBound', problem.noiseBound_GNC,'MaxIterations',100,'FixPriorOutliers',false);
+    [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);
     soln_gnc = info.f_info.soln;
     soln_gnc.iters = info.Iterations;
     soln_gnc.time = toc(t);
