@@ -31,16 +31,18 @@ divFactor = params.Results.ContinuationFactor;
 
 %% GNC Main Loop
 weights = ones(N,1);
+prevWeights = weights;
 prevCost = 1e6;
 costDiff = 1e6;
 gap = 1e6;
+prevMu = 0;
 
 % for logging
 if debug
     history.weights = weights;
-    history.fcost = prevCost;
-    history.costDiff = 0;
-    history.gap = gap;
+    history.fcost = [];
+    history.costDiff = [];
+    history.gap = [];
     history.mu = [];
     history.residuals = zeros(N,1);
     history.solns = {};
@@ -49,9 +51,27 @@ history.infos = {};
 failed = false;
 
 for itr = 0:maxSteps
+    % debug: save history
+    if itr > 0
+        if debug
+            history.weights = [history.weights, prevWeights];
+            history.fcost = [history.fcost, prevCost];
+            history.costDiff = [history.costDiff, costDiff];
+            history.gap = [history.gap, gap];
+            history.mu = [history.mu, prevMu];
+            history.residuals = [history.residuals, residuals];
+            history.solns{end+1} = info.soln;
+        end
+        history.infos{end+1} = info;
+    end
+
     % Termination conditions
     if costDiff < stopTh
         fprintf("GNC converged %3.2e < %3.2e.\n", costDiff, stopTh);
+        break;
+    end
+    if prevMu < 0
+        fprintf("GNC converged %3.2e < 0\n", mu);
         break;
     end
     % if gap < tightTh
@@ -75,18 +95,15 @@ for itr = 0:maxSteps
     if itr < 1
         maxResidual = max(residuals);
         mu = barc2 / (2*maxResidual - barc2);
-        history.mu = mu;
         if ~problem.usecBound
             problem.regen_sdp = false;
-        end
-        if mu < 0
-            break;
         end
     end
 
     % Weights update
     th1 = (mu+1)/mu * barc2;
     th2 = mu/(mu+1) * barc2;
+    prevWeights = weights;
     for i = 1:N
         if residuals(i) - th1 >= 0
             weights(i) = 0;
@@ -102,23 +119,12 @@ for itr = 0:maxSteps
     prevCost = f_cost;
 
     % Increase mu
+    prevMu = mu;
     mu = mu*divFactor;
-
-    % save history
-    if debug
-        history.weights = [history.weights, weights];
-        history.fcost = [history.fcost, f_cost];
-        history.costDiff = [history.costDiff, costDiff];
-        history.gap = [history.gap, gap];
-        history.mu = [history.mu, mu];
-        history.residuals = [history.residuals, residuals];
-        history.solns{end+1} = info.soln;
-    end
-    history.infos{end+1} = info;
 end
 
 if (failed) && (params.Results.FailGracefully)
-    info = history.info{1};
+    info = history.infos{1};
     info.failed = true;
 end
 
@@ -134,7 +140,8 @@ info.Iterations = itr;
 
 %% Debug: print history
 if debug
-    history.residuals = history.residuals(:,[2:end,1]);
+    history.residuals = history.residuals(:,2:end);
+    history.weights = history.weights(:,2:end);
     info.history = history;
 
     % replay history

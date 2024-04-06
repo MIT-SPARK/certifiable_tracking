@@ -10,7 +10,7 @@ experiment = "pascal";
 %% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
-mosekpath   = '../mosek/10.1/toolbox/r2017a';
+mosekpath   = '/opt/mosek/10.1/toolbox/r2017a';
 sdpnalpath  = '../SDPNALv1.0';
 coptpath = '/opt/copt71';
 pyvenvpath = '~/research/tracking/trackvenv/bin/python3';
@@ -32,7 +32,7 @@ addpath(genpath(gncpath)) % optional if no outliers
 addpath(genpath(mosekpath))
 addpath(genpath(stridepath))
 % addpath("/opt/copt71")
-setenv("COPT_LICENSE_DIR", "/opt/copt71")
+setenv("COPT_LICENSE_DIR", "~/copt")
 
 %% add internal paths
 addpath('./outlier_rejection')
@@ -43,7 +43,7 @@ addpath('./visualization')
 %% Setup for python
 flag = int32(bitor(2, 8));
 py.sys.setdlopenflags(flag);
-% pyenv('Version', pyvenvpath, 'ExecutionMode','OutOfProcess');
+pyenv('Version', pyvenvpath, 'ExecutionMode','OutOfProcess');
 
 %% Setup experiments
 addpath("experiments/"+experiment);

@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalaeroplane2_" + indepVar;
+savename = "pascalaeroplane3_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = [0.05:0.025:0.95];
 num_repeats = 500;
@@ -108,49 +108,49 @@ problem_milp = problems_pruned{j};
 % regen only first time
 problem.regen_sdp = (j == 1);
 problem_milp.regen_sdp = (j==1);
-try
+% try
     t = tic;
     [inliers, info] = gnc2(problem_milp, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);
     soln_ours = info.f_info.soln;
     soln_ours.iters = info.Iterations;
     soln_ours.time = toc(t) + problem_milp.milptime;
-catch
-    soln_ours.p_est = ones(3,1,1)*NaN;
-    soln_ours.R_est = ones(3,3,1)*NaN;
-    soln_ours.c_est = ones(problem.K,1)*NaN;
-    soln_ours.iters = NaN;
-    soln_ours.time = NaN;
-end
+% catch
+%     soln_ours.p_est = ones(3,1,1)*NaN;
+%     soln_ours.R_est = ones(3,3,1)*NaN;
+%     soln_ours.c_est = ones(problem.K,1)*NaN;
+%     soln_ours.iters = NaN;
+%     soln_ours.time = NaN;
+% end
 
 % GNC only
-try
+% try
     t = tic;
     [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);
     soln_gnc = info.f_info.soln;
     soln_gnc.iters = info.Iterations;
     soln_gnc.time = toc(t);
-catch
-    soln_gnc.p_est = ones(3,1,1)*NaN;
-    soln_gnc.R_est = ones(3,3,1)*NaN;
-    soln_gnc.c_est = ones(problem.K,1)*NaN;
-    soln_gnc.iters = NaN;
-    soln_gnc.time = NaN;
-end
+% catch
+%     soln_gnc.p_est = ones(3,1,1)*NaN;
+%     soln_gnc.R_est = ones(3,3,1)*NaN;
+%     soln_gnc.c_est = ones(problem.K,1)*NaN;
+%     soln_gnc.iters = NaN;
+%     soln_gnc.time = NaN;
+% end
 
 % MILP only
-try
+% try
     t = tic;
     soln = solve_weighted_tracking(problem_milp);
     soln_milp = soln;
     soln_milp.iters = 1;
     soln_milp.time = toc(t) + problem_milp.milptime;
-catch
-    soln_milp.p_est = ones(3,1,1)*NaN;
-    soln_milp.R_est = ones(3,3,1)*NaN;
-    soln_milp.c_est = ones(problem.K,1)*NaN;
-    soln_milp.iters = NaN;
-    soln_milp.time = NaN;
-end
+% catch
+%     soln_milp.p_est = ones(3,1,1)*NaN;
+%     soln_milp.R_est = ones(3,3,1)*NaN;
+%     soln_milp.c_est = ones(problem.K,1)*NaN;
+%     soln_milp.iters = NaN;
+%     soln_milp.time = NaN;
+% end
 disp("Finished iv="+iv+" ("+j+")");
 
 R_err_ours = getAngularError(problem.R_gt(:,:,end), soln_ours.R_est(:,:,end));

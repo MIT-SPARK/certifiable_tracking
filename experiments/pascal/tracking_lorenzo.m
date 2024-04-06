@@ -11,7 +11,7 @@ clc; clear; close all
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.05;
+problem.outlierRatio = 0.5;
 problem.outlierVariance = 1.0;
 
 problem.noiseSigmaSqrt = 0.03*0.2; % [m]
@@ -59,7 +59,7 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-problem = lorenzo_prune(problem);
+% problem = lorenzo_prune(problem);
 
 % run GNC
 [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6, 'Debug', true);
