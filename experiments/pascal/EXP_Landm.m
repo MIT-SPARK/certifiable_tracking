@@ -126,6 +126,75 @@ results = [results{:}];
 save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
+% data settings
+Llist = [1,2,3];
+displayRange = 2:length(domain);
+
+% visual settings
+tile = true;
+
+settings.PACEEKF = {'x-','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
+settings.PACERAW = {'x-','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
+
+settings.OURS = {'x-','DisplayName', 'OURS','LineWidth',2,'Color','002e4c'};
+settings.ours_colors = ["#338eca","#005b97","#002e4c"];
+settings.Llist = Llist;
+settings.Ldomain = Ldomain;
+
+% restrict domain and normalize positions
+resultsAdj = results(:,displayRange);
+for j = 1:length(resultsAdj)
+resultsAdj(j).p_err_ekf = resultsAdj(j).p_err_ekf/lengthScale;
+resultsAdj(j).p_err_pace = resultsAdj(j).p_err_pace/lengthScale;
+resultsAdj(j).p_err_ours = resultsAdj(j).p_err_ours/lengthScale;
+resultsAdj(j).c_err_pace = resultsAdj(j).c_err_pace/lengthScale;
+resultsAdj(j).c_err_ours = resultsAdj(j).c_err_ours/lengthScale;
+end
+
+% created tiled figure
+if tile
+    figure
+    t=tiledlayout(2,3);
+    title(t,'Measurement Noise')
+end
+
+% Positions
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "p_err", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Position Error (normalized)");
+title("Position Errors")
+
+settings=rmfield(settings,"PACEEKF");
+% Rotations
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "R_err", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Rotation Error (deg)");
+title("Rotation Errors")
+
+% Shape
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "c_err", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Shape Error (normalized)");
+title("Shape Errors")
+
+% Gap
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "gap", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Gap");
+title("Suboptimality Gaps")
+
+% Time
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "time", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Time (s)");
+title("Run Times")
+
+%% Display Results
 % process into displayable form
 % settings.OURS = {'DisplayName', 'OURS','LineWidth',3};
 % ours_colors = ["#000000", "#002e4c", "#00395f", "#004471", "#005084",...
@@ -137,11 +206,11 @@ settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
 figure
 t=tiledlayout(2,2);
 title(t,'Measurement Noise')
-set(0,'DefaultLineLineWidth',2)
+set(0,'DefaultLineLineWidth',1)
 
-% display_range = 1:length(domain);
-display_range = 1:17;
-results = results(:,display_range);
+% display_range = 2:length(domain);
+% display_range = 1:17;
+% results = results(:,display_range);
 Llist = [1,2,3];
 
 % Rotation figure
@@ -175,8 +244,8 @@ for lidx = Llist
 L = Ldomain(lidx);
 lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
 plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
-a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
-errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
+a=plot([results.(indepVar)],median(res(:,lrange))/lengthScale,'x-',plotsettings{:});
+errorshade([results.(indepVar)],res(:,lrange)/lengthScale,get(a,'Color'));
 end
 yscale log;% xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
@@ -222,24 +291,105 @@ xlabel(indepVar); ylabel("Gap");
 title("Suboptimality Gaps")
 
 % time figure
-% nexttile
-% hold on
-% res = [results.time_ours];
-% for lidx = Llist
-% L = Ldomain(lidx);
-% lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
-% plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
-% a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
-% errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
-% end
-% xlabel(indepVar); ylabel("Time (s)");
-% title("Solve Time")
+nexttile
+hold on
+b=plot([results.(indepVar)],median([results.time_pace]),'x-',settings.PACERAW{:});
+hold on
+errorshade([results.(indepVar)],[results.time_pace],get(b,'Color'));
+res = [results.time_ours];
+for lidx = Llist
+L = Ldomain(lidx);
+lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
+plotsettings = {'DisplayName', "OURS-" + string(L),'LineWidth',3,'Color',ours_colors(length(Ldomain)-lidx+1)};
+a=plot([results.(indepVar)],median(res(:,lrange)),'x-',plotsettings{:});
+errorshade([results.(indepVar)],res(:,lrange),get(a,'Color'));
+end
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Time (s)");
+title("Solve Time")
 
-%% Change results
-% for i = 1:length(results)
-%     results(i).R_err_ekf = results(i).R_err_ekf';
-%     results(i).R_err_pace = results(i).R_err_pace';
-%     results(i).p_err_ekf = results(i).p_err_ekf';
-%     results(i).p_err_pace = results(i).p_err_pace';
-%     results(i).c_err_pace = results(i).c_err_pace';
-% end
+%% Box and Whisker Display
+
+% parameters
+nBins = length(domain);
+
+% make bins
+domain = [results.(indepVar)];
+edges = linspace(domain(1),domain(end),nBins+1);
+bins = discretize(domain,edges);
+
+% generate figure
+figure
+% t=tiledlayout(2,2);
+% title(t,'Measurement Noise')
+
+% rotation figure
+% nexttile
+
+
+hold on
+L = Ldomain(lidx);
+lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
+res = [results.p_err_ours];
+boxplot(res(:,lrange), bins, 'Positions', 1:nBins ,'Symbol','','Colors',hex2rgb('#1a80c4'),'PlotStyle','compact','Widths',0.25)
+boxplot([results.p_err_pace], bins, 'Positions', (1:nBins) + 0.3,'Symbol','','Colors',hex2rgb('#D95319'),'PlotStyle','compact','Widths',0.25)
+hold off
+yscale log
+
+% set(gca,'xticklabel',{'#1','#2','#3','#4','#5','#6','#7','#8'})
+
+%% Second Box and Whisker Option
+
+tbl = table;
+domain = [results.(indepVar)];
+tbl.method = repelem(["OURS", "PACE"], num_repeats*length(domain))';
+
+nBins = length(domain);
+edges = linspace(domain(1),domain(end),nBins+1);
+bins = discretize(domain,edges);
+tbl.domain = repmat(repelem(bins,num_repeats)',[2,1]);
+
+% positions
+res = [results.p_err_ours];
+lidx = 1;
+lrange = lidx + length(Ldomain)*(0:length(display_range)-1);
+p_err_ours = res(:,lrange)/lengthScale;
+p_err_pace = [results.p_err_pace]/lengthScale;
+
+tbl.p = [p_err_ours(:); p_err_pace(:)];
+
+figure
+b=boxchart(tbl.domain,tbl.p,'GroupByColor',tbl.method, 'JitterOutliers','on','MarkerStyle','.', 'Notch','off');
+yscale log
+
+%% Helper function: plotting
+function plotvariable(results, indepVar, var, settings)
+    hold on
+    if isfield(settings, "PACEEKF")
+        errorshade([results.(indepVar)],[results.(var + "_ekf")],hex2rgb(settings.PACEEKF{5}));
+    end
+    errorshade([results.(indepVar)],[results.(var + "_pace")],hex2rgb(settings.PACERAW{5}));
+    
+    Llist = settings.Llist;
+    Ldomain = settings.Ldomain;
+    ours_colors = settings.ours_colors;
+    for lidx=Llist
+        lrange = lidx + length(Ldomain)*(0:length([results.(indepVar)])-1);
+        res = [results.(var + "_ours")];
+        errorshade([results.(indepVar)],res(:,lrange),hex2rgb(ours_colors(lidx)));
+    end
+
+    if isfield(settings, "PACEEKF")
+        plot([results.(indepVar)],median([results.(var + "_ekf")]),settings.PACEEKF{:});
+    end
+    plot([results.(indepVar)],median([results.(var + "_pace")]),settings.PACERAW{:});
+    for lidx=Llist
+        lrange = lidx + length(Ldomain)*(0:length([results.(indepVar)])-1);
+        res = [results.(var + "_ours")];
+        plotsettings = settings.OURS; L = Ldomain(lidx);
+        plotsettings{3} = plotsettings{3} + "-" + string(L);
+        plotsettings{7} = ours_colors(lidx);
+        plot([results.(indepVar)],median(res(:,lrange)),plotsettings{:});
+    end
+    hold off
+end

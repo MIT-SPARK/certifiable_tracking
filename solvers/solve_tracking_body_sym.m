@@ -162,12 +162,12 @@ vBoundSq = vBound^2;
 g_v = vBoundSq*L - v'*v;
 
 % c bound (0<=c<=1)
-cBoundSq = 1.0; % should just be 1
-g_c = [cBoundSq - c'*c;c];
+% cBoundSq = 1.0; % should just be 1
+% g_c = [cBoundSq - c'*c;c];
 
 % g = [g_c];
 % g = [g_c;g_v];
-g = [g_s_first; g_v; g_c];
+g = [g_s_first; g_v];
 
 %% Complete problem definition
 problem.vars = x;
