@@ -10,10 +10,10 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalaeroplane3_" + indepVar;
+savename = "pascalaeroplane_easyforGNC_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = [0.05:0.025:0.95];
-num_repeats = 500;
+num_repeats = 50; % 3: 500
 
 %% Loop
 results = cell(length(domain),1);
@@ -30,7 +30,7 @@ problem.category = "aeroplane";
 problem.L = 8;
 
 problem.outlierRatio = iv;
-problem.outlierVariance = 1.0;
+problem.outlierVariance = 0.6; % 3: 1.0
 
 problem.noiseSigmaSqrt = 0.03*lengthScale; % [m]
 problem.covar_measure_base = 1;

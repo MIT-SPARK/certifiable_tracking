@@ -126,6 +126,78 @@ results = [results{:}];
 save("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
+% data settings
+Llist = [1,2,3];
+displayRange = 2:length(domain);
+
+% visual settings
+tile = true;
+
+settings.PACEEKF = {'x-','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
+settings.PACERAW = {'x-','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
+
+settings.OURS = {'x-','DisplayName', 'OURS','LineWidth',2,'Color','002e4c'};
+settings.ours_colors = ["#338eca","#005b97","#002e4c"];
+settings.Llist = Llist;
+settings.Ldomain = Ldomain;
+
+% restrict domain and normalize positions
+resultsAdj = results(:,displayRange);
+for j = 1:length(resultsAdj)
+resultsAdj(j).p_err_ekf = resultsAdj(j).p_err_ekf/lengthScale;
+resultsAdj(j).p_err_pace = resultsAdj(j).p_err_pace/lengthScale;
+resultsAdj(j).p_err_ours = resultsAdj(j).p_err_ours/lengthScale;
+resultsAdj(j).c_err_pace = resultsAdj(j).c_err_pace/lengthScale;
+resultsAdj(j).c_err_ours = resultsAdj(j).c_err_ours/lengthScale;
+end
+
+% created tiled figure
+if tile
+    figure
+    t=tiledlayout(2,3);
+    title(t,'Measurement Noise')
+end
+
+% Positions
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "p_err", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Position Error (normalized)");
+title("Position Errors")
+
+lg = legend('Orientation','horizontal');
+lg.Layout.Tile = 'south';
+
+settings=rmfield(settings,"PACEEKF");
+% Rotations
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "R_err", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Rotation Error (deg)");
+title("Rotation Errors")
+
+% Shape
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "c_err", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Shape Error (normalized)");
+title("Shape Errors")
+
+% Gap
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "gap", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Gap");
+title("Suboptimality Gaps")
+
+% Time
+if (tile); nexttile; else; figure; end
+plotvariable(resultsAdj, indepVar, "time", settings)
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Time (s)");
+title("Run Times")
+
+%% Display Results
 % process into displayable form
 % settings.OURS = {'DisplayName', 'OURS','LineWidth',3};
 ours_colors = ["#002e4c", "#005b97","#338eca","#80b9de"];
