@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane6_" + indepVar;
+savename = "pascalaeroplane7_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0:0.05:2;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]

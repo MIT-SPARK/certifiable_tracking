@@ -30,7 +30,7 @@ problem.category = "aeroplane";
 problem.L = 8;
 
 problem.outlierRatio = iv;
-problem.outlierVariance = 0.6; % 3: 1.0
+problem.outlierVariance = 0.3*lengthScale; % 3: 1.0 (no lengthScale)
 
 problem.noiseSigmaSqrt = 0.03*lengthScale; % [m]
 problem.covar_measure_base = 1;

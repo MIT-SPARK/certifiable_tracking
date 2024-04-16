@@ -3,7 +3,7 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-clc; clear; %close all
+clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
@@ -11,7 +11,7 @@ clc; clear; %close all
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.05;
+problem.outlierRatio = 0.15;
 problem.outlierVariance = 1.0;
 
 problem.noiseSigmaSqrt = 0.03*0.2; % [m]
@@ -25,7 +25,7 @@ problem.noiseBound_GNC_residuals = 1;
 problem.noiseBound_GRAPH = 0.03*0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
+problem.velocityBound = 5.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity

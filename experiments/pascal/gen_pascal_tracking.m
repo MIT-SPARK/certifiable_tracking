@@ -23,7 +23,6 @@ noiseSigmaSqrt = problem.noiseSigmaSqrt;
 dt = problem.dt;
 
 accNoiseSigmaSqrt = problem.accelerationNoiseBoundSqrt;
-rotNoiseBound = problem.rotationNoiseBound;
 
 % TODO: INCORPORATE MAX POSITION BOUNDS
 % if (problem.velocityBound*L*dt >= problem.translationBound)
@@ -113,8 +112,14 @@ for l = 1:L
 
     if (l < L)
         % Apply random (bounded) acceleration (TODO: make actual bound)
-        dR_gt(:,:,l) = dR_gt(:,:,l) * rand_rotation('RotationBound',rotNoiseBound);
-        v_gt(:,:,l) = v_gt(:,:,l) + accNoiseSigmaSqrt*randn(3,1)*dt;
+        v_gt(:,:,l) = v_gt(:,:,l) + accNoiseSigmaSqrt*randn(3,1); % equivalent to Gaussian noise with variance accNoiseSigma
+
+        if (isfield(problem,"rotationKappa"))
+            % Langevin
+            dR_gt(:,:,l) = dR_gt(:,:,l)*randlangevin(eye(3), problem.rotationKappa);
+        else
+            dR_gt(:,:,l) = dR_gt(:,:,l) * rand_rotation('RotationBound',problem.rotationNoiseBound); % NOT equivalent to Langevin
+        end
 
         if strcmp(problem.velprior, "body")
             dR = dR_gt(:,:,l);
@@ -215,8 +220,7 @@ if strcmp(problem.velprior, "body")
     end
     x_gt = [reshape(problem.R_gt, problem.L*9,1,1);
             reshape(problem.dR_gt,(problem.L-1)*9,1,1); 
-            reshape(problem.s_gt,problem.L*3,1,1); 
-            reshape(problem.v_gt,(problem.L-1)*3,1,1)];
+            reshape(problem.s_gt,problem.L*3,1,1)];
     problem.x_gt = x_gt;
 elseif strcmp(problem.velprior, "world")
     rh_gt = zeros(9*(L-1), 1);
@@ -261,4 +265,26 @@ angle = RotationBound*rand - RotationBound/2;
 axis  = randn(3,1);
 axis  = axis / norm(axis);
 R     = axang2rotm([axis' angle]);
+end
+
+function Re = randlangevin(mode, kappa)
+% sample from the Langevin distribution in SO(3)
+% with mode and concentration param kappa
+% See SE-Sync for algorithm
+
+% 1) sample from von mises
+theta = vmrand(0, 2*kappa);
+
+% 2) sample axis of rotation
+axis = rand(3,1);
+axis = axis / norm(axis);
+
+% 3) set perturbation matrix
+axis_skew = [0, -axis(3), axis(2);
+             axis(3), 0, -axis(1);
+             -axis(2), axis(1), 0];
+P = expm(theta*axis_skew);
+
+Re = mode*P;
+
 end

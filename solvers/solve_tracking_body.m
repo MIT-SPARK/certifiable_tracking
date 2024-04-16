@@ -292,7 +292,7 @@ dRs = projectRList(drs);
 % s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
 s_est = reshape(x_est((18*L-9+1):(18*L-9+3*L)),[3,1,L]);
 % v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
-v_est = reshape(res.sol.itr.xx(2:end),[3,1,L-1]); % not using eigenvalue: expect rank 3 solution
+v_est = reshape(res.sol.itr.xx(2:end),[3,1,L-1]);
 % c_est = full(dmsubs(c,x,x_est));
 c_est = Cr*reshape(Rs,9*L,1,1) - Cs*reshape(s_est,3*L,1,1) + gbar;
 % c = Cr*r - Cs*s + gbar;
@@ -323,13 +323,13 @@ gap = (obj_est - obj(2)) / obj_est;
 gap_stable = (obj_est - obj(2)) / (obj_est+1);
 
 % compute residuals
-residuals = zeros(N, L);
-for i = 1:N
-    for l = 1:L
-        residue = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est - s_est(:,:,l);
-        residuals(i,l) = (residue'*residue);
-    end
-end
+% residuals = zeros(N, L);
+% for i = 1:N
+%     for l = 1:L
+%         residue = Rs(:,:,l)'*y(ib3(i),l) - B(ib3(i),:)*c_est - s_est(:,:,l);
+%         residuals(i,l) = (residue'*residue);
+%     end
+% end
 % corrected c
 c_est_corrected = c_est;
 c_est_corrected(c_est < 0) = 0;

@@ -7,20 +7,24 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.0*0.2; % [m]
+problem.noiseSigmaSqrt = 0.15*0.2; % [m]
 problem.noiseBound = 0.1;
 problem.processNoise = 0.1;
 
-problem.covar_measure_base = 0.0001;
-problem.covar_velocity_base = 0.001;
-problem.covar_rotrate_base = 0.001;
+% MLE parameters
+problem.accelerationNoiseBoundSqrt = 0.1;
+problem.rotationKappa = 200;
+
+problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = problem.rotationKappa;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -29,9 +33,6 @@ problem.dt = 1.0;
 problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
-
-problem.accelerationNoiseBoundSqrt = 0;%1*0.2;
-problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
@@ -51,7 +52,7 @@ problem.lambda = lambda;
 %% Solve!
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
-paceukf = pace_py_UKF(problem,pace);
+% paceukf = pace_py_UKF(problem,pace);
 paceekf = pace_ekf(problem,pace);
 
 %% Check solutions
@@ -105,7 +106,9 @@ c_err = norm(problem.c_gt - soln.c_est);
 % Plot trajectory!
 plot_trajectory2(problem,soln)
 
-compare(problem, soln, pace, paceukf, paceekf);
+compare(problem, soln, pace, pace, paceekf);
+
+soln.gap
 
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;
