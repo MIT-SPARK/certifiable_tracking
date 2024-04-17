@@ -282,6 +282,8 @@ vecmax = eigvecs(:,end);
 % re-normalize so first element is 1
 vecmax_normed = vecmax / vecmax(1);
 x_est = vecmax_normed(2:end);
+% x_est = Xopt{1};
+% x_est = x_est(2:end,1);
 
 % Project to SO(3) and extract results
 rs = x_est(1:(9*L));
@@ -319,8 +321,8 @@ end
 % compute gap
 % obj_est = dmsubs(prob_obj,x,x_proj); % slow
 obj_est = x_proj'*(Q'*Q)*x_proj + v_est_corrected'*(Av'*Av)*v_est_corrected;
-gap = (obj_est - obj(2)) / obj_est;
-gap_stable = (obj_est - obj(2)) / (obj_est+1);
+gap = (obj_est - obj(2)) / obj(2);
+gap_stable = (obj_est - obj(2)) / (obj(2)+1);
 
 % compute residuals
 % residuals = zeros(N, L);
@@ -342,6 +344,56 @@ for i = 1:N
         residuals(i,l) = (residue'*residue);
     end
 end
+
+%% Alt reprojection: generative model
+% % use v, dR to gen p, R from p0, R0
+% s2_est = zeros(3,1,L);
+% p2_est = zeros(3,1,L);
+% R2_est = zeros(3,3,L);
+% 
+% % initialize p, s, R
+% s2_est(:,:,1) = s_est(:,:,1);
+% p2_est(:,:,1) = p_est(:,:,1); % this came from s
+% R2_est(:,:,1) = Rs(:,:,1);
+% 
+% % estimate p, s, R from p0, R0, v, dR
+% for l = 1:L-1
+%     s2_est(:,:,l+1) = dRs(:,:,l)'*(s2_est(:,:,l) + v_est(:,:,l)*dt);
+%     p2_est(:,:,l+1) = p2_est(:,:,l) + R2_est(:,:,l)*v_est(:,:,l)*dt;
+%     R2_est(:,:,l+1) = R2_est(:,:,l) * dRs(:,:,l);
+% end
+% 
+% % gap
+% x_proj2 = [1.0; reshape(R2_est,[9*L,1]); reshape(dRs,[9*(L-1),1]);
+%                 reshape(s2_est,[3*L,1])];
+% v2 = reshape(v_est,[3*(L-1),1]);
+% obj_est2 = x_proj2'*(Q'*Q)*x_proj2 + v2'*(Av'*Av)*v2;
+% gap2 = (obj_est2 - obj(2)) / obj(2);
+% 
+% % gt gap
+% x_gt = [1; problem.x_gt];
+% v_gt = reshape(problem.v_gt,[3*L-3,1]);
+% obj_gt = x_gt'*(Q'*Q)*x_gt + v_gt'*(Av'*Av)*v_gt;
+% gap_gt = (obj_gt - obj(2)) / obj(2);
+% 
+% % save
+% soln.s2_est = s2_est;
+% soln.p2_est = p2_est;
+% soln.R2_est = R2_est;
+% soln.dR2_est = dRs;
+% soln.obj_est2 = obj_est2;
+% soln.gap2 = gap2;
+% soln.gap_gt = gap_gt;
+
+% % Alt reprojection: Lasserre
+% 1) chol
+% [U,S,~] = svd(Xopt{1}); % U = V
+% S(S < 1e-6) = 0;
+% V = U*sqrt(S);
+% V = V(:,1:rank(S));
+% % 2) column reduce
+% U = rref(V')';
+
 
 %% Pack into struct
 % raw SDP/MOSEK data
@@ -467,7 +519,7 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
     % conic constraint: v'*(Av'*Av)*v <= sh
     % (sh, 1, (sqrt(2)*Av)*v) in Q^(2 + 3*(L-1))
     k = size(Av,1);
-    fQ = sparse([1, zeros(1,3*L-3);zeros(1,1+3*L-3); zeros(k,1) sparse(sqrt(2)*Av)]);
+    fQ = sparse([1/2, zeros(1,3*L-3);zeros(1,1+3*L-3); zeros(k,1) sparse(Av)]); % equiv to sqrt(2)*Av
     gQ = [0, 1, zeros(1,k)]';
     accQ = [symbcon.MSK_DOMAIN_RQUADRATIC_CONE, 2 + k];
 

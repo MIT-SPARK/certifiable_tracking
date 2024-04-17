@@ -234,7 +234,7 @@ x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
 
 % compute gap (THIS TAKES FOREVER)
 obj_est = dmsubs(prob_obj,x,x_proj);
-gap = (obj_est - obj(1)) / obj_est;
+gap = (obj_est - obj(2)) / obj_est;
 
 % compute residuals (TODO: USE WHOLE OBJECTIVE?)
 residuals = zeros(N, L);

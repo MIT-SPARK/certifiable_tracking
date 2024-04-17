@@ -7,20 +7,20 @@
 
 clc; clear; close all
 % restoredefaultpath
-rng("default")
+% rng("default")
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.15*0.2; % [m]
+problem.noiseSigmaSqrt = 0.1*0.2; % [m]
 problem.noiseBound = 0.1;
 problem.processNoise = 0.1;
 
 % MLE parameters
-problem.accelerationNoiseBoundSqrt = 0.1;
-problem.rotationKappa = 200;
+problem.accelerationNoiseBoundSqrt = 0.05*0.2;
+problem.rotationKappa = 2/(0.05*0.2);
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
@@ -106,9 +106,14 @@ c_err = norm(problem.c_gt - soln.c_est);
 % Plot trajectory!
 plot_trajectory2(problem,soln)
 
+% temp for testing
+% soln2.p = soln.p2_est;
+% soln2.R = soln.R2_est;
+
 compare(problem, soln, pace, pace, paceekf);
 
 soln.gap
+% soln.gap2
 
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;
@@ -128,7 +133,7 @@ for l = 1:L
     eours.R(l) = getAngularError(gt.R_gt(:,:,l), ours.R_est(:,:,l));
 end
 
-fprintf("           PACE    +UKF    OURS    LEKF \n")
+fprintf("           PACE    OUR2    OURS    LEKF \n")
 fprintf("Position: %.4f, %.4f, %.4f, %.4f\n",epace.p,eukf.p,eours.p, eekf.p);
 fprintf("Rotation: %.4f, %.4f, %.4f\n",mean(epace.R),mean(eukf.R),mean(eours.R));
 end

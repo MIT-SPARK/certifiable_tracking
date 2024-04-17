@@ -3,7 +3,7 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-clc; clear; close all
+clc; clear; %close all
 % restoredefaultpath
 % rng("default")
 
@@ -44,7 +44,7 @@ problem.usecBound = false;
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
-lambda = 0.;
+lambda = 0.1;
 problem.lambda = lambda;
 
 % for GNC

@@ -10,11 +10,11 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane4_" + indepVar;
+savename = "pascalaeroplane7_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0.0:0.025:1;
+domain = 0.01:0.01:0.5;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
-num_repeats = 500; % 2: 50
+num_repeats = 50; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
@@ -44,9 +44,17 @@ problem.L = max(Ldomain); % nr of keyframes in horizon
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = iv*lengthScale; % [m]
 
-problem.covar_measure_base = 0.0001; % 2: 0.01
-problem.covar_velocity_base = 0.001;
-problem.covar_rotrate_base = 0.001;
+% MLE parameters
+problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
+problem.rotationKappa = 2/(0.05*lengthScale);
+
+problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = problem.rotationKappa;
+
+% problem.covar_measure_base = 0.0001; % 2: 0.01
+% problem.covar_velocity_base = 0.001;
+% problem.covar_rotrate_base = 0.001;
 
 problem.noiseBound = 0.15*lengthScale; %0.5 for 1st save file
 problem.processNoise = 5e-4;
@@ -57,8 +65,8 @@ problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
 
-problem.accelerationNoiseBoundSqrt = 0;
-problem.rotationNoiseBound = 0; % rad
+% problem.accelerationNoiseBoundSqrt = 0;
+% problem.rotationNoiseBound = 0; % rad
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
