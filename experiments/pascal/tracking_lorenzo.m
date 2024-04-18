@@ -3,7 +3,7 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-clc; clear; %close all
+clc; clear; close all
 % restoredefaultpath
 % rng("default")
 
@@ -15,9 +15,12 @@ problem.outlierRatio = 0.15;
 problem.outlierVariance = 1.0;
 
 problem.noiseSigmaSqrt = 0.03*0.2; % [m]
-problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.accelerationNoiseBoundSqrt = 0.05*0.2;
+problem.rotationKappa = 2/(0.05*0.2);
+
+problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = problem.rotationKappa;
 
 problem.noiseBound = 0.1*0.2;
 problem.noiseBound_GNC = 0.03*0.2;%0.15*0.3;
@@ -59,12 +62,12 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-% problem = lorenzo_prune(problem);
+problem = lorenzo_prune(problem);
 
 % run GNC
 [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6, 'Debug', true);
 % convert to true inliers
-% inliers = problem.priorinliers(inliers);
+inliers = problem.priorinliers(inliers);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)

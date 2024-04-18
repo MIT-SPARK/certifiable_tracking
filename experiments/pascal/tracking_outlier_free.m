@@ -7,24 +7,28 @@
 
 clc; clear; close all
 % restoredefaultpath
-rng("default")
+% rng("default")
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.15*0.2; % [m]
-problem.noiseBound = 0.45*0.2;
-problem.processNoise = 0.1;
+problem.noiseSigmaSqrt = 0.2*0.2; % [m]
+problem.noiseBound = 0.15*0.2;
+problem.processNoise = 2e-4;
 
 % MLE parameters
-problem.accelerationNoiseBoundSqrt = 0.05*0.2;
-problem.rotationKappa = 2/(0.01*0.2);
+problem.accelerationNoiseBoundSqrt = 0;%0.05*0.2;
+problem.rotationKappa = 0;%2/(0.01*0.2);
 
-problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
-problem.kappa_rotrate_base = problem.rotationKappa;
+% problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+% problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+% problem.kappa_rotrate_base = problem.rotationKappa;
+
+problem.covar_measure_base = 0.0001;
+problem.covar_velocity_base = 0.001;
+problem.covar_rotrate_base = 0.001;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;

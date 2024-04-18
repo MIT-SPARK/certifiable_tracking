@@ -272,6 +272,11 @@ function Re = randlangevin(mode, kappa)
 % with mode and concentration param kappa
 % See SE-Sync for algorithm
 
+if kappa <= 0
+    Re = eye(3);
+    return
+end
+
 % 1) sample from von mises
 theta = vmrand(0, 2*kappa);
 
