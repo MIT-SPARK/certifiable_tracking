@@ -10,10 +10,10 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "outlierratio"; % name of independent variable
-savename = "pascalaeroplane_easyforGNC_" + indepVar;
+savename = "pascalaeroplane_mle_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = [0.05:0.025:0.95];
-num_repeats = 50; % 3: 500
+domain = [0.05:0.05:0.75];
+num_repeats = 500; % 3: 500
 
 %% Loop
 results = cell(length(domain),1);
@@ -33,9 +33,12 @@ problem.outlierRatio = iv;
 problem.outlierVariance = 0.3*lengthScale; % 3: 1.0 (no lengthScale)
 
 problem.noiseSigmaSqrt = 0.03*lengthScale; % [m]
-problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
-problem.covar_rotrate_base = 1;
+problem.accelerationNoiseBoundSqrt = 0.05*0.2;
+problem.rotationKappa = 2/(0.05*0.2);
+
+problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = problem.rotationKappa;
 
 problem.noiseBound = 0.1*lengthScale;
 problem.noiseBound_GNC = 0.03*lengthScale;
@@ -49,8 +52,8 @@ problem.dt = 1.0;
 problem.velprior = "body";       % constant body frame velocity
 problem.usecBound = false;
 
-problem.accelerationNoiseBoundSqrt = 0;
-problem.rotationNoiseBound = 0; % rad
+% problem.accelerationNoiseBoundSqrt = 0;
+% problem.rotationNoiseBound = 0; % rad
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);

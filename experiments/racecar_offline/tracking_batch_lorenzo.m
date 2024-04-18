@@ -142,7 +142,7 @@ quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(
 end
 
 %% Plot Ground Truth
-plotgt = teaser;
+plotgt = gt;
 
 figure
 p_gt = reshape(plotgt.p,[3,size(plotgt.p,3),1]);

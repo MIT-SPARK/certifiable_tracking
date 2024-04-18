@@ -18,6 +18,9 @@ pyvenvpath = '~/research/tracking/trackvenv/bin/python3';
 if (experiment == "pascal")
     cadpath = "../datasets/pascal3d";
 end
+if (experiment == "racecar_offline")
+    cadpath = "../datasets/racecar_offline";
+end
 
 %% add external paths
 spotpath    = certifiablyrobustperceptionpath + '/spotless';
@@ -48,6 +51,6 @@ pyenv('Version', pyvenvpath, 'ExecutionMode','OutOfProcess');
 %% Setup experiments
 addpath("experiments/"+experiment);
 
-if (experiment == "pascal")
+if (experiment == "pascal") || (experiment == "racecar_offline")
     addpath(cadpath);
 end

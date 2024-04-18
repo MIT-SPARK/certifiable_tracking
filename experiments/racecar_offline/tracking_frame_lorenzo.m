@@ -9,7 +9,7 @@ clc; clear; close all
 
 %% Define settings for batch processing
 problem.json = "../datasets/racecar_offline/racecar_fast2.json";
-problem.L = 3; % batch size
+problem.L = 4; % batch size
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
 % Set bounds based on problem setting
@@ -78,79 +78,55 @@ if (mod(j,5) == 0)
 end
 
 end
+save("racecar_L4.mat","solns");
 
 %% Check solutions
-L = problem.L;
-N = curproblem.N_VAR;
+est = struct();
+est.p = zeros(3,1,length(solns)+2);
+est.R = zeros(3,3,length(solns)+2);
+est.gap = zeros(length(solns)+2);
 
-p_err = zeros(L*length(solns),1);
-R_err = zeros(L*length(solns),1);
-est.p = zeros(3,1,L*length(solns));
-est.R = zeros(3,3,L*length(solns));
-
-figure(1);
 for j = 1:length(solns)
+    problem = problems{j};
+    soln = solns(j);
 
-problem = problems{j};
-soln = solns(j);
-
-% TODO: update for frame
-idx = ((j-1)*L + 1):j*L;
-for l = 1:L
-    p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt.p(:,:,idx(l)));
-    R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R_est(:,:,l));
-
-    % if (p_err(idx(l)) > 10)
-    %     % don't plot
-    %     soln.gap = 1;
-    % end
+    % true horizon-level estimate
+    if j == 1
+        est.p(:,:,1:3) = soln.p_est;
+        est.R(:,:,1:3) = soln.R_est;
+        est.gap(1:3) = soln.gap_stable;
+    else
+        est.p(:,:,j+2) = soln.p_est(:,:,end);
+        est.R(:,:,j+2) = soln.R_est(:,:,end);
+        est.gap(j+2) = soln.gap_stable;
+    end
 end
 
-% if (soln.gap > 0.5)
-%     % don't plot
-%     est.p(:,:,idx) = NaN;
-%     est.R(:,:,idx) = NaN;
-%     continue
-% end
+est.p(:,:,est.gap > 0.01) = NaN;
+est.R(:,:,est.gap > 0.01) = NaN;
 
-est.p(:,:,idx) = soln.p_est;
-est.R(:,:,idx) = soln.R_est;
+%% Plot solutions
+options = {est, gt, teaser};
+titles = ["OURS", "Ground Truth", "Teaser"];
 
-% eigenvalue plot
-% figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
-% hold on
-
-% Plot trajectory!
-figure(1);
-axis equal
-p_est = reshape(soln.p_est,[3,L,1]);
-plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-hold on
-
-R_est = soln.R_est;
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
-
+for i = 1:length(options)
+    figure
+    p = reshape(options{i}.p,[3,size(options{i}.p,3),1]);
+    % p_gt = p_gt(:,12*8:15*8)
+    R = options{i}.R;
+    plot3(p(1,:),p(2,:),p(3,:),'.k', 'MarkerSize',10);
+    hold on
+    axis equal
+    
+    % R_est = soln.R_est;
+    quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,1,:)),squeeze(R(2,1,:)),squeeze(R(3,1,:)),'r');
+    quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,2,:)),squeeze(R(2,2,:)),squeeze(R(3,2,:)),'g');
+    quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,3,:)),squeeze(R(2,3,:)),squeeze(R(3,3,:)),'b');
+    title(titles(i))
 end
-
-%% Plot Ground Truth
-plotgt = teaser;
-
-figure
-p_gt = reshape(plotgt.p,[3,size(plotgt.p,3),1]);
-% p_gt = p_gt(:,12*8:15*8)
-R_gt = plotgt.R;
-plot3(p_gt(1,:),p_gt(2,:),p_gt(3,:),'.k', 'MarkerSize',10);
-hold on
-axis equal
-
-% R_est = soln.R_est;
-quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(R_gt(1,1,:)),squeeze(R_gt(2,1,:)),squeeze(R_gt(3,1,:)),'r');
-quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(R_gt(1,2,:)),squeeze(R_gt(2,2,:)),squeeze(R_gt(3,2,:)),'g');
-quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(R_gt(1,3,:)),squeeze(R_gt(2,3,:)),squeeze(R_gt(3,3,:)),'b');
 
 %% Plot Together
+p_gt = gt.p;
 t = 1:length(est.p);
 figure
 subplot(3,1,1)

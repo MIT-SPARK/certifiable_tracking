@@ -394,6 +394,10 @@ end
 % % 2) column reduce
 % U = rref(V')';
 
+% stable rank
+rank_stable = (norm(Xopt{1},'fro') / max(svd(Xopt{1})))^2;
+soln.rank_stable = rank_stable;
+
 
 %% Pack into struct
 % raw SDP/MOSEK data

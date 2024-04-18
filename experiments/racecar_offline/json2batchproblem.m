@@ -9,6 +9,10 @@ function [problem_list, gt, teaser] = json2batchproblem(problem)
 if (~isnan(shapes))
     problem.shapes = shapes;
 end
+% OVERRIDE SHAPES FROM CAD LIBRARY
+load("racecar_lib2.mat","shapes");
+% problem.shapes = shapes(:,:,5:end);
+problem.shapes = shapes;
 
 %% Define shape data
 % shapes is 3 x N x K
@@ -19,7 +23,7 @@ K = problem.K;
 
 % set lambda if K > N
 if K > N
-    problem.lambda = 1.0;
+    problem.lambda = 0.1;
     disp("Set lambda to " + string(problem.lambda));
 else
     problem.lambda = 0.0;

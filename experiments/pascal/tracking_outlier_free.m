@@ -7,20 +7,20 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.1*0.2; % [m]
-problem.noiseBound = 0.1;
+problem.noiseSigmaSqrt = 0.15*0.2; % [m]
+problem.noiseBound = 0.45*0.2;
 problem.processNoise = 0.1;
 
 % MLE parameters
 problem.accelerationNoiseBoundSqrt = 0.05*0.2;
-problem.rotationKappa = 2/(0.05*0.2);
+problem.rotationKappa = 2/(0.01*0.2);
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
@@ -112,7 +112,7 @@ plot_trajectory2(problem,soln)
 
 compare(problem, soln, pace, pace, paceekf);
 
-soln.gap
+soln.gap_stable
 % soln.gap2
 
 function compare(gt, ours, pace, paceukf, paceekf)
