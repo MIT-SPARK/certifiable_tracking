@@ -20,8 +20,11 @@ problem.noiseBound_GNC_residuals = 1;
 problem.noiseBound_GRAPH = 0.01;
 problem.noiseBound = 0.05;
 
+problem.cBound = 1;
+problem.noiseBoundSq = problem.noiseBound^2;
+
 problem.covar_measure_base = 1;
-problem.covar_velocity_base = 1;
+problem.covar_velocity_base = 10;
 problem.covar_rotrate_base = 10;
 
 problem.velprior = "body";       % constant body frame velocity
@@ -36,50 +39,18 @@ min_max_dists = robin_min_max_dists(problems{1}.shapes);
 %% Solve for each batch
 solns = [];
 disp("Solving " + string(length(problems)) + " problems...")
-for j = 100:300%length(problems) % TODO!
+for j = 1:length(problems)
 % regen if batch size changes.
 
 curproblem = problems{j};
 curproblem.regen_sdp = (j==1); % when in doubt, set to true
 
-% data for GNC
-curproblem.type = "tracking";
-curproblem.N = curproblem.N_VAR*curproblem.L; % How many measurements this problem has (updated by ROBIN)
-curproblem.outliers = []; % outlier indicies
-curproblem.priors = [];
-curproblem.dof = 3;
+% run pace with GNC + ROBIN
+t = tic;
+pace = pace_raw(curproblem,true,true);
+pace.fulltime = toc(t);
 
-curproblem = lorenzo_prune(curproblem, min_max_dists);
-
-% preprocess inliers
-% if isfield(curproblem,'prioroutliers')
-%     curproblem.prioroutliers = sort(curproblem.prioroutliers);
-%     curproblem.N = curproblem.N - length(curproblem.prioroutliers);
-% end
-
-% run GNC
-try
-    [inliers, info] = gnc2(curproblem, @solver_for_gnc, 'barc2', curproblem.noiseBound_GNC);
-    disp("GNC finished " + string(j) + " (" + info.Iterations + " iterations)")
-
-    soln = info.f_info.soln;
-    ef = eig(soln.raw.Xopt{1});
-    if (ef(end-1) > 1e-4)
-        disp("**Not convergent: " + string(soln.gap_stable))
-    end
-
-    % view_gnc(curproblem,info);
-catch
-    f = fieldnames(solns(1))';
-    f{2,1} = {NaN};
-    soln = struct(f{:});
-    soln.p_est = ones(3,1,curproblem.L)*NaN;
-    soln.R_est = ones(3,3,curproblem.L)*NaN;
-    info.f_info.soln = soln;
-    disp("GNC failed " + string(j))
-end
-
-solns = [solns; soln];
+solns = [solns; pace];
 
 if (mod(j,5) == 0)
     disp(j);
@@ -96,9 +67,6 @@ R_err = zeros(L*length(solns),1);
 est.p = zeros(3,1,L*length(solns));
 est.R = zeros(3,3,L*length(solns));
 
-gt2.p = gt.p(:,:,3*100-3+1:3*300);
-gt2.R = gt.R(:,:,3*100-3+1:3*300);
-
 figure(1);
 for j = 1:length(solns)
 
@@ -107,8 +75,8 @@ soln = solns(j);
 
 idx = ((j-1)*L + 1):j*L;
 for l = 1:L
-    p_err(idx(l)) = norm(soln.p_est(:,:,l) - gt2.p(:,:,idx(l)));
-    R_err(idx(l)) = getAngularError(gt2.R(:,:,idx(l)),soln.R_est(:,:,l));
+    p_err(idx(l)) = norm(soln.p(:,:,l) - gt.p(:,:,idx(l)));
+    R_err(idx(l)) = getAngularError(gt.R(:,:,idx(l)),soln.R(:,:,l));
 
     % if (p_err(idx(l)) > 10)
     %     % don't plot
@@ -123,24 +91,24 @@ end
 %     continue
 % end
 
-est.p(:,:,idx) = soln.p_est;
-est.R(:,:,idx) = soln.R_est;
+est.p(:,:,idx) = soln.p;
+est.R(:,:,idx) = soln.R;
 
 % eigenvalue plot
 % figure; bar(eig(soln.raw.Xopt{1})); % if rank = 1, then relaxation is exact/tight
 % hold on
 
 % Plot trajectory!
-% figure(1);
-% axis equal
-% p_est = reshape(soln.p_est,[3,L,1]);
-% plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-% hold on
-% 
-% R_est = soln.R_est;
-% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
+figure(1);
+axis equal
+p_est = reshape(soln.p,[3,L,1]);
+plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+hold on
+
+R_est = soln.R;
+quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
+quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
+quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 end
 
@@ -208,17 +176,30 @@ fid = fopen(problem.savefile, 'w');
 fprintf(fid, '%s', cocoString);
 fclose(fid);
 
-%% Try to estimate R_err
-% figure
-% axisdif = zeros(3,L_big);
-% angdif = zeros(1,L_big);
-% for l = 1:L_big
-%     axang = rotm2axang(est.R(:,:,l)'*gt.R(:,:,l));
-%     axisdif(:,l) = axang(1:3);
-%     angdif(:,l) = axang(4)*180/pi;
-%     quiver3(0,0,0,axang(1),axang(2),axang(3),'r');
-%     hold on
-% end
+%% Print error metrics
+gt.p = gt.p(:,:,1:length(est.p));
+gt.R = gt.R(:,:,1:length(est.R));
+% degcm
+[est.degcm, est.p_err, est.R_err] = compute_degcm(gt(1:length(est)),est);
+% [teaser.degcm, teaser.p_err, teaser.R_err] = compute_degcm(gt,teaser); % should remove 0s--those are where TEASER failed
+degcm_10_5 = compute_degcm(gt,est,'degThreshold',10);
+% c error
+cerr = compute_cerr(solns, est, problem.shapes, problem.shapes(:,:,end));
 
-median(R_err)
-median(p_err)
+
+function cerr = compute_cerr(solns, est, shapes, shape_gt)
+    N = size(shapes,2);
+    K = size(shapes,3);
+    L = length(solns);
+    
+    B = reshape(shapes, [3*N,K]);
+
+    cerr = zeros(3*L,N);
+    for l = 1:L
+        for i = 1:3
+            b_est = reshape(B*solns(l).c(:,:,i),[3,N]);
+            cerr(3*(l-1)+i,:) = vecnorm(b_est - shape_gt);
+        end
+    end
+
+end

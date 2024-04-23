@@ -10,9 +10,9 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane7_" + indepVar;
+savename = "pascalaeroplane_mle2_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0:0.05:2;
+domain = 0.025:0.025:0.5;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
 num_repeats = 500; % 2,3: 50; 4: 500
 
@@ -43,21 +43,22 @@ problem.L = max(Ldomain); % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.05*lengthScale; % 2: 0.05, 3: 0.01, 4: 0.05
-problem.covar_measure_base = 0.01;
-problem.covar_velocity_base = 0.01; % 2: 0.01, 3: 0.05, 4: 0.01
-problem.covar_rotrate_base = 0.01; % 2: 0.01, 3: 0.05, 4: 0.01
+% MLE parameters
+problem.accelerationNoiseBoundSqrt = iv*lengthScale;
+problem.rotationKappa = 1/(iv*lengthScale)*(1/2);
+
+problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = problem.rotationKappa;
 
 problem.noiseBound = 0.15*lengthScale; % 2:0.15, 3: 0.05, 4: 0.15
-problem.processNoise = 0.01; % 2,3: 0.05; % 4: 0.01
+problem.processNoise = 0.05; % 2,3: 0.05; % 4: 0.01
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
-
-problem.accelerationNoiseBoundSqrt = iv*lengthScale;
-problem.rotationNoiseBound = iv/10; % rad
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -101,7 +102,7 @@ for lidx = 1:length(Ldomain)
     R_err_ours(lidx) = getAngularError(problem.R_gt(:,:,end), soln.R_est(:,:,end));
     p_err_ours(lidx) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
     c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
-    gap_ours(lidx) = soln.gap_stable;
+    gap_ours(lidx) = soln.gap;
     time_ours(lidx) = soln.solvetime;
 end
 
@@ -128,7 +129,7 @@ save("../datasets/results/" + savename + ".mat","results")
 %% Display Results
 % data settings
 Llist = [1,2,3];
-displayRange = 2:length(domain);
+displayRange = 1:length(domain);
 
 % visual settings
 tile = true;
@@ -155,7 +156,7 @@ end
 if tile
     figure
     t=tiledlayout(2,3);
-    title(t,'Measurement Noise')
+    title(t,'Process Noise')
 end
 
 % Positions

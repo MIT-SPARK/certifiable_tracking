@@ -9,7 +9,7 @@ clc; clear; close all
 
 %% Define settings for batch processing
 problem.json = "../datasets/racecar_offline/racecar_fast2.json";
-problem.L = 4; % batch size
+problem.L = 12; % batch size
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
 % Set bounds based on problem setting
@@ -60,8 +60,10 @@ curproblem = lorenzo_prune(curproblem, min_max_dists);
 % end
 
 % run GNC
+t = tic;
 [inliers, info] = gnc2(curproblem, @solver_for_gnc, 'barc2', curproblem.noiseBound_GNC);
 disp("GNC finished " + string(j) + " (" + info.Iterations + " iterations)")
+info.f_info.soln.fulltime = toc(t) + curproblem.milptime;
 
 soln = info.f_info.soln;
 ef = eig(soln.raw.Xopt{1});
@@ -78,13 +80,13 @@ if (mod(j,5) == 0)
 end
 
 end
-save("racecar_L4.mat","solns");
+% save("racecar_L4.mat","solns");
 
 %% Check solutions
 est = struct();
 est.p = zeros(3,1,length(solns)+2);
 est.R = zeros(3,3,length(solns)+2);
-est.gap = zeros(length(solns)+2);
+est.gap = zeros(length(solns)+2,1);
 
 for j = 1:length(solns)
     problem = problems{j};
@@ -102,8 +104,8 @@ for j = 1:length(solns)
     end
 end
 
-est.p(:,:,est.gap > 0.01) = NaN;
-est.R(:,:,est.gap > 0.01) = NaN;
+% est.p(:,:,est.gap > 0.01) = NaN;
+% est.R(:,:,est.gap > 0.01) = NaN;
 
 %% Plot solutions
 options = {est, gt, teaser};
@@ -119,13 +121,31 @@ for i = 1:length(options)
     axis equal
     
     % R_est = soln.R_est;
-    quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,1,:)),squeeze(R(2,1,:)),squeeze(R(3,1,:)),'r');
-    quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,2,:)),squeeze(R(2,2,:)),squeeze(R(3,2,:)),'g');
-    quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,3,:)),squeeze(R(2,3,:)),squeeze(R(3,3,:)),'b');
+    % quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,1,:)),squeeze(R(2,1,:)),squeeze(R(3,1,:)),'r');
+    % quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,2,:)),squeeze(R(2,2,:)),squeeze(R(3,2,:)),'g');
+    % quiver3(p(1,:)',p(2,:)',p(3,:)',squeeze(R(1,3,:)),squeeze(R(2,3,:)),squeeze(R(3,3,:)),'b');
     title(titles(i))
 end
 
+figure
+tab = table();
+tab.x = est.p(1,1:1880)';
+tab.y = est.p(2,1:1880)';
+tab.z = est.p(3,1:1880)';
+% tab.tight = options{i}.gap < 1e-4;
+tab.tight = abs(est.gap(1:1880));
+scatter(tab,'x','y','filled','ColorVariable','tight','SizeData',20)
+% view(0,90)
+axis equal
+% colorbar %('Ticks',[1e-4,1])
+cMap = interp1([0;1],[0 0 0; 1 0 0],linspace(0,1,256));
+colormap(cMap);
+set(gca,'ColorScale','log')
+axis off
+colorbar('Location','south','AxisLocation','out')
+
 %% Plot Together
+% position
 p_gt = gt.p;
 t = 1:length(est.p);
 figure
@@ -147,6 +167,37 @@ subplot(3,1,3)
 plot(t,p_gt(3,1:length(est.p)),'DisplayName','Ground Truth')
 hold on
 plot(t,est.p(3,:),'DisplayName','Estimate')
+xlabel("time")
+ylabel("z")
+
+% rotation
+eul_gt  = zeros(3,length(est.R));
+eul_est = zeros(3,length(est.R));
+for l = 1:length(est.R)
+    eul_gt(:,l)  = rotm2eul(gt.R(:,:,l));
+    eul_est(:,l) = rotm2eul(est.R(:,:,l));
+end
+
+t = 1:length(eul_est);
+figure
+subplot(3,1,1)
+plot(t,eul_gt(1,1:length(eul_est)),'DisplayName','Ground Truth')
+hold on
+plot(t,eul_est(1,:),'DisplayName','Estimate')
+ylabel("x")
+
+legend('Location','ne')
+title("Explict Comparison of Evaluated Trajectories")
+
+subplot(3,1,2)
+plot(t,eul_gt(2,1:length(eul_est)),'DisplayName','Ground Truth')
+hold on
+plot(t,eul_est(2,:),'DisplayName','Estimate')
+ylabel("y")
+subplot(3,1,3)
+plot(t,eul_gt(3,1:length(eul_est)),'DisplayName','Ground Truth')
+hold on
+plot(t,eul_est(3,:),'DisplayName','Estimate')
 xlabel("time")
 ylabel("z")
 
@@ -174,14 +225,26 @@ fid = fopen(problem.savefile, 'w');
 fprintf(fid, '%s', cocoString);
 fclose(fid);
 
-%% Try to estimate R_err
-% figure
-% axisdif = zeros(3,L_big);
-% angdif = zeros(1,L_big);
-% for l = 1:L_big
-%     axang = rotm2axang(est.R(:,:,l)'*gt.R(:,:,l));
-%     axisdif(:,l) = axang(1:3);
-%     angdif(:,l) = axang(4)*180/pi;
-%     quiver3(0,0,0,axang(1),axang(2),axang(3),'r');
-%     hold on
-% end
+%% Print error metrics
+% degcm
+[est.degcm, est.p_err, est.R_err] = compute_degcm(gt,est);
+[teaser.degcm, teaser.p_err, teaser.R_err] = compute_degcm(gt,teaser); % should remove 0s--those are where TEASER failed
+degcm_10_5 = compute_degcm(gt,est,'degThreshold',10);
+% c error
+cerr = compute_cerr(solns, est, problem.shapes, problem.shapes(:,:,end));
+
+
+function cerr = compute_cerr(solns, est, shapes, shape_gt)
+    N = size(shapes,2);
+    K = size(shapes,3);
+    L = length(est.p)-2;
+    
+    B = reshape(shapes, [3*N,K]);
+
+    cerr = zeros(L,N);
+    for l = 1:L
+        b_est = reshape(B*solns(l).c_est,[3,N]);
+        cerr(l,:) = vecnorm(b_est - shape_gt);
+    end
+
+end

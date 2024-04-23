@@ -30,23 +30,23 @@ problem.category = "aeroplane";
 problem.L = 8;
 
 problem.outlierRatio = iv;
-problem.outlierVariance = 0.3*lengthScale; % 3: 1.0 (no lengthScale)
+problem.outlierVariance = 1.0*lengthScale; % 3: 1.0 (no lengthScale)
 
-problem.noiseSigmaSqrt = 0.03*lengthScale; % [m]
+problem.noiseSigmaSqrt = 0.01*lengthScale; % [m]
 problem.accelerationNoiseBoundSqrt = 0.05*0.2;
-problem.rotationKappa = 2/(0.05*0.2);
+problem.rotationKappa = 1/(0.05*0.2)*(1/2);
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
-problem.noiseBound = 0.1*lengthScale;
-problem.noiseBound_GNC = 0.03*lengthScale;
+problem.noiseBound = 0.05*lengthScale;
+problem.noiseBound_GNC = 0.01*lengthScale;
 problem.noiseBound_GNC_residuals = 1;
-problem.noiseBound_GRAPH = 0.03*lengthScale;
+problem.noiseBound_GRAPH = 0.01*lengthScale;
 
 problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
+problem.velocityBound = 5.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
@@ -109,7 +109,7 @@ problem = problems{j};
 problem_milp = problems_pruned{j};
 
 % regen only first time
-problem.regen_sdp = (j == 1);
+problem.regen_sdp = false;
 problem_milp.regen_sdp = (j==1);
 % try
     t = tic;
@@ -128,7 +128,7 @@ problem_milp.regen_sdp = (j==1);
 % GNC only
 % try
     t = tic;
-    [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);
+    [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6);%,'Debug',true);
     soln_gnc = info.f_info.soln;
     soln_gnc.iters = info.Iterations;
     soln_gnc.time = toc(t);

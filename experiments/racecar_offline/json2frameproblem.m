@@ -10,7 +10,7 @@ if (~isnan(shapes))
     problem.shapes = shapes;
 end
 % OVERRIDE SHAPES FROM CAD LIBRARY
-load("racecar_lib2.mat","shapes");
+load("racecar_lib.mat","shapes");
 % problem.shapes = shapes(:,:,5:end);
 problem.shapes = shapes;
 

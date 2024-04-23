@@ -42,7 +42,7 @@ for l = 1:problem.L
         SDP = relax_category_registration_v2(pace_problem,'lambda',problem.lambda,'checkMonomials',false);
         try
             tic
-            out = gnc_category_registration(pace_problem,SDP,path,'lambda',problem.lambda);
+            out = gnc_category_registration(pace_problem,SDP,false,'lambda',problem.lambda);
             pace_time = toc;
             % [R_est,t_est] = invert_transformation(out.R_est,out.t_est);
             R_est = out.R_est;

@@ -10,11 +10,11 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane7_" + indepVar;
+savename = "pascalaeroplane_mle3_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0.01:0.01:0.5;  % 0:0.025:1
+domain = 0.025:0.025:1;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
-num_repeats = 50; % 2: 50
+num_repeats = 500; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
@@ -46,7 +46,7 @@ problem.noiseSigmaSqrt = iv*lengthScale; % [m]
 
 % MLE parameters
 problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
-problem.rotationKappa = 2/(0.05*lengthScale);
+problem.rotationKappa = 1/(0.05*lengthScale)*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
@@ -56,8 +56,8 @@ problem.kappa_rotrate_base = problem.rotationKappa;
 % problem.covar_velocity_base = 0.001;
 % problem.covar_rotrate_base = 0.001;
 
-problem.noiseBound = 0.15*lengthScale; %0.5 for 1st save file
-problem.processNoise = 5e-4;
+problem.noiseBound = 3*iv*lengthScale; %3*iv for 8 reg
+problem.processNoise = 5e-2;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -110,7 +110,7 @@ for lidx = 1:length(Ldomain)
     R_err_ours(lidx) = getAngularError(problem.R_gt(:,:,end), soln.R_est(:,:,end));
     p_err_ours(lidx) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
     c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
-    gap_ours(lidx) = soln.gap_stable;
+    gap_ours(lidx) = soln.gap;
     time_ours(lidx) = soln.solvetime;
 end
 

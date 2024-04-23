@@ -11,21 +11,21 @@ clc; clear; close all
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
-problem.outlierRatio = 0.15;
-problem.outlierVariance = 1.0;
+problem.outlierRatio = 0.75;
+problem.outlierVariance = 1.0*0.2;
 
-problem.noiseSigmaSqrt = 0.03*0.2; % [m]
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.accelerationNoiseBoundSqrt = 0.05*0.2;
-problem.rotationKappa = 2/(0.05*0.2);
+problem.rotationKappa = 1/(0.05*0.2)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = 1*problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
-problem.noiseBound = 0.1*0.2;
-problem.noiseBound_GNC = 0.03*0.2;%0.15*0.3;
+problem.noiseBound = 0.15*0.2;
+problem.noiseBound_GNC = 0.05*0.2;%0.15*0.3;
 problem.noiseBound_GNC_residuals = 1;
-problem.noiseBound_GRAPH = 0.03*0.2;
+problem.noiseBound_GRAPH = 0.05*0.2;
 problem.processNoise = 0.5;
 problem.translationBound = 10.0;
 problem.velocityBound = 5.0;
@@ -35,8 +35,8 @@ problem.velprior = "body";       % constant body frame velocity
 % problem.velprior = "world";      % constant world frame velocity
 % problem.velprior = "grav-world"; % add gravity in z direction
 
-problem.accelerationNoiseBoundSqrt = 0.0;%0.01;
-problem.rotationNoiseBound = 0;%pi/32; % rad
+% problem.accelerationNoiseBoundSqrt = 0.0;%0.01;
+% problem.rotationNoiseBound = 0;%pi/32; % rad
 
 % regen if pbound, vbound, N, L, K change.
 problem.regen_sdp = true; % when in doubt, set to true
@@ -62,12 +62,12 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-problem = lorenzo_prune(problem);
+% problem = lorenzo_prune(problem);
 
 % run GNC
 [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6, 'Debug', true);
 % convert to true inliers
-inliers = problem.priorinliers(inliers);
+% inliers = problem.priorinliers(inliers);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)

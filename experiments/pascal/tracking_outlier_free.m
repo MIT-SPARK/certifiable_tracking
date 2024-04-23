@@ -14,21 +14,21 @@ problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.2*0.2; % [m]
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.noiseBound = 0.15*0.2;
-problem.processNoise = 2e-4;
+problem.processNoise = 5e-2;
 
 % MLE parameters
-problem.accelerationNoiseBoundSqrt = 0;%0.05*0.2;
-problem.rotationKappa = 0;%2/(0.01*0.2);
+problem.accelerationNoiseBoundSqrt = 0.5*0.2;
+problem.rotationKappa = 1/(0.5*0.2)^2*1/2;
 
-% problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-% problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
-% problem.kappa_rotrate_base = problem.rotationKappa;
+problem.covar_measure_base = problem.noiseSigmaSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = problem.rotationKappa;
 
-problem.covar_measure_base = 0.0001;
-problem.covar_velocity_base = 0.001;
-problem.covar_rotrate_base = 0.001;
+% problem.covar_measure_base = 0.0001;
+% problem.covar_velocity_base = 0.01;
+% problem.covar_rotrate_base = 0.01;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -117,15 +117,16 @@ plot_trajectory2(problem,soln)
 compare(problem, soln, pace, pace, paceekf);
 
 soln.gap_stable
+soln.gap
 % soln.gap2
 
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;
 % compare position
-epace.p = norm(gt.p_gt - pace.p,'fro') / L;
-eukf.p = norm(gt.p_gt - paceukf.p,'fro') / L;
-eekf.p = norm(gt.p_gt - paceekf.p,'fro') / L;
-eours.p = norm(gt.p_gt - ours.p_est,'fro') / L;
+epace.p = vecnorm(gt.p_gt - pace.p);
+eukf.p = vecnorm(gt.p_gt - paceukf.p);
+eekf.p = vecnorm(gt.p_gt - paceekf.p);
+eours.p = vecnorm(gt.p_gt - ours.p_est);
 
 % compare rotation
 epace.R = zeros(L,1);
@@ -138,6 +139,6 @@ for l = 1:L
 end
 
 fprintf("           PACE    OUR2    OURS    LEKF \n")
-fprintf("Position: %.4f, %.4f, %.4f, %.4f\n",epace.p,eukf.p,eours.p, eekf.p);
+fprintf("Position: %.4f, %.4f, %.4f, %.4f\n",epace.p(end),eukf.p(end),eours.p(end), eekf.p(end));
 fprintf("Rotation: %.4f, %.4f, %.4f\n",mean(epace.R),mean(eukf.R),mean(eours.R));
 end

@@ -31,7 +31,8 @@ processNoise = [processNoise, pn^2, 0, pn^2];
 processNoise = diag(processNoise);
 
 % Measurement noise
-measureNoise = repmat((problem.noiseBound/3)^2, 1,3);
+% measureNoise = repmat((problem.noiseBound/3)^2, 1,3);
+measureNoise = repmat(problem.covar_measure_base, 1,3);
 measureNoise = diag(measureNoise);
 
 %% Convert PACE data into EKF form
