@@ -134,6 +134,9 @@ results = [results{:}];
 % save
 save("../datasets/results/" + savename + ".mat","results")
 
+%%
+load("../datasets/results/" + savename + ".mat","results")
+
 %% Display Results
 % data settings
 Llist = [1,2,3];
@@ -163,7 +166,7 @@ end
 % created tiled figure
 if tile
     figure
-    t=tiledlayout(2,3);
+    t=tiledlayout(1,5);
     title(t,'Measurement Noise')
 end
 

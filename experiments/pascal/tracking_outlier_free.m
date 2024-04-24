@@ -19,8 +19,8 @@ problem.noiseBound = 0.15*0.2;
 problem.processNoise = 5e-2;
 
 % MLE parameters
-problem.accelerationNoiseBoundSqrt = 0.5*0.2;
-problem.rotationKappa = 1/(0.5*0.2)^2*1/2;
+problem.accelerationNoiseBoundSqrt = 0.05*0.2;
+problem.rotationKappa = 1/(0.05*0.2)*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;

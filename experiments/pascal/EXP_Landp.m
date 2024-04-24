@@ -10,9 +10,9 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane_mle2_" + indepVar;
+savename = "pascalaeroplane_mle3_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0.025:0.025:0.5;
+domain = 0.025:0.025:1.0;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
 num_repeats = 500; % 2,3: 50; 4: 500
 
@@ -126,6 +126,9 @@ results = [results{:}];
 % save
 save("../datasets/results/" + savename + ".mat","results")
 
+%%
+load("../datasets/results/" + savename + ".mat","results")
+
 %% Display Results
 % data settings
 Llist = [1,2,3];
@@ -155,7 +158,7 @@ end
 % created tiled figure
 if tile
     figure
-    t=tiledlayout(2,3);
+    t=tiledlayout(1,5);
     title(t,'Process Noise')
 end
 

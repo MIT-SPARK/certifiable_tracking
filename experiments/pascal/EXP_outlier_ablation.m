@@ -201,16 +201,18 @@ results = [results{:}];
 % save
 save("../datasets/results/" + savename + ".mat","results")
 
+%%
+load("../datasets/results/" + savename + ".mat","results")
+
 %% Display Results
 % process into displayable form
-settings.OURS = {'DisplayName', 'OURS', 'Color', "#0072BD",'LineWidth',3};
+settings.OURS = {'DisplayName', 'OURS', 'Color', "#005b97",'LineWidth',3};
 settings.PACEEKF = {'DisplayName', 'PACE-EKF', 'Color', "#D95319"};
 settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
-settings.GNC  = {'DisplayName', 'OURS-GNC', 'Color', "#D95319"}; % TODO: change colors
-settings.MILP = {'DisplayName', 'OURS-MILP', 'Color', "#EDB120"};
+settings.GNC  = {'DisplayName', 'OURS-GNC', 'Color', "#9A6324"}; % TODO: change colors
+settings.MILP = {'DisplayName', 'OURS-MILP', 'Color', "#A77CD9"};
 figure
-tiledlayout(2,2);
-set(0,'DefaultLineLineWidth',2)
+tiledlayout(1,5);
 
 % Rotation figure
 nexttile
@@ -253,25 +255,25 @@ xlabel(indepVar); ylabel("Shape Error (normalized)");
 title("Shape Errors")
 
 % Iterations figure
-% nexttile
-% a=loglog([results.(indepVar)],abs(median([results.iter_ours])),'x-',settings.OURS{:}); hold on;
-% b=plot([results.(indepVar)],abs(median([results.iter_gnc])),'x-',settings.GNC{:});
+nexttile
+b=plot([results.(indepVar)],abs(median([results.iter_gnc])),'x-',settings.GNC{:}); hold on;
+a=plot([results.(indepVar)],abs(median([results.iter_ours])),'x-',settings.OURS{:});
 % b=plot([results.(indepVar)],abs(median([results.iter_milp])),'x-',settings.MILP{:});
-% errorshade([results.(indepVar)],abs([results.iter_ours]),hex2rgb(settings.OURS{4}));
-% errorshade([results.(indepVar)],abs([results.iter_gnc]),hex2rgb(settings.GNC{4}));
+errorshade([results.(indepVar)],abs([results.iter_ours]),hex2rgb(settings.OURS{4}));
+errorshade([results.(indepVar)],abs([results.iter_gnc]),hex2rgb(settings.GNC{4}));
 % errorshade([results.(indepVar)],abs([results.iter_milp]),hex2rgb(settings.MILP{4}));
 % yscale log; xscale log
-% xlabel(indepVar); ylabel("Gap");
-% title("Suboptimality Gaps")
+xlabel(indepVar); ylabel("Iterations");
+title("GNC Iterations")
 
 % time figure
 nexttile
 hold on
+c=plot([results.(indepVar)],median([results.time_milp],"omitmissing"),'x-',settings.MILP{:});
+b=plot([results.(indepVar)],median([results.time_gnc],"omitmissing"),'x-',settings.GNC{:});
 a=plot([results.(indepVar)],median([results.time_ours],"omitmissing"),'x-',settings.OURS{:});
 errorshade([results.(indepVar)],[results.time_ours],hex2rgb(settings.OURS{4}));
-b=plot([results.(indepVar)],median([results.time_gnc],"omitmissing"),'x-',settings.GNC{:});
 errorshade([results.(indepVar)],[results.time_gnc],hex2rgb(settings.GNC{4}));
-b=plot([results.(indepVar)],median([results.time_milp],"omitmissing"),'x-',settings.MILP{:});
 errorshade([results.(indepVar)],[results.time_milp],hex2rgb(settings.MILP{4}));
 xlabel(indepVar); ylabel("Time (s)");
 title("Solve Time")
