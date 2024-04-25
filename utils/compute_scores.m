@@ -22,12 +22,23 @@ else
 end
 
 % Read point clouds
+if isstring(pcfile_gt)
 pc_gt = pcread(pcfile_gt);
 pc_est = pcread(pcfile_est);
 N_pts = length(pc_gt.Location);
+
 % homogeneous coords
 pc_gt = [double(pc_gt.Location)';ones(1,N_pts)];
 pc_est = [double(pc_est.Location)';ones(1,N_pts)];
+else
+
+pc_gt = pcfile_gt;
+pc_est = pcfile_est;
+N_pts = size(pc_est,2);
+% homogeneous coords
+pc_gt = [pc_gt;ones(1,N_pts)];
+pc_est = [pc_est;ones(1,N_pts)];
+end
 
 %% ADD score: compute mean distance between points
 all_err = zeros(N_pts,L);

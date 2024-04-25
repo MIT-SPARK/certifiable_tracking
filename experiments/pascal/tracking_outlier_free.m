@@ -7,14 +7,14 @@
 
 clc; clear; close all
 % restoredefaultpath
-% rng("default")
+rng("default")
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05*0.2; % [m]
+problem.noiseSigmaSqrt = 0.2*0.2; % [m]
 problem.noiseBound = 0.15*0.2;
 problem.processNoise = 5e-2;
 
@@ -31,7 +31,7 @@ problem.kappa_rotrate_base = problem.rotationKappa;
 % problem.covar_rotrate_base = 0.01;
 
 problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
+problem.velocityBound = 5.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
@@ -47,9 +47,9 @@ problem.usecBound = false;
 % problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
-problem = gen_pascal_tracking(problem);
-lambda = 0.0;
+lambda = 0;
 problem.lambda = lambda;
+problem = gen_pascal_tracking(problem);
 
 % problem.mosekpath = mosekpath;
 
@@ -116,7 +116,7 @@ plot_trajectory2(problem,soln)
 
 compare(problem, soln, pace, pace, paceekf);
 
-soln.gap_stable
+% soln.gap_stable
 soln.gap
 % soln.gap2
 

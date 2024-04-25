@@ -96,8 +96,10 @@ for itr = 0:maxSteps
     if itr < 1
         maxResidual = max(residuals);
         mu = barc2 / (2*maxResidual - barc2);
-        if ~problem.usecBound
-            problem.regen_sdp = false;
+        if (isfield(problem,'usecBound'))
+            if ~problem.usecBound
+                problem.regen_sdp = false;
+            end
         end
     end
 

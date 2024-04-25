@@ -124,6 +124,8 @@ data = jsondecode(str);
 % get CAD keypoints if there
 if isfield(data, "interp_cad_keypoints")
     shapes = data(1).interp_cad_keypoints' / 1000.0;
+    % REMOVE INTERP:
+    shapes = shapes(:,1:52); % TEMP FIX THIS!!!!! TODOD!!!!!@#!@#@
 
     % [C, ia, ic] = unique(shapes','stable','rows');
     % % remove nonspherical keypoints/shapes
@@ -136,7 +138,8 @@ if isfield(data, "interp_cad_keypoints")
     % shapes = shapes(:,keepVec,:);
 
     N = size(shapes,2);
-    field = "est_interp_world_keypoints";
+    % field = "est_interp_world_keypoints";
+    field = "est_world_keypoints"; % FIX DONT USE FIX FIX
 else
     shapes = NaN;
     N = size(problem.shapes,2);

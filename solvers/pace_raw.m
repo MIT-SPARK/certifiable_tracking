@@ -48,6 +48,7 @@ for l = 1:problem.L
             R_est = out.R_est;
             t_est = out.t_est;
             c_est = out.c_est;
+            s.c_est_raw = out.c_est_raw;
             gap = out.gap;
             cost = out.f_est;
         catch
@@ -56,6 +57,7 @@ for l = 1:problem.L
             t_est = ones(3,1)*NaN;
             R_est = ones(3,3)*NaN;
             c_est = ones(problem.K,1)*NaN;
+            s.c_est_raw = c_est;
             gap = NaN;
             pace_time = NaN;
             cost = NaN;
@@ -87,5 +89,9 @@ soln.c = reshape([soln_pace.c_est],[K,1,L]);
 soln.gaps = reshape([soln_pace.gap],[L,1]);
 soln.times = reshape([soln_pace.time],[L,1]);
 soln.cost = reshape([soln_pace.cost],[L,1]);
+
+if (isfield(soln_pace, "c_est_raw"))
+soln.c_raw = reshape([soln_pace.c_est_raw],[K,1,L]);
+end
 
 end

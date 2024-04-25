@@ -62,8 +62,13 @@ B = reshape(shapes, 3*N, K);
 %% ground truth c, v, p, R, dR
 % allow override by specifying in problem struct
 if ~isfield(problem,'c_gt')
+    % NOTE: This isn't MLE
     c_gt = rand(K,1);
     c_gt = c_gt/sum(c_gt); % sum to one
+    % MLE version:
+    % cbar = 1 / K;
+    % const = (problem.lambda^(-1/2))*randn(K-1,1);
+    % c_gt = [cbar + const; 1 - (K-1)*cbar - sum(const)];
 else
     c_gt = problem.c_gt;
 end

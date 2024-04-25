@@ -10,11 +10,12 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane_mle3_" + indepVar;
+savename = "pascalaeroplane_mle2_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:1.0;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
 num_repeats = 500; % 2,3: 50; 4: 500
+% TODO: process noise for ekf
 
 %% Loop
 results = cell(length(domain),1);
@@ -132,7 +133,7 @@ load("../datasets/results/" + savename + ".mat","results")
 %% Display Results
 % data settings
 Llist = [1,2,3];
-displayRange = 1:length(domain);
+displayRange = 1:length(results);
 
 % visual settings
 tile = true;
@@ -151,8 +152,7 @@ for j = 1:length(resultsAdj)
 resultsAdj(j).p_err_ekf = resultsAdj(j).p_err_ekf/lengthScale;
 resultsAdj(j).p_err_pace = resultsAdj(j).p_err_pace/lengthScale;
 resultsAdj(j).p_err_ours = resultsAdj(j).p_err_ours/lengthScale;
-resultsAdj(j).c_err_pace = resultsAdj(j).c_err_pace/lengthScale;
-resultsAdj(j).c_err_ours = resultsAdj(j).c_err_ours/lengthScale;
+resultsAdj(j).accelerationNoiseBoundSqrt = resultsAdj(j).accelerationNoiseBoundSqrt / 0.05; % scale
 end
 
 % created tiled figure
@@ -184,7 +184,7 @@ title("Rotation Errors")
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "c_err", settings)
 yscale log;% xscale log
-xlabel(indepVar); ylabel("Shape Error (normalized)");
+xlabel(indepVar); ylabel("Shape Error");
 title("Shape Errors")
 
 % Gap

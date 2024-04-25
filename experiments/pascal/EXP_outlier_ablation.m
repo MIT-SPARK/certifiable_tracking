@@ -206,11 +206,11 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
-settings.OURS = {'DisplayName', 'OURS', 'Color', "#005b97",'LineWidth',3};
+settings.OURS = {'DisplayName', 'OURS', 'Color', "#005b97",'LineWidth',2};
 settings.PACEEKF = {'DisplayName', 'PACE-EKF', 'Color', "#D95319"};
 settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
 settings.GNC  = {'DisplayName', 'OURS-GNC', 'Color', "#9A6324"}; % TODO: change colors
-settings.MILP = {'DisplayName', 'OURS-MILP', 'Color', "#A77CD9"};
+settings.MILP = {'DisplayName', 'OURS-MILP', 'Color', "#4B7F52"};
 figure
 tiledlayout(1,5);
 
@@ -251,7 +251,7 @@ b=loglog([results.(indepVar)],median([results.c_err_gnc],"omitmissing"),'x-',set
 b=loglog([results.(indepVar)],median([results.c_err_milp],"omitmissing"),'x-',settings.MILP{:});
 a=plot([results.(indepVar)],median([results.c_err_ours],"omitmissing"),'x-',settings.OURS{:});
 yscale log; %xscale log
-xlabel(indepVar); ylabel("Shape Error (normalized)");
+xlabel(indepVar); ylabel("Shape Error");
 title("Shape Errors")
 
 % Iterations figure

@@ -385,14 +385,7 @@ end
 % soln.gap2 = gap2;
 % soln.gap_gt = gap_gt;
 
-% % Alt reprojection: Lasserre
-% 1) chol
-% [U,S,~] = svd(Xopt{1}); % U = V
-% S(S < 1e-6) = 0;
-% V = U*sqrt(S);
-% V = V(:,1:rank(S));
-% % 2) column reduce
-% U = rref(V')';
+% % Alt reprojection: L
 
 % stable rank
 rank_stable = (norm(Xopt{1},'fro') / max(svd(Xopt{1})))^2;
@@ -519,6 +512,8 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
     % bounds: [-vBound, vBound]
     prob.blx = [0, -vBound*ones(1,3*(L-1))];
     prob.bux = [Inf,  vBound*ones(1,3*(L-1))];
+    % prob.blx = [0, -vBound*ones(1,3), -Inf*ones(1,3*L-6)];
+    % prob.bux = [Inf,  vBound*ones(1,3), Inf*ones(1,3*L-6)];
     
     % conic constraint: v'*(Av'*Av)*v <= sh
     % (sh, 1, (sqrt(2)*Av)*v) in Q^(2 + 3*(L-1))

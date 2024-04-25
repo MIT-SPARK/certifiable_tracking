@@ -29,7 +29,7 @@ covar_velocity_base = 0.01^2;
 covar_rotrate_base = 0.01^2;
 
 savename = "ycbineoat_" + video;
-jsondir = "../datasets/ycbineoat/";
+jsondir = "../datasets/YCBInEOAT/";
 
 %% Generate frame problems
 % Define json, generate problem

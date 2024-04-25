@@ -60,7 +60,7 @@ end
 
 %% Check solutions
 L = problem.L;
-N = curproblem.N_VAR;
+N = problems{1}.N_VAR;
 
 p_err = zeros(L*length(solns),1);
 R_err = zeros(L*length(solns),1);
@@ -99,16 +99,16 @@ est.R(:,:,idx) = soln.R;
 % hold on
 
 % Plot trajectory!
-figure(1);
-axis equal
-p_est = reshape(soln.p,[3,L,1]);
-plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-hold on
-
-R_est = soln.R;
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
+% figure(1);
+% axis equal
+% p_est = reshape(soln.p,[3,L,1]);
+% plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+% hold on
+% 
+% R_est = soln.R;
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 end
 
@@ -185,7 +185,49 @@ gt.R = gt.R(:,:,1:length(est.R));
 degcm_10_5 = compute_degcm(gt,est,'degThreshold',10);
 % c error
 cerr = compute_cerr(solns, est, problem.shapes, problem.shapes(:,:,end));
+cerr_true = compute_cerr_true(solns);
 
+% ADD
+score_add = auc_add(solns, est, gt, problem.shapes, problem.shapes(:,:,end), 0.1);
+
+function score_add = auc_add(solns, est, gt, shapes, shape_gt, threshold)
+N = size(shapes,2);
+K = size(shapes,3);
+L = length(est.p);
+B = reshape(shapes, [3*N,K]);
+
+% step 1: compute ADD score for each pose estimate
+% this score is mean distance between predicted and gt point clouds
+% (including predicted/gt t ransforms)
+add = zeros(L,1);
+for l = 1:length(solns)
+    soln = solns(l);
+    for i = 1:3
+        shape_est = reshape(B*soln.c_raw(:,:,i),[3,N]);
+        pc_pred = est.R(:,:,l)*shape_est + est.p(:,:,l);
+        pc_gt = gt.R(:,:,l)*shape_gt + gt.p(:,:,l);
+
+        add(3*(l-1)+i) = mean(vecnorm(pc_pred - pc_gt));
+    end
+end
+
+% step 2: compute area under curve (AUC)
+% curve in question is accuracy-threshold curve
+% see pose-cnn figure 8
+% generate curve
+thresh = linspace(0,threshold,100); % x-axis
+accuracy = zeros(length(thresh),1); % y-axis
+for t = 1:length(thresh)
+    accuracy(t) = sum(add < thresh(t))/length(add);
+end
+% figure
+plot(thresh,accuracy);
+
+% area under curve!
+max_score = threshold*1;
+score_add = trapz(thresh, accuracy) / max_score;
+
+end
 
 function cerr = compute_cerr(solns, est, shapes, shape_gt)
     N = size(shapes,2);
@@ -201,5 +243,14 @@ function cerr = compute_cerr(solns, est, shapes, shape_gt)
             cerr(3*(l-1)+i,:) = vecnorm(b_est - shape_gt);
         end
     end
-
+end
+function cerr = compute_cerr_true(solns)
+    L = length(solns);
+    cerr = zeros(3*L,1);
+    for l = 1:L
+        c = solns(l).c_raw;
+        for i = 1:3
+            cerr(3*(l-1)+i,:) = vecnorm(c(:,:,i) - [0;0;0;0;0;0;0;0;0;1]);
+        end
+    end
 end

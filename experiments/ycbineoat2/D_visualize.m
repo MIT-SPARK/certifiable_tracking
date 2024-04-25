@@ -47,7 +47,7 @@ quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
 quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
-idx = problem.startIdx:(problem.startIdx + L_cur);
+idx = problem.startIdx:(problem.startIdx + L_cur-1);
 for l = 1:L_cur
     p_err(idx(l),l) = norm(soln.p(:,:,l) - gt.p(:,:,idx(l)));
     R_err(idx(l),l) = getAngularError(gt.R(:,:,idx(l)),soln.R(:,:,l));
@@ -56,8 +56,13 @@ end
 
 % compute errors
 % 1) legit: use latest estimate no matter what
-est_legit.p(:,:,idx(end)) = soln.p(:,:,end);
-est_legit.R(:,:,idx(end)) = soln.R(:,:,end);
+if j == 1
+    est_legit.p(:,:,idx) = soln.p;
+    est_legit.R(:,:,idx) = soln.R;
+else
+    est_legit.p(:,:,idx(end)) = soln.p(:,:,end);
+    est_legit.R(:,:,idx(end)) = soln.R(:,:,end);
+end
 % 2) ignoringbad: throw away bad
 if (soln.gap < 0.3)
     est_ignoringbad.p(:,:,idx(end)) = soln.p(:,:,end);
@@ -113,26 +118,27 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,2,:)),squeeze(gt.R(2,2,:
 quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:)),squeeze(gt.R(3,3,:)),'b');
 
 %% ADD and ADD-S scores
-models_dir = "~/tracking/datasets/ycbineoat/models/";
-pcfile = models_dir + "bleach" + ".ply";
+models_dir = "~/research/tracking/datasets/YCBInEOAT/models/";
+pcfile = models_dir + "cracker" + ".ply";
 pcfile_gt = pcfile;
 pcfile_est = pcfile;
 
 % Compute scores!
-[add_ours_legit, adds_ours_legit] = compute_scores(gt, est_legit, pcfile_gt, pcfile_est, 0.1);
-[add_ours_ignoringbad, adds_ours_ignoringbad] = compute_scores(gt, est_ignoringbad, pcfile_gt, pcfile_est, 0.1);
-[add_ours_bestrun, adds_ours_bestrun] = compute_scores(gt, est_bestrun, pcfile_gt, pcfile_est, 0.1);
+threshold = 0.1;
+[add_ours, adds_ours] = get_adds(gt, est_legit, pcfile_gt); % takes a while
+score_add_ours = get_auc(add_ours, threshold);
+score_adds_ours = get_auc(adds_ours, threshold);
 
-[add_teaser, adds_teaser] = compute_scores(gt, teaser, pcfile_gt, pcfile_est, 0.1);
+[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfile_gt); % takes a while
+score_add_teaser = get_auc(add_teaser, threshold);
+score_adds_teaser = get_auc(adds_teaser, threshold);
 
-scores.add_ours_legit = add_ours_legit;
-scores.adds_ours_legit = adds_ours_legit;
-scores.add_ours_ignoringbad = add_ours_ignoringbad;
-scores.adds_ours_ignoringbad = adds_ours_ignoringbad;
-scores.add_ours_bestrun = add_ours_bestrun;
-scores.adds_ours_bestrun = adds_ours_bestrun;
-scores.add_teaser = add_teaser;
-scores.adds_teaser = adds_teaser;
+%%
+methods = ["CAST"; "TEASER"];
+add_adds = [score_add_ours*100, score_adds_ours*100;
+            score_add_teaser*100, score_adds_teaser*100];
+vid = [video; video];
+tab_new = table(methods,add_adds,vid);
 
 %% Save Poses into JSON
 est = est_legit;

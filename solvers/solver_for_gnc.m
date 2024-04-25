@@ -73,7 +73,7 @@ end
 %% Pull out relevant results
 f_val = soln.raw.obj(1);
 info.soln = soln;
-info.residuals = reshape(soln.residuals, problem.N_VAR*problem.L,1)*problem.noiseBound_GNC_residuals;
+info.residuals = reshape(soln.residuals, problem.N_VAR*problem.L,1);%*problem.noiseBound_GNC_residuals;
 
 % for ROBIN: remove ROBIN outliers from residuals
 if isfield(problem,'prioroutliers')

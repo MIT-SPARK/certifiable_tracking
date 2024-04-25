@@ -10,11 +10,11 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane_mle3_" + indepVar;
+savename = "pascalaeroplane_mletest_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0.025:0.025:1;  % 0:0.025:1
+domain = 0.01:0.01:0.24;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
-num_repeats = 500; % 2: 50
+num_repeats = 50; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
@@ -60,7 +60,7 @@ problem.noiseBound = 3*iv*lengthScale; %3*iv for 8 reg
 problem.processNoise = 5e-2;
 
 problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
+problem.velocityBound = 5.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
@@ -159,8 +159,6 @@ for j = 1:length(resultsAdj)
 resultsAdj(j).p_err_ekf = resultsAdj(j).p_err_ekf/lengthScale;
 resultsAdj(j).p_err_pace = resultsAdj(j).p_err_pace/lengthScale;
 resultsAdj(j).p_err_ours = resultsAdj(j).p_err_ours/lengthScale;
-resultsAdj(j).c_err_pace = resultsAdj(j).c_err_pace/lengthScale;
-resultsAdj(j).c_err_ours = resultsAdj(j).c_err_ours/lengthScale;
 end
 
 % created tiled figure
