@@ -138,7 +138,7 @@ methods = ["CAST"; "TEASER"];
 add_adds = [score_add_ours*100, score_adds_ours*100;
             score_add_teaser*100, score_adds_teaser*100];
 vid = [video; video];
-tab_new = table(methods,add_adds,vid);
+tab_new = table(methods,add_adds,vid)
 
 %% Save Poses into JSON
 est = est_legit;

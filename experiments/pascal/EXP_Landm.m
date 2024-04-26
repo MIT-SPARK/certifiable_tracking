@@ -49,7 +49,7 @@ problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
 problem.rotationKappa = 1/(0.05*lengthScale)*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 % problem.covar_measure_base = 0.0001; % 2: 0.01

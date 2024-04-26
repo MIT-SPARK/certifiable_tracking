@@ -9,7 +9,7 @@ for t = 1:length(thresh)
     accuracy(t) = sum(metric < thresh(t))/length(metric);
 end
 % figure
-% plot(thresh,accuracy);
+plot(thresh,accuracy);
 
 % area under curve!
 max_score = threshold*1;

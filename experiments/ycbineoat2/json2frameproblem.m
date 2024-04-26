@@ -125,7 +125,7 @@ data = jsondecode(str);
 if isfield(data, "interp_cad_keypoints")
     shapes = data(1).interp_cad_keypoints' / 1000.0;
     % REMOVE INTERP:
-    shapes = shapes(:,1:52); % TEMP FIX THIS!!!!! TODOD!!!!!@#!@#@
+    shapes = shapes(:,1:65); % TEMP FIX THIS!!!!! TODOD!!!!!@#!@#@
 
     % [C, ia, ic] = unique(shapes','stable','rows');
     % % remove nonspherical keypoints/shapes

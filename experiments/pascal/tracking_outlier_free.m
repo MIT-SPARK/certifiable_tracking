@@ -7,14 +7,14 @@
 
 clc; clear; close all
 % restoredefaultpath
-rng("default")
+% rng("default")
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.2*0.2; % [m]
+problem.noiseSigmaSqrt = 0.3*0.2; % [m]
 problem.noiseBound = 0.15*0.2;
 problem.processNoise = 5e-2;
 
@@ -58,6 +58,10 @@ soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
 % paceukf = pace_py_UKF(problem,pace);
 paceekf = pace_ekf(problem,pace);
+
+% problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;
+% problem.velprior="body-sym";
+% soln2 = solve_weighted_tracking(problem);
 
 %% Check solutions
 % eigenvalue plot
@@ -111,14 +115,14 @@ c_err = norm(problem.c_gt - soln.c_est);
 plot_trajectory2(problem,soln)
 
 % temp for testing
-% soln2.p = soln.p2_est;
-% soln2.R = soln.R2_est;
+% soln2.p = soln2.p_est;
+% soln2.R = soln2.R_est;
 
 compare(problem, soln, pace, pace, paceekf);
 
 % soln.gap_stable
 soln.gap
-% soln.gap2
+% soln2.gap
 
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;

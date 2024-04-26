@@ -230,7 +230,11 @@ for l = 1:L-1
     r_temp = reshape(dRs(:,:,l),9,1);
     x_proj = [x_proj; r_temp];
 end
-x_proj = [x_proj; reshape(s_est,[3*L,1,1]); reshape(v_est,[3*L-3,1,1])];
+x_proj = [x_proj; reshape(s_est,[3*L,1,1])];%; reshape(v_est,[3*L-3,1,1])];
+for l = 1:L-1
+    v = (1/dt)*(Rs(:,:,l)'*Rs(:,:,l+1) * s_est(:,:,l+1) - s_est(:,:,l));
+    x_proj = [x_proj; v];
+end
 
 % compute gap (THIS TAKES FOREVER)
 obj_est = dmsubs(prob_obj,x,x_proj);
