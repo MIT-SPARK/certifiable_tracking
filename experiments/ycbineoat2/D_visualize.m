@@ -36,16 +36,16 @@ L_cur = problem.L;
 % hold on
 
 % Plot trajectory!
-figure(1);
-axis equal
-p_est = reshape(soln.p,[3,L_cur,1]);
-plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
-hold on
-
-R_est = soln.R;
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
-quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
+% figure(1);
+% axis equal
+% p_est = reshape(soln.p,[3,L_cur,1]);
+% plot3(p_est(1,:),p_est(2,:),p_est(3,:),'.k', 'MarkerSize',10);
+% hold on
+% 
+% R_est = soln.R;
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,1,:)),squeeze(R_est(2,1,:)),squeeze(R_est(3,1,:)),'r');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,2,:)),squeeze(R_est(2,2,:)),squeeze(R_est(3,2,:)),'g');
+% quiver3(p_est(1,:)',p_est(2,:)',p_est(3,:)',squeeze(R_est(1,3,:)),squeeze(R_est(2,3,:)),squeeze(R_est(3,3,:)),'b');
 
 idx = problem.startIdx:(problem.startIdx + L_cur-1);
 for l = 1:L_cur
@@ -119,7 +119,7 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:
 
 %% ADD and ADD-S scores
 models_dir = "~/research/tracking/datasets/YCBInEOAT/models/";
-pcfile = models_dir + "cracker" + ".ply";
+pcfile = models_dir + "bleach" + ".ply";
 pcfile_gt = pcfile;
 pcfile_est = pcfile;
 

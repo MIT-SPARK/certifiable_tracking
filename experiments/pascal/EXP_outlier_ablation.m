@@ -34,7 +34,7 @@ problem.outlierVariance = 1.0*lengthScale; % 3: 1.0 (no lengthScale)
 
 problem.noiseSigmaSqrt = 0.01*lengthScale; % [m]
 problem.accelerationNoiseBoundSqrt = 0.05*0.2;
-problem.rotationKappa = 1/(0.05*0.2)*(1/2);
+problem.rotationKappa = 1/(0.05*0.2)^2*(1/2);
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
@@ -206,76 +206,87 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % process into displayable form
-settings.OURS = {'DisplayName', 'OURS', 'Color', "#005b97",'LineWidth',2};
+settings.OURS = {'x-','DisplayName', 'OURS', 'Color', "#005b97",'LineWidth',2.5};
 settings.PACEEKF = {'DisplayName', 'PACE-EKF', 'Color', "#D95319"};
 settings.PACERAW = {'DisplayName', 'PACE-RAW', 'Color', "#EDB120"};
-settings.GNC  = {'DisplayName', 'OURS-GNC', 'Color', "#9A6324"}; % TODO: change colors
-settings.MILP = {'DisplayName', 'OURS-MILP', 'Color', "#4B7F52"};
+settings.GNC  = {'x:','DisplayName', 'OURS-GNC', 'Color', "#9A6324",'LineWidth',2}; % TODO: change colors
+settings.MILP = {'x-.','DisplayName', 'OURS-MILP', 'Color', "#36B649",'LineWidth',2};
 figure
 tiledlayout(1,5);
-
-% Rotation figure
-nexttile
-errorshade([results.(indepVar)],[results.R_err_gnc],hex2rgb(settings.GNC{4})); hold on;
-errorshade([results.(indepVar)],[results.R_err_ours],hex2rgb(settings.OURS{4}));
-errorshade([results.(indepVar)],[results.R_err_milp],hex2rgb(settings.MILP{4}));
-c=loglog([results.(indepVar)],median([results.R_err_gnc],"omitmissing"),'x-',settings.GNC{:}); hold on;
-b=plot([results.(indepVar)],median([results.R_err_milp],"omitmissing"),'x-',settings.MILP{:});
-a=plot([results.(indepVar)],median([results.R_err_ours],"omitmissing"),'x-',settings.OURS{:});
-
-yscale log;% xscale log
-xlabel(indepVar); ylabel("Rotation Error (deg)");
-title("Rotation Errors")
+domain = [results.(indepVar)];
 
 % position figure
 nexttile
-errorshade([results.(indepVar)],[results.p_err_gnc]/lengthScale,hex2rgb(settings.GNC{4})); hold on;
-errorshade([results.(indepVar)],[results.p_err_ours]/lengthScale,hex2rgb(settings.OURS{4}));
-errorshade([results.(indepVar)],[results.p_err_milp]/lengthScale,hex2rgb(settings.MILP{4}));
-b=loglog([results.(indepVar)],median([results.p_err_milp],"omitmissing")/lengthScale,'x-',settings.MILP{:}); hold on;
-c=plot([results.(indepVar)],median([results.p_err_gnc],"omitmissing")/lengthScale,'x-',settings.GNC{:}); hold on;
-a=plot([results.(indepVar)],median([results.p_err_ours],"omitmissing")/lengthScale,'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.p_err_gnc]/lengthScale,hex2rgb(settings.GNC{5})); hold on;
+errorshade([results.(indepVar)],[results.p_err_ours]/lengthScale,hex2rgb(settings.OURS{5}));
+errorshade([results.(indepVar)],[results.p_err_milp]/lengthScale,hex2rgb(settings.MILP{5}));
+b=loglog([results.(indepVar)],median([results.p_err_milp],"omitmissing")/lengthScale,settings.MILP{:}); hold on;
+c=plot([results.(indepVar)],median([results.p_err_gnc],"omitmissing")/lengthScale,settings.GNC{:}); hold on;
+a=plot([results.(indepVar)],median([results.p_err_ours],"omitmissing")/lengthScale,settings.OURS{:});
 yscale log; %xscale log
 xlabel(indepVar); ylabel("Position Error (normalized)");
+xlim([domain(1), domain(end)])
+ylim tight
 title("Position Errors")
+
+% Rotation figure
+nexttile
+errorshade([results.(indepVar)],[results.R_err_gnc],hex2rgb(settings.GNC{5})); hold on;
+errorshade([results.(indepVar)],[results.R_err_ours],hex2rgb(settings.OURS{5}));
+errorshade([results.(indepVar)],[results.R_err_milp],hex2rgb(settings.MILP{5}));
+c=loglog([results.(indepVar)],median([results.R_err_gnc],"omitmissing"),settings.GNC{:}); hold on;
+b=plot([results.(indepVar)],median([results.R_err_milp],"omitmissing"),settings.MILP{:});
+a=plot([results.(indepVar)],median([results.R_err_ours],"omitmissing"),settings.OURS{:});
+
+yscale log;% xscale log
+xlabel(indepVar); ylabel("Rotation Error (deg)");
+xlim([domain(1), domain(end)])
+ylim tight
+title("Rotation Errors")
 
 lg = legend('Orientation','horizontal');
 lg.Layout.Tile = 'south';
 
 % shape figure
 nexttile
-errorshade([results.(indepVar)],[results.c_err_gnc],hex2rgb(settings.GNC{4})); hold on;
-errorshade([results.(indepVar)],[results.c_err_milp],hex2rgb(settings.MILP{4}));
-errorshade([results.(indepVar)],[results.c_err_ours],hex2rgb(settings.OURS{4}));
-b=loglog([results.(indepVar)],median([results.c_err_gnc],"omitmissing"),'x-',settings.GNC{:});
-b=loglog([results.(indepVar)],median([results.c_err_milp],"omitmissing"),'x-',settings.MILP{:});
-a=plot([results.(indepVar)],median([results.c_err_ours],"omitmissing"),'x-',settings.OURS{:});
+errorshade([results.(indepVar)],[results.c_err_gnc],hex2rgb(settings.GNC{5})); hold on;
+errorshade([results.(indepVar)],[results.c_err_milp],hex2rgb(settings.MILP{5}));
+errorshade([results.(indepVar)],[results.c_err_ours],hex2rgb(settings.OURS{5}));
+b=loglog([results.(indepVar)],median([results.c_err_gnc],"omitmissing"),settings.GNC{:});
+b=loglog([results.(indepVar)],median([results.c_err_milp],"omitmissing"),settings.MILP{:});
+a=plot([results.(indepVar)],median([results.c_err_ours],"omitmissing"),settings.OURS{:});
 yscale log; %xscale log
 xlabel(indepVar); ylabel("Shape Error");
+xlim([domain(1), domain(end)])
+ylim tight
 title("Shape Errors")
 
 % Iterations figure
 nexttile
-b=plot([results.(indepVar)],abs(median([results.iter_gnc])),'x-',settings.GNC{:}); hold on;
-a=plot([results.(indepVar)],abs(median([results.iter_ours])),'x-',settings.OURS{:});
-% b=plot([results.(indepVar)],abs(median([results.iter_milp])),'x-',settings.MILP{:});
-errorshade([results.(indepVar)],abs([results.iter_ours]),hex2rgb(settings.OURS{4}));
-errorshade([results.(indepVar)],abs([results.iter_gnc]),hex2rgb(settings.GNC{4}));
-% errorshade([results.(indepVar)],abs([results.iter_milp]),hex2rgb(settings.MILP{4}));
+b=plot([results.(indepVar)],abs(median([results.iter_gnc])),settings.GNC{:}); hold on;
+a=plot([results.(indepVar)],abs(median([results.iter_ours])),settings.OURS{:});
+% b=plot([results.(indepVar)],abs(median([results.iter_milp])),settings.MILP{:});
+errorshade([results.(indepVar)],abs([results.iter_ours]),hex2rgb(settings.OURS{5}));
+errorshade([results.(indepVar)],abs([results.iter_gnc]),hex2rgb(settings.GNC{5}));
+% errorshade([results.(indepVar)],abs([results.iter_milp]),hex2rgb(settings.MILP{5}));
 % yscale log; xscale log
 xlabel(indepVar); ylabel("Iterations");
+xlim([domain(1), domain(end)])
+ylim tight
 title("GNC Iterations")
 
 % time figure
 nexttile
 hold on
-c=plot([results.(indepVar)],median([results.time_milp],"omitmissing"),'x-',settings.MILP{:});
-b=plot([results.(indepVar)],median([results.time_gnc],"omitmissing"),'x-',settings.GNC{:});
-a=plot([results.(indepVar)],median([results.time_ours],"omitmissing"),'x-',settings.OURS{:});
-errorshade([results.(indepVar)],[results.time_ours],hex2rgb(settings.OURS{4}));
-errorshade([results.(indepVar)],[results.time_gnc],hex2rgb(settings.GNC{4}));
-errorshade([results.(indepVar)],[results.time_milp],hex2rgb(settings.MILP{4}));
+c=plot([results.(indepVar)],median([results.time_milp],"omitmissing"),settings.MILP{:});
+b=plot([results.(indepVar)],median([results.time_gnc],"omitmissing"),settings.GNC{:});
+a=plot([results.(indepVar)],median([results.time_ours],"omitmissing"),settings.OURS{:});
+errorshade([results.(indepVar)],[results.time_ours],hex2rgb(settings.OURS{5}));
+errorshade([results.(indepVar)],[results.time_gnc],hex2rgb(settings.GNC{5}));
+errorshade([results.(indepVar)],[results.time_milp],hex2rgb(settings.MILP{5}));
 xlabel(indepVar); ylabel("Time (s)");
+xlim([domain(1), domain(end)])
+ylim tight
 title("Solve Time")
 yscale log;
 

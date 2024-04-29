@@ -12,28 +12,23 @@ function soln = pace_ekf(problem, pace)
 % Lorenzo Shaikewitz for SPARK Lab
 
 %% Define covariances and noise
-% state covariance
-if (isfield(problem,"covar_velocity_base"))
-    covar_velocity = ones(1,3)*problem.covar_velocity_base;
-else
-    covar_velocity = ones(1,3)*(problem.noiseBound/3)^2;
-end
-covarState = covar_velocity(1);
-
 % process noise (noise added to const. vel. model)
-if (isfield(problem,"processNoise"))
-    pn = problem.processNoise;
+covar_velocity = problem.covar_velocity_base;
+if (isfield(problem,"covar_rotrate_base"))
+    covar_rotrate = problem.covar_rotrate_base;
 else
-    pn = 0.01;
+    covar_rotrate = 1/(2*problem.kappa_rotrate_base);
 end
-processNoise = repmat([0,pn^2],1,2);
-processNoise = [processNoise, pn^2, 0, pn^2];
+processNoise = [0., covar_velocity, 0, covar_velocity, covar_rotrate, 0, covar_velocity];
 processNoise = diag(processNoise);
 
-% Measurement noise
-% measureNoise = repmat((problem.noiseBound/3)^2, 1,3);
-measureNoise = repmat(problem.covar_measure_base, 1,3);
-measureNoise = diag(measureNoise);
+% Measurement noise (TODO: wrong)
+measureNoise = repmat(problem.covar_measure_base, [1,3]);
+measureNoise = 0.1*diag(measureNoise);
+
+% state covariance: initially the same as measurement noise (TODO: wrong)
+covarState = repmat(problem.covar_measure_base,[1,7]);
+covarState = 0.1*diag(covarState);
 
 %% Convert PACE data into EKF form
 L = problem.L;

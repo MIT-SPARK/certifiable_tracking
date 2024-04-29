@@ -14,13 +14,13 @@ problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.3*0.2; % [m]
+problem.noiseSigmaSqrt = 0.05*0.2; % [m]
 problem.noiseBound = 0.15*0.2;
 problem.processNoise = 5e-2;
 
 % MLE parameters
 problem.accelerationNoiseBoundSqrt = 0.05*0.2;
-problem.rotationKappa = 1/(0.05*0.2)*1/2;
+problem.rotationKappa = 1/(0.05*0.2)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
@@ -31,7 +31,7 @@ problem.kappa_rotrate_base = problem.rotationKappa;
 % problem.covar_rotrate_base = 0.01;
 
 problem.translationBound = 10.0;
-problem.velocityBound = 5.0;
+problem.velocityBound = 2.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
@@ -47,21 +47,21 @@ problem.usecBound = false;
 % problem.dR_gt = repmat(eye(3,3),[1,1,problem.L-1]);
 
 % add shape, measurements, outliers
-lambda = 0;
-problem.lambda = lambda;
 problem = gen_pascal_tracking(problem);
+lambda = 0.0;
+problem.lambda = lambda;
 
 % problem.mosekpath = mosekpath;
 
 %% Solve!
-soln = solve_weighted_tracking(problem);
+% soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
 % paceukf = pace_py_UKF(problem,pace);
 paceekf = pace_ekf(problem,pace);
 
-% problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;
-% problem.velprior="body-sym";
-% soln2 = solve_weighted_tracking(problem);
+norm(pace.p(:,:,end) - problem.p_gt(:,:,end))
+norm(paceekf.p(:,:,end) - problem.p_gt(:,:,end))
+return
 
 %% Check solutions
 % eigenvalue plot
@@ -115,14 +115,14 @@ c_err = norm(problem.c_gt - soln.c_est);
 plot_trajectory2(problem,soln)
 
 % temp for testing
-% soln2.p = soln2.p_est;
-% soln2.R = soln2.R_est;
+% soln2.p = soln.p2_est;
+% soln2.R = soln.R2_est;
 
 compare(problem, soln, pace, pace, paceekf);
 
-% soln.gap_stable
+soln.gap_stable
 soln.gap
-% soln2.gap
+% soln.gap2
 
 function compare(gt, ours, pace, paceukf, paceekf)
 L = gt.L;

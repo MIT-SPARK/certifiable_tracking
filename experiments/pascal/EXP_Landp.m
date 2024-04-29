@@ -46,7 +46,7 @@ problem.outlierRatio = 0.0;
 problem.noiseSigmaSqrt = 0.05*lengthScale; % 2: 0.05, 3: 0.01, 4: 0.05
 % MLE parameters
 problem.accelerationNoiseBoundSqrt = iv*lengthScale;
-problem.rotationKappa = 1/(iv*lengthScale)*(1/2);
+problem.rotationKappa = 1/(iv*lengthScale)^2*(1/2);
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
 problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
@@ -138,8 +138,8 @@ displayRange = 1:length(results);
 % visual settings
 tile = true;
 
-settings.PACEEKF = {'x-','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
-settings.PACERAW = {'x-','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
+settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
+settings.PACERAW = {'x: ','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
 
 settings.OURS = {'x-','DisplayName', 'OURS','LineWidth',2,'Color','002e4c'};
 settings.ours_colors = ["#338eca","#005b97","#002e4c"];

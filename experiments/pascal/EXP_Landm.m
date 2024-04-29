@@ -13,7 +13,7 @@ indepVar = "noiseSigmaSqrt";
 savename = "pascalaeroplane_mletest_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.01:0.01:0.24;  % 0:0.025:1
-Ldomain = [4,8,12]; % 2: 3:12;
+Ldomain = [12];%[4,8,12]; % 2: 3:12;
 num_repeats = 50; % 2: 50
 
 %% Loop
@@ -46,10 +46,10 @@ problem.noiseSigmaSqrt = iv*lengthScale; % [m]
 
 % MLE parameters
 problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
-problem.rotationKappa = 1/(0.05*lengthScale)*1/2;
+problem.rotationKappa = 1/(0.05*lengthScale)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 % problem.covar_measure_base = 0.0001; % 2: 0.01
@@ -139,14 +139,14 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % data settings
-Llist = [1,2,3];
+Llist = 1;%[1,2,3];
 displayRange = 1:length(results);
 
 % visual settings
 tile = true;
 
-settings.PACEEKF = {'x-','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
-settings.PACERAW = {'x-','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
+settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
+settings.PACERAW = {'x:','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
 
 settings.OURS = {'x-','DisplayName', 'OURS','LineWidth',2,'Color','002e4c'};
 settings.ours_colors = ["#338eca","#005b97","#002e4c"];

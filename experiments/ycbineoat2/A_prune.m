@@ -14,7 +14,7 @@ videos = ["cracker_box_reorient", "cracker_box_yalehand0", ...
           "tomato_soup_can_yalehand0"];
 
 % parameters to change
-video = videos(6);
+video = videos(3);
 maxL = 6;
 skip = 1; % sequential frames or skip frames
 
