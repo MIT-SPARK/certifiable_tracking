@@ -15,9 +15,10 @@ class CONSTBODY:
         """
 
         def __init__(self, keypoints, v, dR):
-            self.keypoints = keypoints
-            self.v = v
-            self.dR = dR
+            self.N = keypoints.shape[1]
+            self.keypoints = keypoints # 3 x N
+            self.v = v # 3
+            self.dR = dR # 3 x 3
 
     class INPUT:
         """Input of the propagation model.
@@ -38,10 +39,10 @@ class CONSTBODY:
         """
         # velocities
         v_new = state.v + noise[:3]
-        dR_new = state.dR.dot(SO3.from_rpy(noise[3:6]*dt))
+        dR_new = state.dR.dot(SO3.from_rpy(noise[3:6]))
 
         # new keypoints
-        keypoints_new = state.dR.T.dot(state.keypoints + state.v)
+        keypoints_new = state.dR.T.dot(state.keypoints + state.v*dt)
 
         new_state = cls.STATE(
             keypoints=keypoints_new,
@@ -71,9 +72,7 @@ class CONSTBODY:
 
         :var state: state :math:`\\boldsymbol{\\chi}`.
         """
-        y = np.squeeze(state.p)
-        # y = np.hstack([y, SO3.to_rpy(state.R)])
-        y = np.hstack([y, SO3.log(state.R)])
+        y = np.squeeze(state.keypoints.reshape([-1,1]))
         return y
 
     @classmethod
@@ -81,10 +80,9 @@ class CONSTBODY:
         """Retraction.
         """
         new_state = cls.STATE(
-            p=state.p + xi[:3],
-            R=state.R @ (SO3.exp(xi[3:6])),
-            v=state.v + xi[6:9],
-            w=state.w + xi[9:12],
+            keypoints=state.keypoints + xi[:(3*state.N)].reshape([3,state.N]),
+            v=state.v + xi[(3*state.N):(3*state.N+3)],
+            dR=state.dR.dot(SO3.from_rpy(xi[(3*state.N+3):])),
         )
         return new_state
 
@@ -94,14 +92,13 @@ class CONSTBODY:
         """
         xi = np.hstack([
                 np.squeeze(state.p - hat_state.p),
-                SO3.log(hat_state.R @ (state.R.T)),
                 np.squeeze(state.v - hat_state.v),
-                np.squeeze(state.w - hat_state.w),
+                SO3.to_rpy(hat_state.R @ (state.R.T)),
                 ])
         return xi
 
 
-def run_ukf(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
+def run_ukf(est, shape, dt, P, Q, R):
     '''
     L: number of times to reason over (including initial time)
     p_meas: 3 x 1 x L matrix of position measurements
@@ -114,99 +111,106 @@ def run_ukf(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
     '''
     ## CREATE MODEL
     # create the model
-    L = int(L)
-    model = CONSTBODY(L, dt)
-
-    ## Convert measurements into states (R -> rpy)
-    ys = []
-    for l in range(L):
-        # rpy = SO3.to_rpy(R_meas[:,:,l])
-        rpy = SO3.log(R_meas[:,:,l])
-        ys.append(np.hstack([np.squeeze(p_meas[:,:,l]), rpy]))
+    model = CONSTBODY(shape, dt)
+    L = est.p.shape[2]
 
     # initial state
-    state0 = model.STATE(R=R_meas[:,:,0], p=np.squeeze(p_meas[:,:,0]), v=v_init, w=w_init)
+    state0 = model.STATE(keypoints=est.keypoints[:,:,0], v=est.v[:,:,0], dR=est.dR[:,:,0])
 
     ## CREATE UKF
     # sigma point parameters
-    alpha = np.array([1e-3]*12) # TODO: 12?
-
-    # P = np.diag([1,1,1,0.0,0.,0.0,1,1,1,0.005,0.005,0.005])
-    # Q = np.diag([1,1,1,0.005,0.005,0.005])
-    # R = np.diag([1,1,1,0.005,0.005,0.005])*0
+    alpha = np.array([1e-3]*12)
 
     ukf = ukfm.UKF(state0=state0, P0=P, f=model.f, h=model.h, Q=Q, R=R,
                 phi=model.phi, phi_inv=model.phi_inv, alpha=alpha)
     
     # set variables for recording estimates along the full trajectory
     ukf_states = [state0]
-    ukf_Ps = np.zeros((model.L, 12, 12))
+    ukf_Ps = np.zeros((L, 12, 12))
     ukf_Ps[0] = P
 
-    p_est = np.zeros([3,1,model.L-1])
-    R_est = np.zeros([3,3,model.L-1])
-
     ## FILTERING
-    for l in range(1, model.L):
+    for l in range(1, L):
         # propagation
         ukf.propagation([], model.dt) # empty input
-        # update only if a measurement is received
 
-        ukf.update(ys[l])
+        # update only if a measurement is received
+        ukf.update(est.keypoints[:,:,l])
 
         # save estimates
         ukf_states.append(ukf.state)
         ukf_Ps[l] = ukf.P
-        p_est[:,:,l-1] = np.reshape(ukf.state.p,[3,1])
-        R_est[:,:,l-1] = ukf.state.R
+        est.keypoints[:,:,l+1] = ukf.state.keypoints
+        est.v[:,:,l+1] = ukf.state.v
+        est.dR[:,:,l+1] = ukf.state.dR
 
     # Process states into numpy array for passing back to MATLAB
-    return p_est, R_est
+    return est
 
 
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation as R_geo
 
 class DataHandler:
-    def __init__(self,L):
-        self.p = np.zeros(3,1,L)
-        self.R = np.zeros(3,3,L)
+    def __init__(self,N,L):
+        self.keypoints = np.zeros(3,N,L)
         self.v = np.zeros(3,1,L-1)
         self.dR = np.zeros(3,3,L-1)
 
+    def __init__(self,keypoints,v,dR):
+        self.keypoints = keypoints
+        self.v = v
+        self.dR = dR
+
 # GENERATE DATA FOR UKF TEST
-def generate_data(L):
-    covar_meas = np.diag([]) # measurement noise: noise added to position measurements!
-    covar_prop = np.diag([]) # propagation noise: noise added to velocity, rotation rate
-    covar_stat = np.diag([]) # (initial) state uncertanty: covariance of initial estimate
+def generate_data(L, N):
+    dt = 1.0
+
+    covar_velocity = 0.05
+    covar_rotrate = 0.05
+    covar_measure = 0.05
+    R = np.diag([covar_measure]*N) # measurement noise: keypoint noise
+    Q = np.diag([covar_velocity]*3 + [covar_rotrate]*3) # propagation noise: noise added to velocity, rotation rate
+    P = np.diag([covar_measure]*N + [0]*3 + [0]*3) # (initial) state uncertanty: covariance of initial estimate
 
     gt = DataHandler(L)
     est = DataHandler(L)
     ## generate initial points
-    # starting position, rotation
-    gt.p[:,:,0] = np.random.rand(3)*10.0
-    gt.R[:,:,0] = R.random().as_matrix()
+    # starting shape lib
 
-    # starting velocity, rotation rate
+    # starting keypoints, velocity, rotation rate
+    gt.p[:,:,0] = np.random.randn([3,1])
+    gt.R[:,:,0] = np.random.randn([3,1])
+    gt.keypoints[:,:,0] = np.random.randn([3,N]) + gt.p[:,:,0]
     gt.v[:,:,0] = np.random.rand(3)*5.0
-    gt.dR[:,:,0] = R.random().as_matrix()
+    gt.dR[:,:,0] = R_geo.random().as_matrix()
 
     ## generate trajectory
+    for l in range(1,L):
+        # Ground truth: these should match the f function
+        gt.v[:,:,l] = gt.v[:,:,l-1] + np.random.randn([3,1])*np.sqrt(covar_velocity)
+        gt.dR[:,:,l] = gt.dR[:,:,l-1].dot(SO3.from_rpy(np.random.randn([3,1])*np.sqrt(covar_rotrate)))
+        gt.keypoints[:,:,l] = gt.dR[:,:,l-1].dot(gt.keypoints[:,:,l-1] + gt.v[:,:,l-1]*dt) # TODO: SHOULD TRANSFORM CENTROID INSTEAD
+        
+        # Estimated: keypoints only, should match the phi function
+        est.keypoints[:,:,l] = gt.keypoints[:,:,l] + np.random.randn([3,N])*np.sqrt(covar_measure)
 
+    # initialize est
+    est.v[:,:,0] = gt.v[:,:,0]
+    est.dR[:,:,0] = gt.dR[:,:,0]
+    est.keypoints[:,:,0] = gt.keypoints[:,:,0] + np.random.randn([3,N])*np.sqrt(covar_measure)
 
-    return gt, est
+    return gt, est, P, Q, R, dt
 
 
 
 import pickle
 
-def save(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
+def save(keypoints, v, dR, dt, P, Q, R):
     db = {}
     db['dt'] = dt
-    db['L'] = L
-    db['p_meas'] = p_meas
-    db['R_meas'] = R_meas
-    db['v_init'] = v_init
-    db['w_init'] = w_init
+    db['keypoints'] = keypoints
+    db['v'] = v
+    db['dR'] = dR
     db['Q'] = Q
     db['R'] = R
     db['P'] = P
@@ -215,11 +219,24 @@ def save(dt, L, p_meas, R_meas, v_init, w_init, Q, R, P):
     # source, destination
     pickle.dump(db, dbfile)                    
     dbfile.close()
-    
-if __name__ == '__main__':
-    dbfile = open('examplePickle', 'rb')    
+
+def read_pickle():
+    dbfile = open('examplePickle', 'rb')
     db = pickle.load(dbfile)
     dbfile.close()
+    dt = db['dt']
+    P = db['P']
+    Q = db['Q']
+    R = db['R']
+
+    est = DataHandler(db['keypoints'], db['v'], db['dR'])
+
+    return est, P, Q, R, dt
+
     
-    p, r = run_ukf(db['dt'], db['L'], db['p_meas'], db['R_meas'], db['v_init'], db['w_init'], db['Q'], db['R'], db['P'])
+if __name__ == '__main__':
+    gt, est, P, Q, R, dt = generate_data(L=12, N=10)
+    shape = gt.keypoints[:,:,0]
+    
+    est = run_ukf(est, shape, dt, P, Q, R)
     print(p,r)

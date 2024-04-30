@@ -59,8 +59,9 @@ pace = pace_raw(problem);
 % paceukf = pace_py_UKF(problem,pace);
 paceekf = pace_ekf(problem,pace);
 
-norm(pace.p(:,:,end) - problem.p_gt(:,:,end))
-norm(paceekf.p(:,:,end) - problem.p_gt(:,:,end))
+figure
+plot(squeeze(vecnorm(pace.p - problem.p_gt)));hold on;
+plot(squeeze(vecnorm(paceekf.p - problem.p_gt)))
 return
 
 %% Check solutions

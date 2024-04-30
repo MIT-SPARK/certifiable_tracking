@@ -119,7 +119,7 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:
 
 %% ADD and ADD-S scores
 models_dir = "~/research/tracking/datasets/YCBInEOAT/models/";
-pcfile = models_dir + "bleach" + ".ply";
+pcfile = models_dir + "mustard" + ".ply";
 pcfile_gt = pcfile;
 pcfile_est = pcfile;
 

@@ -12,13 +12,13 @@ clc; clear; close all
 indepVar = "noiseSigmaSqrt";
 savename = "pascalaeroplane_mletest_" + indepVar;
 lengthScale = 0.2; % smallest dimension
-domain = 0.01:0.01:0.24;  % 0:0.025:1
-Ldomain = [12];%[4,8,12]; % 2: 3:12;
+domain = 0.025:0.025:0.5;  % 0:0.025:1
+Ldomain = [4,8,12]; % 2: 3:12;
 num_repeats = 50; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
-parfor (index = 1:length(domain)) % PAR, 20)
+for (index = 1:length(domain)) % PAR, 20)
 iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
