@@ -1,6 +1,6 @@
 clc; close all; clear;
 
-domain = [2,3,4,5,6];
+domain = [4,5,6];
 failed = [];
 
 for d = domain

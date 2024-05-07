@@ -5,6 +5,9 @@ function plotvariable(results, indepVar, var, settings)
     if isfield(settings, "PACEEKF")
         errorshade([results.(indepVar)],[results.(var + "_ekf")],hex2rgb(settings.PACEEKF{5}));
     end
+    if isfield(settings, "CASTP")
+        errorshade([results.(indepVar)],[results.(var + "_castp")],hex2rgb(settings.CASTP{5}));
+    end
     errorshade([results.(indepVar)],[results.(var + "_pace")],hex2rgb(settings.PACERAW{5}));
     
     Llist = settings.Llist;
@@ -18,6 +21,9 @@ function plotvariable(results, indepVar, var, settings)
 
     if isfield(settings, "PACEEKF")
         plot([results.(indepVar)],median([results.(var + "_ekf")]),settings.PACEEKF{:});
+    end
+    if isfield(settings, "CASTP")
+        plot([results.(indepVar)],median([results.(var + "_castp")]),settings.CASTP{:});
     end
     plot([results.(indepVar)],median([results.(var + "_pace")]),settings.PACERAW{:});
     for lidx=Llist

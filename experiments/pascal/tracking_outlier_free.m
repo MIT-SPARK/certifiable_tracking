@@ -8,13 +8,14 @@
 clc; clear; close all
 % restoredefaultpath
 % rng("default")
+% rng(100)
 
 %% Generate random tracking problem
 problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05*0.2; % [m]
+problem.noiseSigmaSqrt = 0.1*0.2; % [m]
 problem.noiseBound = 0.15*0.2;
 problem.processNoise = 5e-2;
 
@@ -23,12 +24,14 @@ problem.accelerationNoiseBoundSqrt = 0.05*0.2;
 problem.rotationKappa = 1/(0.05*0.2)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
-% problem.covar_measure_base = 0.0001;
-% problem.covar_velocity_base = 0.01;
-% problem.covar_rotrate_base = 0.01;
+pace_numbers = load("../datasets/results/pascalaeroplane_mle3_noiseSigmaSqrt.mat","results");
+index = 4;
+cur = pace_numbers.results(index);
+problem.covar_measure_position = ones(1,3)*(mean(cur.p_err_pace.^2));
+problem.covar_measure_rotation = ones(1,3)*(mean((cur.R_err_pace*pi/180.).^2));
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -56,13 +59,65 @@ problem.lambda = lambda;
 %% Solve!
 % soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
-% paceukf = pace_py_UKF(problem,pace);
+paceukf = pace_py_UKF(problem,pace);
 paceekf = pace_ekf(problem,pace);
 
+mean(vecnorm(problem.p_gt(:,:,:) - pace.p(:,:,:)))
+mean(vecnorm(problem.p_gt(:,:,:) - paceukf.p(:,:,:)))
+
 figure
-plot(squeeze(vecnorm(pace.p - problem.p_gt)));hold on;
-plot(squeeze(vecnorm(paceekf.p - problem.p_gt)))
+tiledlayout(3,1)
+nexttile
+plot(squeeze(pace.p(1,:,:)));
+hold on
+plot(squeeze(paceukf.p(1,:,:)));
+plot(squeeze(problem.p_gt(1,:,:)),'k');
+
+nexttile
+plot(squeeze(pace.p(2,:,:)));
+hold on
+plot(squeeze(paceukf.p(2,:,:)));
+plot(squeeze(problem.p_gt(2,:,:)),'k');
+
+nexttile
+plot(squeeze(pace.p(3,:,:)));
+hold on
+plot(squeeze(paceukf.p(3,:,:)));
+plot(squeeze(problem.p_gt(3,:,:)),'k');
+
+L = length(pace.R);
+w_pace = zeros(3,L);
+w_gt = zeros(3,L);
+w_ukf = zeros(3,L);
+for l = 1:length(pace.R)
+    axang = rotm2axang(pace.R(:,:,l));
+    w_pace(:,l) = axang(1:3)*axang(4);
+    axang = rotm2axang(problem.R_gt(:,:,l));
+    w_gt(:,l) = axang(1:3)*axang(4);
+    axang = rotm2axang(paceukf.R(:,:,l));
+    w_ukf(:,l) = axang(1:3)*axang(4);
+end
+figure
+tiledlayout(3,1)
+nexttile
+plot(w_pace(1,:));
+hold on
+plot(w_ukf(1,:));
+plot(w_gt(1,:),'k');
+
+nexttile
+plot(w_pace(2,:));
+hold on
+plot(w_ukf(2,:));
+plot(w_gt(2,:),'k');
+
+nexttile
+plot(w_pace(3,:));
+hold on
+plot(w_ukf(3,:));
+plot(w_gt(3,:),'k');
 return
+
 
 %% Check solutions
 % eigenvalue plot
@@ -119,7 +174,7 @@ plot_trajectory2(problem,soln)
 % soln2.p = soln.p2_est;
 % soln2.R = soln.R2_est;
 
-compare(problem, soln, pace, pace, paceekf);
+compare(problem, soln, pace, paceukf, paceekf);
 
 soln.gap_stable
 soln.gap

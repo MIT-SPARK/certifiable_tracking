@@ -14,19 +14,19 @@ videos = ["cracker_box_reorient", "cracker_box_yalehand0", ...
           "tomato_soup_can_yalehand0"];
 
 % parameters to change
-video = videos(5);
-maxL = 6;
+video = videos(1);
+maxL = 8;
 skip = 1; % sequential frames or skip frames
 
 % for pruning
-noiseBound_GRAPH = 0.01;
+noiseBound_GRAPH = 0.01; % TODO: back to 0.01 for this and gnc
 % for GNC
 noiseBound_GNC = 0.01;
 % for solver
-velocityBound = 1.5;
-covar_measure_base = 0.01^2;
-covar_velocity_base = 0.01^2;
-covar_rotrate_base = 0.01^2;
+velocityBound = 50;%1.5;
+covar_measure_base = 0.01;
+covar_velocity_base = 0.1;
+covar_rotrate_base = 0.1;
 
 savename = "ycbineoat_" + video;
 jsondir = "../datasets/YCBInEOAT/";
@@ -38,6 +38,10 @@ problem.json = jsondir + video + ".json";
 problem.L = maxL; % batch size
 problem.savefile = jsondir + video + "_ours.json";
 problem.velprior = "body";
+
+% set category
+idx = min([regexp(video,'_'), regexp(video,'\d')]);
+problem.object = char(video); problem.object = string(problem.object(1:idx-1));
 
 % Add shape, split into batches
 [problems, gt, teaser, shapes] = json2frameproblem(problem, skip);

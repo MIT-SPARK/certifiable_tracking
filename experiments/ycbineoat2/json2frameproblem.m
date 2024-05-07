@@ -105,7 +105,7 @@ for batch = 1:tot_L
     % curproblem.weights = weights;
     % curproblem.covar_velocity = covar_velocity;
     % curproblem.kappa_rotrate = kappa_rotrate;
-    curproblem.dt = dt;
+    curproblem.dt = 1;%dt;
 
     problem_list{end+1} = curproblem;
 end
@@ -122,29 +122,41 @@ fclose(fid);
 data = jsondecode(str);
 
 % get CAD keypoints if there
-if isfield(data, "interp_cad_keypoints")
-    shapes = data(1).interp_cad_keypoints' / 1000.0;
-    % REMOVE INTERP:
-    shapes = shapes(:,1:52); % TEMP FIX THIS!!!!! TODOD!!!!!@#!@#@
-
-    % [C, ia, ic] = unique(shapes','stable','rows');
-    % % remove nonspherical keypoints/shapes
-    % % keep = [6,7,8,10,12,14,15,16];
-    % keep = [6,8,14,16];
-    % keepVec = ia;
-    % for n = 1:length(ia)
-    %     keepVec = [keepVec; length(ia) + 16*(n-1) + keep'];
-    % end
-    % shapes = shapes(:,keepVec,:);
-
-    N = size(shapes,2);
-    % field = "est_interp_world_keypoints";
-    field = "est_world_keypoints"; % FIX DONT USE FIX FIX
-else
-    shapes = NaN;
-    N = size(problem.shapes,2);
-    field = "est_world_keypoints";
+if (problem.object == "cracker") || (problem.object == "sugar")
+    load("../datasets/YCBInEOAT/shapes/shapes_box.mat","shapes");
+    shapes = shapes(:,:,1:2); % TEMP
+elseif (problem.object == "mustard") || (problem.object == "bleach")
+    load("../datasets/YCBInEOAT/shapes/shapes_bottle.mat","shapes");
+elseif (problem.object == "tomato")
+    load("../datasets/YCBInEOAT/shapes/shapes_can.mat","shapes");
 end
+N = size(shapes,2);
+field = "est_world_keypoints";
+
+
+% if isfield(data, "interp_cad_keypoints")
+%     shapes = data(1).interp_cad_keypoints' / 1000.0;
+%     % REMOVE INTERP:
+%     shapes = shapes(:,1:52);
+% 
+%     % [C, ia, ic] = unique(shapes','stable','rows');
+%     % % remove nonspherical keypoints/shapes
+%     % % keep = [6,7,8,10,12,14,15,16];
+%     % keep = [6,8,14,16];
+%     % keepVec = ia;
+%     % for n = 1:length(ia)
+%     %     keepVec = [keepVec; length(ia) + 16*(n-1) + keep'];
+%     % end
+%     % shapes = shapes(:,keepVec,:);
+% 
+%     N = size(shapes,2);
+%     % field = "est_interp_world_keypoints";
+%     field = "est_world_keypoints";
+% else
+%     shapes = NaN;
+%     N = size(problem.shapes,2);
+%     field = "est_world_keypoints";
+% end
 
 keypoints = [data.(field)];
 % if isfield(data,"interp_cad_keypoints")

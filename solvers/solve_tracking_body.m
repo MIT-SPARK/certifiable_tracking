@@ -501,7 +501,7 @@ function prob = add_quad_v_constraints(prob, Av, L, dt, vBound)
     % in objective: sh replaces v'*(Av'*Av)*v
     % in constraints: add constraint v'*(Av'*Av)*v <= sh
     % result: minimizing sh -> sh = (v'*(Av'*Av)*v)
-    [~, res] = mosekopt('symbcon');
+    [~, res] = mosekopt('symbcon echo(0)');
     symbcon = res.symbcon;
 
     % objective: add sh

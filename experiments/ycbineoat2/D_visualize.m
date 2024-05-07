@@ -18,6 +18,7 @@ R_err = zeros(L*N,L)*NaN;
 
 est_legit.p = zeros(3,1,length(solns))*NaN;
 est_legit.R = zeros(3,3,length(solns))*NaN;
+est_legit.c = zeros(length(solns),1)*NaN;
 est_ignoringbad.p = zeros(3,1,length(solns))*NaN;
 est_ignoringbad.R = zeros(3,3,length(solns))*NaN;
 est_bestrun.p = zeros(3,1,length(solns))*NaN;
@@ -59,9 +60,14 @@ end
 if j == 1
     est_legit.p(:,:,idx) = soln.p;
     est_legit.R(:,:,idx) = soln.R;
+    [~, est_legit.c(idx)] = max(soln.c);
 else
     est_legit.p(:,:,idx(end)) = soln.p(:,:,end);
     est_legit.R(:,:,idx(end)) = soln.R(:,:,end);
+    [~, est_legit.c(idx(end))] = max(soln.c);
+    if (est_legit.c(idx(end)) ~= 2)
+        fprintf("%d: %.2e\n", j, soln.gap)
+    end
 end
 % 2) ignoringbad: throw away bad
 if (soln.gap < 0.3)
@@ -119,17 +125,23 @@ quiver3(p_gt(1,:)',p_gt(2,:)',p_gt(3,:)',squeeze(gt.R(1,3,:)),squeeze(gt.R(2,3,:
 
 %% ADD and ADD-S scores
 models_dir = "~/research/tracking/datasets/YCBInEOAT/models/";
-pcfile = models_dir + "mustard" + ".ply";
-pcfile_gt = pcfile;
-pcfile_est = pcfile;
+if (problem.object == "cracker") || (problem.object == "sugar")
+    pcfiles = models_dir + ["cracker.ply", "sugar.ply", "jello.ply"];
+elseif (problem.object == "mustard") || (problem.object == "bleach")
+    pcfiles = models_dir + ["mustard.ply", "bleach.ply"];
+elseif (problem.object == "tomato")
+    pcfiles = models_dir + ["coffee.ply", "tomato.ply", "tuna.ply"];
+end
+gt.c = find(contains(pcfiles, problem.object));
+teaser.c = gt.c*ones(length(teaser.p),1);
 
 % Compute scores!
 threshold = 0.1;
-[add_ours, adds_ours] = get_adds(gt, est_legit, pcfile_gt); % takes a while
+[add_ours, adds_ours] = get_adds(gt, est_legit, pcfiles, true); % takes a while if calc adds
 score_add_ours = get_auc(add_ours, threshold);
 score_adds_ours = get_auc(adds_ours, threshold);
 
-[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfile_gt); % takes a while
+[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, true); % takes a while
 score_add_teaser = get_auc(add_teaser, threshold);
 score_adds_teaser = get_auc(adds_teaser, threshold);
 

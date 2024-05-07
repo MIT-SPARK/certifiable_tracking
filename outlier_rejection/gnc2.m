@@ -100,6 +100,8 @@ for itr = 0:maxSteps
             if ~problem.usecBound
                 problem.regen_sdp = false;
             end
+        else
+            problem.regen_sdp = false;
         end
     end
 

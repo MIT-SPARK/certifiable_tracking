@@ -1,4 +1,17 @@
-% setup_func("pascal")
+setup_func("ycbineoat2")
+domain = [4,5,6];
+failed = [];
+
+for d = domain
+    try
+        ycbineoat(d, false);
+    catch
+        failed = [failed, d];
+        fprintf("--------")
+    end
+end
+
+setup_func("pascal")
 % try
 %     EXP_outlier_ablation;
 % catch
@@ -6,8 +19,10 @@
 try
     EXP_Landm;
 catch
+    failed = [failed,-1];
 end
 try
-    EXP_Landp;
+    EXP_Landm_UKF;
 catch
+    failed = [failed,-2];
 end

@@ -10,15 +10,15 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane_mle3_" + indepVar;
+savename = "pascalaeroplane_mle_ukf2_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:0.5;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
-num_repeats = 50; % 2: 50
+num_repeats = 500; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
-parfor (index = 1:length(domain)) % PAR, 20)
+for (index = 1:length(domain)) % PAR, 20)
 iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
@@ -54,15 +54,16 @@ problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
 problem.rotationKappa = 1/(0.05*lengthScale)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
+problem.covar_velocity_base = 50*problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
-% problem.covar_measure_base = 0.0001; % 2: 0.01
-% problem.covar_velocity_base = 0.001;
-% problem.covar_rotrate_base = 0.001;
+% for UKF: load from prev results
+pace_numbers = load("../datasets/results/pascalaeroplane_mle3_noiseSigmaSqrt.mat","results");
+cur = pace_numbers.results(index);
+problem.covar_measure_position = ones(1,3)*(mean(cur.p_err_pace.^2));
+problem.covar_measure_rotation = ones(1,3)*((mean(cur.R_err_pace)*pi/180.).^2);
 
 problem.noiseBound = 3*iv*lengthScale; %3*iv for 8 reg
-problem.processNoise = 5e-2;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 5.0;
@@ -80,7 +81,11 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_ekf(problem,pace); % try pace_py_ukf (issues with parfor)
+try
+paceekf = pace_py_UKF(problem,pace); % try pace_py_ukf (issues with parfor)
+catch
+paceekf = pace;
+end
 
 % Save solutions: only use last error
 % rotation error
@@ -168,7 +173,7 @@ Llist = 1;%[1,2,3];
 displayRange = 1:length(results);
 
 % visual settings
-tile = false;
+tile = true;
 
 settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',2};
 % settings.CASTP = {'x-.','DisplayName', 'CAST-P', 'Color', "#D95319",'LineWidth',2};
@@ -203,11 +208,10 @@ xlabel(indepVar); ylabel("Position Error (normalized)");
 title("Position Errors")
 
 if tile
-    lg = legend('Orientation','horizontal');
-    lg.Layout.Tile = 'south';
+lg = legend('Orientation','horizontal');
+lg.Layout.Tile = 'south';
 end
 
-settings=rmfield(settings,"PACEEKF");
 % Rotations
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "R_err", settings)
@@ -215,6 +219,7 @@ yscale log;% xscale log
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
+settings=rmfield(settings,"PACEEKF");
 % Shape
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "c_err", settings)
