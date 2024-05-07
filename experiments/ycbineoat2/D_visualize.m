@@ -137,11 +137,11 @@ teaser.c = gt.c*ones(length(teaser.p),1);
 
 % Compute scores!
 threshold = 0.1;
-[add_ours, adds_ours] = get_adds(gt, est_legit, pcfiles, true); % takes a while if calc adds
+[add_ours, adds_ours] = get_adds(gt, est_legit, pcfiles, false); % takes a while if calc adds
 score_add_ours = get_auc(add_ours, threshold);
 score_adds_ours = get_auc(adds_ours, threshold);
 
-[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, true); % takes a while
+[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, false); % takes a while
 score_add_teaser = get_auc(add_teaser, threshold);
 score_adds_teaser = get_auc(adds_teaser, threshold);
 
