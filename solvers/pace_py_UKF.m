@@ -29,7 +29,7 @@ Q = py.numpy.array(diag(covar_process));
 % read this from the chart (3*mean err)
 covar_measure_position = problem.covar_measure_position;
 covar_measure_rotation = problem.covar_measure_rotation;
-R_covar = 1*py.numpy.array(diag([covar_measure_position, covar_measure_rotation]));
+R_covar = py.numpy.array(diag([covar_measure_position, covar_measure_rotation]));
 
 % (initial) Error Covariance (P)
 covar_error = [covar_measure_position, covar_measure_rotation, covar_velocity, covar_rotrate];

@@ -24,14 +24,14 @@ problem.accelerationNoiseBoundSqrt = 0.05*0.2;
 problem.rotationKappa = 1/(0.05*0.2)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 pace_numbers = load("../datasets/results/pascalaeroplane_mle3_noiseSigmaSqrt.mat","results");
 index = 4;
 cur = pace_numbers.results(index);
-problem.covar_measure_position = ones(1,3)*(mean(cur.p_err_pace.^2));
-problem.covar_measure_rotation = ones(1,3)*(mean((cur.R_err_pace*pi/180.).^2));
+problem.covar_measure_position = ones(1,3)*1e-10;%1*ones(1,3)*(mean(cur.p_err_pace.^2));
+problem.covar_measure_rotation = ones(1,3)*1e-10;%1*ones(1,3)*(mean((cur.R_err_pace*pi/180.).^2));
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -59,8 +59,13 @@ problem.lambda = lambda;
 %% Solve!
 % soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
+
+% temp
+pace.p = problem.p_gt + 1*sqrt(problem.covar_measure_position(1))*randn(size(pace.p));
+pace.R = problem.R_gt + 1*sqrt(problem.covar_measure_rotation(1))*randn(size(pace.R));
+
 paceukf = pace_py_UKF(problem,pace);
-paceekf = pace_ekf(problem,pace);
+% paceekf = pace_ekf(problem,pace);
 
 mean(vecnorm(problem.p_gt(:,:,:) - pace.p(:,:,:)))
 mean(vecnorm(problem.p_gt(:,:,:) - paceukf.p(:,:,:)))

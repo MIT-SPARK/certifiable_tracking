@@ -14,7 +14,8 @@ videos = ["cracker_box_reorient", "cracker_box_yalehand0", ...
           "tomato_soup_can_yalehand0"];
 
 % parameters to change
-video = videos(2);
+videonum = 1;
+video = videos(videonum);
 maxL = 8;
 skip = 1; % sequential frames or skip frames
 
@@ -28,8 +29,10 @@ covar_measure_base = 0.01;
 covar_velocity_base = 0.1;
 covar_rotrate_base = 0.1;
 
-savename = "ycbineoat_" + video;
+savename = "ycbineoat_" + string(videonum);
 jsondir = "../datasets/YCBInEOAT/";
+
+return
 
 %% Generate frame problems
 % Define json, generate problem

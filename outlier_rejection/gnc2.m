@@ -133,6 +133,11 @@ if (failed) && (params.Results.FailGracefully)
     info.failed = true;
 end
 
+%% Apply translation bound
+if isfield(problem, "translationBound")
+    info.soln.p_est(abs(info.soln.p_est) > problem.translationBound) = problem.translationBound;
+end
+
 %% Convert to output
 theta_est = zeros(N,1);
 theta_est(weights>0.5) = 1;

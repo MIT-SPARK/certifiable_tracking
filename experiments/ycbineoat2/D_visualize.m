@@ -1,4 +1,4 @@
-%% Step 3: Solve Reduced Version
+%% Step 4: Visualize Results
 % Load solved spherical problems and rerun without spherical
 % Run Experiment Settings section before this
 %
