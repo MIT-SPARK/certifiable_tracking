@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane_mle_ukf2_" + indepVar;
+savename = "pascalaeroplane_ukf_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:0.5;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
@@ -54,14 +54,14 @@ problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
 problem.rotationKappa = 1/(0.05*lengthScale)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = 50*problem.accelerationNoiseBoundSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 % for UKF: load from prev results
 pace_numbers = load("../datasets/results/pascalaeroplane_mle3_noiseSigmaSqrt.mat","results");
 cur = pace_numbers.results(index);
-problem.covar_measure_position = ones(1,3)*(mean(cur.p_err_pace.^2));
-problem.covar_measure_rotation = ones(1,3)*((mean(cur.R_err_pace)*pi/180.).^2);
+problem.covar_measure_position = 0.1*ones(1,3)*(mean((cur.p_err_pace).^2));
+problem.covar_measure_rotation = 0.1*ones(1,3)*(mean(deg2rad(cur.R_err_pace).^2));
 
 problem.noiseBound = 3*iv*lengthScale; %3*iv for 8 reg
 
@@ -169,7 +169,7 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % data settings
-Llist = 1;%[1,2,3];
+Llist = [1,2,3];
 displayRange = 1:length(results);
 
 % visual settings

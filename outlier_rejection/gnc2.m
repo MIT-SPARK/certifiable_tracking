@@ -135,7 +135,7 @@ end
 
 %% Apply translation bound
 if isfield(problem, "translationBound")
-    info.soln.p_est(abs(info.soln.p_est) > problem.translationBound) = problem.translationBound;
+    info.soln.p_est(abs(info.soln.p_est) > problem.translationBound) = 0.0;%problem.translationBound;
 end
 
 %% Convert to output

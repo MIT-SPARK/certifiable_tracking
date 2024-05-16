@@ -23,11 +23,11 @@ processNoise = [0., covar_velocity, 0, covar_velocity, covar_rotrate, 0, covar_v
 processNoise = diag(processNoise);
 
 % Measurement noise (TODO: wrong)
-measureNoise = repmat(problem.covar_measure_base, [1,3]);
+measureNoise = problem.covar_measure_position;
 measureNoise = diag(measureNoise);
 
 % state covariance: initially the same as measurement noise (TODO: wrong)
-covarState = repmat(problem.covar_measure_base,[1,7]);
+covarState = [problem.covar_measure_position(1), covar_velocity, problem.covar_measure_position(1), covar_velocity, covar_rotrate, problem.covar_measure_position(1), covar_velocity];
 covarState = diag(covarState);
 
 %% Convert PACE data into EKF form

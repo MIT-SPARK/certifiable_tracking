@@ -23,16 +23,16 @@ elseif (isfield(problem,"covar_rotrate_base"))
 end
 
 covar_process = [covar_velocity, covar_rotrate];
-Q = py.numpy.array(diag(covar_process));
+Q = 1*py.numpy.array(diag(covar_process));
 
 % Measurement covariance (R)
-% read this from the chart (3*mean err)
+% read this from the chart
 covar_measure_position = problem.covar_measure_position;
 covar_measure_rotation = problem.covar_measure_rotation;
-R_covar = py.numpy.array(diag([covar_measure_position, covar_measure_rotation]));
+R_covar = 1*py.numpy.array(diag([covar_measure_position, covar_measure_rotation]));
 
 % (initial) Error Covariance (P)
-covar_error = [covar_measure_position, covar_measure_rotation, covar_velocity, covar_rotrate];
+covar_error = 10*[covar_measure_position, covar_measure_rotation, covar_velocity, covar_rotrate];
 P = py.numpy.array(diag(covar_error));
 
 %% Fuse with UKF

@@ -10,31 +10,35 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane_mle3_" + indepVar;
+savename = "pascalaeroplane_ukf_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:1.0;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
 num_repeats = 500; % 2,3: 50; 4: 500
-% TODO: process noise for ekf
 
 %% Loop
 results = cell(length(domain),1);
-parfor index = 1:length(domain)
+for index = 1:length(domain)
 iv = domain(index);
 resultsIV = struct();
 resultsIV.(indepVar) = iv;
 resultsIV.R_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.R_err_ekf = zeros(num_repeats,1);
 resultsIV.R_err_pace = zeros(num_repeats,1);
+resultsIV.R_err_castp = zeros(num_repeats,1);
 resultsIV.p_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.p_err_ekf = zeros(num_repeats,1);
 resultsIV.p_err_pace = zeros(num_repeats,1);
+resultsIV.p_err_castp = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.c_err_pace = zeros(num_repeats,1);
+resultsIV.c_err_castp = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.gap_pace = zeros(num_repeats,1);
+resultsIV.gap_castp = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.time_pace = zeros(num_repeats,1);
+resultsIV.time_castp = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
@@ -53,7 +57,12 @@ problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 problem.noiseBound = 0.15*lengthScale; % 2:0.15, 3: 0.05, 4: 0.15
-problem.processNoise = 0.05; % 2,3: 0.05; % 4: 0.01
+
+% for UKF: load from prev results
+pace_numbers = load("../datasets/results/pascalaeroplane_mle3_accelerationNoiseBoundSqrt.mat","results");
+cur = pace_numbers.results(index);
+problem.covar_measure_position = 0.1*ones(1,3)*(mean((cur.p_err_pace).^2));
+problem.covar_measure_rotation = 0.1*ones(1,3)*(mean(deg2rad(cur.R_err_pace).^2));
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -68,7 +77,11 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_ekf(problem,pace); % try pace_py_ukf (issues with parfor)
+try
+paceekf = pace_py_UKF(problem,pace); % try pace_py_ukf (issues with parfor)
+catch
+paceekf = pace;
+end
 
 % Save solutions: only use last error
 % rotation error
@@ -105,21 +118,41 @@ for lidx = 1:length(Ldomain)
     c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
     gap_ours(lidx) = soln.gap;
     time_ours(lidx) = soln.solvetime;
+
+    % last run: CAST-P
+    if lidx == length(Ldomain)
+        lproblem.regen_sdp = false;
+        % disable velocity smoothing
+        lproblem.covar_velocity_base = Inf;
+        lproblem.kappa_rotrate_base = 0;
+        % run!
+        soln_p = solve_weighted_tracking(lproblem);
+        R_err_castp = getAngularError(problem.R_gt(:,:,end), soln_p.R_est(:,:,end));
+        p_err_castp = norm(problem.p_gt(:,:,end) - soln_p.p_est(:,:,end));
+        c_err_castp = norm(problem.c_gt - soln_p.c_est);
+        gap_castp = soln_p.gap;
+        time_castp = soln_p.solvetime;
+    end
 end
 
 % save
 resultsIV.R_err_ours(j,:) = R_err_ours;
 resultsIV.R_err_ekf(j)  = R_err_ekf;
 resultsIV.R_err_pace(j) = R_err_pace;
+resultsIV.R_err_castp(j) = R_err_castp;
 resultsIV.p_err_ours(j,:) = p_err_ours;
 resultsIV.p_err_ekf(j)  = p_err_ekf;
 resultsIV.p_err_pace(j) = p_err_pace;
+resultsIV.p_err_castp(j) = p_err_castp;
 resultsIV.c_err_ours(j,:) = c_err_ours;
 resultsIV.c_err_pace(j) = c_err_pace;
+resultsIV.c_err_castp(j) = c_err_castp;
 resultsIV.gap_ours(j,:) = gap_ours;
 resultsIV.gap_pace(j) = gap_pace;
+resultsIV.gap_castp(j) = gap_castp;
 resultsIV.time_ours(j,:) = time_ours;
 resultsIV.time_pace(j) = time_pace;
+resultsIV.time_castp(j) = time_castp;
 end
 results{index} = resultsIV;
 end

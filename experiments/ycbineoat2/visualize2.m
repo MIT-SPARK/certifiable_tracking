@@ -4,7 +4,7 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-videoNumber = "2_baseline";
+videoNumber = "6";
 savename = "ycbineoat_" + videoNumber;
 load(savename);
 
@@ -22,19 +22,17 @@ figure; hold on;
 tab_new = computeScores(problems{1}, gt, teaser, est, params.video, adds, thresh)
 
 % save to json
-% save2json(est, problems{1})
+save2json(est, problems{1})
 
 % get errors
 est = getErrors(gt, est);
 
-%% Save everything together
-
 %% Helper function: reformat solutions
 function est = getEstimates(problems, solns)
 % convert solns (list of structs) to compact form
-est.p = zeros(3,1,length(solns))*NaN;
-est.R = zeros(3,3,length(solns))*NaN;
-est.c = zeros(length(solns),1)*NaN;
+est.p = zeros(3,1,length(solns)+2)*NaN;
+est.R = zeros(3,3,length(solns)+2)*NaN;
+est.c = zeros(length(solns)+2,1)*NaN;
 
 for j = 1:length(solns)
     problem = problems{j};
@@ -102,7 +100,7 @@ models_dir = "~/research/tracking/datasets/YCBInEOAT/models/";
 if (problem.object == "cracker") || (problem.object == "sugar")
     pcfiles = models_dir + ["cracker.ply", "sugar.ply", "jello.ply"];
 elseif (problem.object == "mustard") || (problem.object == "bleach")
-    pcfiles = models_dir + ["mustard.ply", "bleach.ply"];
+    pcfiles = models_dir + ["mustard.ply", "bleach.ply", "ketchup2.ply"];
 elseif (problem.object == "tomato")
     pcfiles = models_dir + ["coffee.ply", "tomato.ply", "tuna.ply"];
 end

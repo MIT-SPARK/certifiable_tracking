@@ -126,7 +126,7 @@ if (problem.object == "cracker") || (problem.object == "sugar")
     load("../datasets/YCBInEOAT/shapes/shapes_box.mat","shapes");
     shapes = shapes(:,:,1:2); % TEMP
 elseif (problem.object == "mustard") || (problem.object == "bleach")
-    load("../datasets/YCBInEOAT/shapes/shapes_bottle.mat","shapes");
+    load("../datasets/YCBInEOAT/shapes/shapes_bottle3.mat","shapes");
 elseif (problem.object == "tomato")
     load("../datasets/YCBInEOAT/shapes/shapes_can.mat","shapes");
 end
