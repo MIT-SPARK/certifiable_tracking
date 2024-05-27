@@ -10,11 +10,11 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane_mle3_" + indepVar;
+savename = "pascalaeroplane_MLE_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:0.5;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
-num_repeats = 50; % 2: 50
+num_repeats = 500; % 2: 50
 
 %% Loop
 results = cell(length(domain),1);
@@ -54,24 +54,20 @@ problem.accelerationNoiseBoundSqrt = 0.05*lengthScale;
 problem.rotationKappa = 1/(0.05*lengthScale)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
-% problem.covar_measure_base = 0.0001; % 2: 0.01
-% problem.covar_velocity_base = 0.001;
-% problem.covar_rotrate_base = 0.001;
+% for EKF
+problem.covar_measure_position = 5e-5*ones(1,3);
+problem.covar_measure_rotation = 1e-4*ones(1,3);
 
 problem.noiseBound = 3*iv*lengthScale; %3*iv for 8 reg
-problem.processNoise = 5e-2;
 
 problem.translationBound = 10.0;
 problem.velocityBound = 5.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
-
-% problem.accelerationNoiseBoundSqrt = 0;
-% problem.rotationNoiseBound = 0; % rad
 
 % add shape, measurements, outliers
 problem = gen_pascal_tracking(problem);
@@ -80,7 +76,7 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_ekf(problem,pace); % try pace_py_ukf (issues with parfor)
+paceekf = pace_ekf2(problem,pace); % try pace_py_ukf (issues with parfor)
 
 % Save solutions: only use last error
 % rotation error
@@ -164,17 +160,19 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % data settings
-Llist = 1;%[1,2,3];
+Llist = [1,2,3];
 displayRange = 1:length(results);
 
 % visual settings
-tile = false;
+tile = true;
 
 settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',2};
-% settings.CASTP = {'x-.','DisplayName', 'CAST-P', 'Color', "#D95319",'LineWidth',2};
+settings.CASTP = {'x--','DisplayName', 'CAST-Unsmoothed', 'Color', "#0CA183",'LineWidth',2};
 settings.PACERAW = {'x:','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',2};
 
-settings.OURS = {'x-','DisplayName', 'OURS','LineWidth',2.5,'Color','002e4c'};
+settings.OURS = {{'x-','DisplayName', 'CAST','LineWidth',2.5,'Color','338eca','MarkerSize',10};...
+                 {'square-','DisplayName', 'CAST','LineWidth',2.5,'Color','005b97','MarkerSize',5};...
+                 {'.-','DisplayName', 'CAST','LineWidth',2.5,'Color','002e4c','MarkerSize',20}};
 settings.ours_colors = ["#338eca","#005b97","#002e4c"];
 settings.Llist = Llist;
 settings.Ldomain = Ldomain;
@@ -207,7 +205,6 @@ if tile
     lg.Layout.Tile = 'south';
 end
 
-settings=rmfield(settings,"PACEEKF");
 % Rotations
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "R_err", settings)
@@ -216,6 +213,7 @@ xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
 % Shape
+settings=rmfield(settings,"PACEEKF");
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "c_err", settings)
 yscale log;% xscale log

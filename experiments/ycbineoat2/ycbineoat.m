@@ -49,6 +49,11 @@ if ~params.skipPruning
     problem.object = char(video); problem.object = string(problem.object(1:idx-1));
     
     % Add shape, split into batches
+    if isfield(params, "gt")
+        if params.gt
+            problem.USEGT = true;
+        end
+    end
     if ~params.interp
         [problems, gt, teaser, shapes] = json2frameproblem(problem, skip);
     else

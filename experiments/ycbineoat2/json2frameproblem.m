@@ -132,6 +132,10 @@ elseif (problem.object == "tomato")
 end
 N = size(shapes,2);
 field = "est_world_keypoints";
+if isfield(problem, "USEGT")
+    % field = "gt_pixel_est_depth_world_keypoints";
+    field = "gt_world_keypoints";
+end
 
 
 % if isfield(data, "interp_cad_keypoints")

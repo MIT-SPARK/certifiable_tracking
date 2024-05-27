@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "accelerationNoiseBoundSqrt";
-savename = "pascalaeroplane_mle3_" + indepVar;
+savename = "pascalaeroplane_MLE_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:0.5;
 Ldomain = [4,8,12]; % 2,3: 3:12; 4: [4,8,12]
@@ -26,15 +26,20 @@ resultsIV.(indepVar) = iv;
 resultsIV.R_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.R_err_ekf = zeros(num_repeats,1);
 resultsIV.R_err_pace = zeros(num_repeats,1);
+resultsIV.R_err_castp = zeros(num_repeats,1);
 resultsIV.p_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.p_err_ekf = zeros(num_repeats,1);
 resultsIV.p_err_pace = zeros(num_repeats,1);
+resultsIV.p_err_castp = zeros(num_repeats,1);
 resultsIV.c_err_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.c_err_pace = zeros(num_repeats,1);
+resultsIV.c_err_castp = zeros(num_repeats,1);
 resultsIV.gap_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.gap_pace = zeros(num_repeats,1);
+resultsIV.gap_castp = zeros(num_repeats,1);
 resultsIV.time_ours = zeros(num_repeats,length(Ldomain));
 resultsIV.time_pace = zeros(num_repeats,1);
+resultsIV.time_castp = zeros(num_repeats,1);
 disp("Starting " + indepVar + "=" + string(iv));
 for j = 1:num_repeats
 
@@ -49,14 +54,17 @@ problem.accelerationNoiseBoundSqrt = iv*lengthScale;
 problem.rotationKappa = 1/(iv*lengthScale)^2*(1/2);
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
+problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt;%^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 problem.noiseBound = 0.15*lengthScale; % 2:0.15, 3: 0.05, 4: 0.15
-problem.processNoise = 0.05; % 2,3: 0.05; % 4: 0.01
+
+% for EKF
+problem.covar_measure_position = 5e-5*ones(1,3);
+problem.covar_measure_rotation = 1e-4*ones(1,3);
 
 problem.translationBound = 10.0;
-problem.velocityBound = 2.0;
+problem.velocityBound = 5.0;
 problem.dt = 1.0;
 
 problem.velprior = "body";       % constant body frame velocity
@@ -68,7 +76,7 @@ problem.lambda = lambda;
 
 % Solve!
 pace = pace_raw(problem);
-paceekf = pace_ekf(problem,pace); % try pace_py_ukf (issues with parfor)
+paceekf = pace_ekf2(problem,pace); % try pace_py_ukf (issues with parfor)
 
 % Save solutions: only use last error
 % rotation error
@@ -105,21 +113,41 @@ for lidx = 1:length(Ldomain)
     c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
     gap_ours(lidx) = soln.gap;
     time_ours(lidx) = soln.solvetime;
+
+    % last run: CAST-P
+    if lidx == length(Ldomain)
+        lproblem.regen_sdp = false;
+        % disable velocity smoothing
+        lproblem.covar_velocity_base = Inf;
+        lproblem.kappa_rotrate_base = 0;
+        % run!
+        soln_p = solve_weighted_tracking(lproblem);
+        R_err_castp = getAngularError(problem.R_gt(:,:,end), soln_p.R_est(:,:,end));
+        p_err_castp = norm(problem.p_gt(:,:,end) - soln_p.p_est(:,:,end));
+        c_err_castp = norm(problem.c_gt - soln_p.c_est);
+        gap_castp = soln_p.gap;
+        time_castp = soln_p.solvetime;
+    end
 end
 
 % save
 resultsIV.R_err_ours(j,:) = R_err_ours;
 resultsIV.R_err_ekf(j)  = R_err_ekf;
 resultsIV.R_err_pace(j) = R_err_pace;
+resultsIV.R_err_castp(j) = R_err_castp;
 resultsIV.p_err_ours(j,:) = p_err_ours;
 resultsIV.p_err_ekf(j)  = p_err_ekf;
 resultsIV.p_err_pace(j) = p_err_pace;
+resultsIV.p_err_castp(j) = p_err_castp;
 resultsIV.c_err_ours(j,:) = c_err_ours;
 resultsIV.c_err_pace(j) = c_err_pace;
+resultsIV.c_err_castp(j) = c_err_castp;
 resultsIV.gap_ours(j,:) = gap_ours;
 resultsIV.gap_pace(j) = gap_pace;
+resultsIV.gap_castp(j) = gap_castp;
 resultsIV.time_ours(j,:) = time_ours;
 resultsIV.time_pace(j) = time_pace;
+resultsIV.time_castp(j) = time_castp;
 end
 results{index} = resultsIV;
 end
@@ -138,10 +166,13 @@ displayRange = 1:length(results);
 % visual settings
 tile = true;
 
-settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',1};
-settings.PACERAW = {'x: ','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',1};
+settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',2};
+settings.CASTP = {'x--','DisplayName', 'CAST-Unsmoothed', 'Color', "#0CA183",'LineWidth',2};
+settings.PACERAW = {'x:','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',2};
 
-settings.OURS = {'x-','DisplayName', 'OURS','LineWidth',2,'Color','002e4c'};
+settings.OURS = {{'x-','DisplayName', 'CAST','LineWidth',2.5,'Color','338eca','MarkerSize',10};...
+                 {'square-','DisplayName', 'CAST','LineWidth',2.5,'Color','005b97','MarkerSize',5};...
+                 {'.-','DisplayName', 'CAST','LineWidth',2.5,'Color','002e4c','MarkerSize',20}};
 settings.ours_colors = ["#338eca","#005b97","#002e4c"];
 settings.Llist = Llist;
 settings.Ldomain = Ldomain;
@@ -150,6 +181,7 @@ settings.Ldomain = Ldomain;
 resultsAdj = results(:,displayRange);
 for j = 1:length(resultsAdj)
 resultsAdj(j).p_err_ekf = resultsAdj(j).p_err_ekf/lengthScale;
+resultsAdj(j).p_err_castp = resultsAdj(j).p_err_castp/lengthScale;
 resultsAdj(j).p_err_pace = resultsAdj(j).p_err_pace/lengthScale;
 resultsAdj(j).p_err_ours = resultsAdj(j).p_err_ours/lengthScale;
 resultsAdj(j).accelerationNoiseBoundSqrt = resultsAdj(j).accelerationNoiseBoundSqrt / 0.05; % scale
@@ -159,7 +191,7 @@ end
 if tile
     figure
     t=tiledlayout(1,5);
-    title(t,'Process Noise')
+    % title(t,'Process Noise')
 end
 
 % Positions
@@ -172,7 +204,6 @@ title("Position Errors")
 lg = legend('Orientation','horizontal');
 lg.Layout.Tile = 'south';
 
-settings=rmfield(settings,"PACEEKF");
 % Rotations
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "R_err", settings)
@@ -180,6 +211,7 @@ yscale log;% xscale log
 xlabel(indepVar); ylabel("Rotation Error (deg)");
 title("Rotation Errors")
 
+settings=rmfield(settings,"PACEEKF");
 % Shape
 if (tile); nexttile; else; figure; end
 plotvariable(resultsAdj, indepVar, "c_err", settings)

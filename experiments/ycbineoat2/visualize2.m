@@ -5,7 +5,7 @@
 % Lorenzo Shaikewitz for SPARK Lab
 
 videoNumber = "6";
-savename = "ycbineoat_" + videoNumber;
+savename = "ycbineoat_gt_" + videoNumber;
 load(savename);
 
 %% Reformat solutions
@@ -22,6 +22,7 @@ figure; hold on;
 tab_new = computeScores(problems{1}, gt, teaser, est, params.video, adds, thresh)
 
 % save to json
+problems{1}.savefile="test.json";
 save2json(est, problems{1})
 
 % get errors

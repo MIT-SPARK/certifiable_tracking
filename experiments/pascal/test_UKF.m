@@ -10,7 +10,7 @@ clc; clear; close all
 % rng("default")
 % rng(100)
 
-numTests = 1;
+numTests = 50;
 perrpace = zeros(numTests,1);
 perrukf = zeros(numTests,1);
 pace_all = {};
@@ -22,8 +22,8 @@ problem.category = "aeroplane";
 problem.L = 12; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.05*0.2; % [m]
-problem.noiseBound = 3*0.05*0.2;
+problem.noiseSigmaSqrt = 0.15*0.2; % [m]
+problem.noiseBound = 3*0.15*0.2;
 
 % MLE parameters
 problem.accelerationNoiseBoundSqrt = 0.01*0.2;
@@ -67,15 +67,15 @@ problem.lambda = lambda;
 pace_re = pace_raw(problem);
 
 % temp
-pace.p = problem.p_gt + 0*1*sqrt(problem.covar_measure_position(1))*randn(size(pace_re.p));
-for l = 1:problem.L
-    rnoise = 1*sqrt(problem.covar_measure_rotation(1))*randn(1,3);
-    pace.R(:,:,l) = problem.R_gt(:,:,l);%*axang2rotm([rnoise./norm(rnoise), norm(rnoise)]);
-end
-% pace = pace_re;
+% pace.p = problem.p_gt + 1*sqrt(problem.covar_measure_position(1))*randn(size(pace_re.p));
+% for l = 1:problem.L
+%     rnoise = 1*sqrt(problem.covar_measure_rotation(1))*randn(1,3);
+%     pace.R(:,:,l) = problem.R_gt(:,:,l)*axang2rotm([rnoise./norm(rnoise), norm(rnoise)]);
+% end
+pace = pace_re;
 
 % paceukf = pace_py_UKF(problem,pace);
-paceukf = pace_ekf2(problem,pace_re);
+paceukf = pace_ekf2(problem,pace);
 
 pace_all{i} = pace_re;
 problems{i} = problem;

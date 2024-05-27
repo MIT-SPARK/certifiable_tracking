@@ -1,10 +1,11 @@
 %% Base parameters
 params = struct();
-params.videoNumber = 6; %***********
+params.videoNumber = 1; %***********
 params.skipPruning = false;
 params.interp = false;
+params.gt = true;
 
-params.savename = "ycbineoat_" + string(params.videoNumber);
+params.savename = "ycbineoat_gtNOOCC_" + string(params.videoNumber);
 params.maxL = 8;
 
 % for outliers
@@ -45,13 +46,13 @@ ParamList = params;
 %     params.noiseBound_GNC = n;
 %     ParamList = [ParamList; params2];
 % end
-% videos = [4,5,6];
-% for v = videos
-%     params2 = params;
-%     params2.videoNumber = v;
-%     params2.savename = "ycbineoat_" + string(v);
-%     ParamList = [ParamList; params2];
-% end
+videos = [2,3,4,5,6];
+for v = videos
+    params2 = params;
+    params2.videoNumber = v;
+    params2.savename = "ycbineoat_gtNOOCC_" + string(v);
+    ParamList = [ParamList; params2];
+end
 
 %% Run!
 for p = 1:length(ParamList)

@@ -15,8 +15,8 @@ problem.category = "aeroplane";
 problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0;
-problem.noiseSigmaSqrt = 0.1*0.2; % [m]
-problem.noiseBound = 0.15*0.2;
+problem.noiseSigmaSqrt = 0.4*0.2; % [m]
+problem.noiseBound = 3*0.4*0.2;
 problem.processNoise = 5e-2;
 
 % MLE parameters
@@ -24,8 +24,8 @@ problem.accelerationNoiseBoundSqrt = 0.05*0.2;
 problem.rotationKappa = 1/(0.05*0.2)^2*1/2;
 
 problem.covar_measure_base = problem.noiseSigmaSqrt^2;
-problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
-problem.kappa_rotrate_base = problem.rotationKappa;
+problem.covar_velocity_base = Inf;%problem.accelerationNoiseBoundSqrt^2;
+problem.kappa_rotrate_base = 0;%problem.rotationKappa;
 
 pace_numbers = load("../datasets/results/pascalaeroplane_mle3_noiseSigmaSqrt.mat","results");
 index = 4;
@@ -60,7 +60,7 @@ problem.lambda = lambda;
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
 
-paceukf = pace_py_UKF(problem,pace);
+% paceukf = pace_py_UKF(problem,pace);
 % paceekf = pace_ekf(problem,pace);
 
 % mean(vecnorm(problem.p_gt(:,:,:) - pace.p(:,:,:)))
