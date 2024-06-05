@@ -4,8 +4,8 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-videoNumber = "6";
-savename = "ycbineoat_gt_" + videoNumber;
+videoNumber = "3";
+savename = "ycbineoat_" + videoNumber;
 load(savename);
 
 %% Reformat solutions
@@ -16,17 +16,17 @@ est = getEstimates(problems, solns);
 plotSolns(gt, est);
 
 % compute scores
-adds = false; % takes a while
+adds = true; % takes a while
 thresh = 0.1;
 figure; hold on;
 tab_new = computeScores(problems{1}, gt, teaser, est, params.video, adds, thresh)
 
 % save to json
-problems{1}.savefile="test.json";
+% problems{1}.savefile="test.json";
 save2json(est, problems{1})
 
 % get errors
-est = getErrors(gt, est);
+% est = getErrors(gt, est);
 
 %% Helper function: reformat solutions
 function est = getEstimates(problems, solns)
@@ -97,11 +97,11 @@ end
 
 %% Helper function: compute scores
 function tab = computeScores(problem, gt, teaser, est, video, adds, threshold)
-models_dir = "~/research/tracking/datasets/YCBInEOAT/models/";
+models_dir = "~/research/tracking/datasets/YCBInEOAT/models3/";
 if (problem.object == "cracker") || (problem.object == "sugar")
-    pcfiles = models_dir + ["cracker.ply", "sugar.ply", "jello.ply"];
+    pcfiles = models_dir + ["cracker.ply", "sugar.ply"];%, "jello.ply"];
 elseif (problem.object == "mustard") || (problem.object == "bleach")
-    pcfiles = models_dir + ["mustard.ply", "bleach.ply", "ketchup2.ply"];
+    pcfiles = models_dir + ["mustard.ply", "bleach.ply", "bleach.ply"]; % TEMP: todo, fix
 elseif (problem.object == "tomato")
     pcfiles = models_dir + ["coffee.ply", "tomato.ply", "tuna.ply"];
 end
@@ -113,7 +113,7 @@ teaser.c = gt.c*ones(length(teaser.p),1);
 score_add_ours = get_auc(add_ours, threshold);
 score_adds_ours = get_auc(adds_ours, threshold);
 
-[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, false); % takes a while
+[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, adds); % takes a while
 score_add_teaser = get_auc(add_teaser, threshold);
 score_adds_teaser = get_auc(adds_teaser, threshold);
 
@@ -157,9 +157,4 @@ function est = getErrors(gt, est)
     for l = 1:length(est.R)
         est.R_err(l) = getAngularError(gt.R(:,:,l),est.R(:,:,l));
     end
-end
-
-%% Helper fuction: save everything together
-function saveAll(savename, params)
-    
 end

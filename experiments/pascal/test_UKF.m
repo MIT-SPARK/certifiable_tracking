@@ -10,7 +10,7 @@ clc; clear; close all
 % rng("default")
 % rng(100)
 
-numTests = 50;
+numTests = 500;
 perrpace = zeros(numTests,1);
 perrukf = zeros(numTests,1);
 pace_all = {};
@@ -36,8 +36,8 @@ problem.kappa_rotrate_base = problem.rotationKappa;
 % pace_numbers = load("../datasets/results/pascalaeroplane_mle3_noiseSigmaSqrt.mat","results");
 % index = 8;
 % cur = pace_numbers.results(index);
-problem.covar_measure_position = 5e-5*ones(1,3);%*(var(cur.p_err_pace));
-problem.covar_measure_rotation = 1e-4*ones(1,3);%*(var(deg2rad(cur.R_err_pace)));
+problem.covar_measure_position = 1e-2*ones(1,3);%*(var(cur.p_err_pace));
+problem.covar_measure_rotation = 1e-2*ones(1,3);%*(var(deg2rad(cur.R_err_pace)));
 
 problem.translationBound = 10.0;
 problem.velocityBound = 2.0;
@@ -64,30 +64,32 @@ problem.lambda = lambda;
 
 %% Solve!
 % soln = solve_weighted_tracking(problem);
-pace_re = pace_raw(problem);
+% pace_re = pace_raw(problem);
 
 % temp
-% pace.p = problem.p_gt + 1*sqrt(problem.covar_measure_position(1))*randn(size(pace_re.p));
-% for l = 1:problem.L
-%     rnoise = 1*sqrt(problem.covar_measure_rotation(1))*randn(1,3);
-%     pace.R(:,:,l) = problem.R_gt(:,:,l)*axang2rotm([rnoise./norm(rnoise), norm(rnoise)]);
-% end
-pace = pace_re;
+pace.p = problem.p_gt + sqrt(problem.covar_measure_position(1))*randn(3,1,problem.L);
+for l = 1:problem.L
+    rnoise = 1*sqrt(problem.covar_measure_rotation(1))*randn(1,3);
+    pace.R(:,:,l) = problem.R_gt(:,:,l)*axang2rotm([rnoise./norm(rnoise), norm(rnoise)]);
+end
+% pace = pace_re;
 
 % paceukf = pace_py_UKF(problem,pace);
 paceukf = pace_ekf2(problem,pace);
 
-pace_all{i} = pace_re;
+% pace_all{i} = pace_re;
 problems{i} = problem;
-perrpace(i) = mean(vecnorm(problem.p_gt(:,:,end) - pace.p(:,:,end)));
-perrukf(i) = mean(vecnorm(problem.p_gt(:,:,end) - paceukf.p(:,:,end)));
+perrpace(i) = vecnorm(problem.p_gt(:,:,end) - pace.p(:,:,end));
+perrukf(i) = vecnorm(problem.p_gt(:,:,end) - paceukf.p(:,:,end));
+Rerrpace(i) = getAngularError(problem.R_gt(:,:,end), pace.R(:,:,end));
+Rerrukf(i) = getAngularError(problem.R_gt(:,:,end), paceukf.R(:,:,end));
 
 end
 %% print
 median(perrpace)
 median(perrukf)
 
-% return
+return
 %% debug
 gt.p = zeros(3,problem.L*numTests);
 pa.p = zeros(3,problem.L*numTests);

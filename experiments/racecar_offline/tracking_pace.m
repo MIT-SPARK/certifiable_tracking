@@ -8,7 +8,7 @@ clc; clear; close all
 % rng("default")
 
 %% Define settings for batch processing
-problem.json = "../datasets/racecar_offline/racecar_fast2.json";
+problem.json = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 problem.L = 3; % batch size
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
@@ -168,7 +168,7 @@ fclose(fid);
 data = jsondecode(str);
 
 for l = 1:length(T_est)
-    data(l).cast_pose = T_est(:,:,l);
+    data(l).pace_pose = T_est(:,:,l);
 end
 
 cocoString = jsonencode(data, "PrettyPrint",true);

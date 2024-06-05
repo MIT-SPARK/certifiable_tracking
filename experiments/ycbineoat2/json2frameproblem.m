@@ -124,17 +124,18 @@ data = jsondecode(str);
 % get CAD keypoints if there
 if (problem.object == "cracker") || (problem.object == "sugar")
     load("../datasets/YCBInEOAT/shapes/shapes_box.mat","shapes");
-    shapes = shapes(:,:,1:2); % TEMP
+    shapes = shapes(:,:,1:2); % TEMP: jello scale is way off
 elseif (problem.object == "mustard") || (problem.object == "bleach")
     load("../datasets/YCBInEOAT/shapes/shapes_bottle3.mat","shapes");
+    % shapes = shapes + [0, 0, 0.01]'; % TEMP: aligns CAD model better
 elseif (problem.object == "tomato")
     load("../datasets/YCBInEOAT/shapes/shapes_can.mat","shapes");
 end
 N = size(shapes,2);
 field = "est_world_keypoints";
 if isfield(problem, "USEGT")
-    % field = "gt_pixel_est_depth_world_keypoints";
-    field = "gt_world_keypoints";
+    field = "gt_pixel_est_depth_world_keypoints";
+    % field = "gt_world_keypoints";
 end
 
 

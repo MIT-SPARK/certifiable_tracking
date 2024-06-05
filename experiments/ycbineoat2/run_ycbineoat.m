@@ -1,11 +1,11 @@
 %% Base parameters
 params = struct();
-params.videoNumber = 1; %***********
+params.videoNumber = 7; %***********
 params.skipPruning = false;
 params.interp = false;
 params.gt = true;
 
-params.savename = "ycbineoat_gtNOOCC_" + string(params.videoNumber);
+params.savename = "ycbineoat_gt_" + string(params.videoNumber);
 params.maxL = 8;
 
 % for outliers
@@ -15,8 +15,8 @@ params.noiseBound_GNC = 0.01/2;
 params.velocityBound = 1.5;
 params.translationBound = 2.5;
 params.covar_measure_base = 0.01;
-params.covar_velocity_base = 10*0.01;
-params.covar_rotrate_base = 10*0.01;
+params.covar_velocity_base = 0.1;
+params.covar_rotrate_base = 0.1;
 
 ParamList = params;
 
@@ -46,11 +46,12 @@ ParamList = params;
 %     params.noiseBound_GNC = n;
 %     ParamList = [ParamList; params2];
 % end
-videos = [2,3,4,5,6];
+videos = [8,9];
 for v = videos
     params2 = params;
     params2.videoNumber = v;
-    params2.savename = "ycbineoat_gtNOOCC_" + string(v);
+    params2.savename = "ycbineoat_gt_" + string(v);
+
     ParamList = [ParamList; params2];
 end
 

@@ -10,6 +10,11 @@ curve2 = prctile(y,25);
 x2 = [x, fliplr(x)];
 inBetween = [curve1, fliplr(curve2)];
 
+% stdev = std(y)*1;
+% mu = mean(y);
+% x2 = [x, fliplr(x)];
+% inBetween = [max(mu - stdev, 1e-12), fliplr(mu + stdev)];
+
 if (type=="shade")
     % shade
     obj = fill(x2, inBetween,color,'FaceAlpha',0.15,'EdgeColor','none');

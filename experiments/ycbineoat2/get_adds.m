@@ -19,7 +19,8 @@ for l = 1:L
         add(l) = 100;
         continue
     else
-        pc_pred = est.R(:,:,l)*shapes{est.c(l)} + est.p(:,:,l);
+        % pc_pred = est.R(:,:,l)*shapes{est.c(l)} + est.p(:,:,l);
+        pc_pred = est.R(:,:,l)*shapes{gt.c} + est.p(:,:,l);
     end
     pc_gt = gt.R(:,:,l)*shapes{gt.c} + gt.p(:,:,l);
 
@@ -30,16 +31,22 @@ end
 % this score is mean distance computed using closest point distance
 adds = zeros(L,1);
 if (calc_adds)
+pc_gt = shapes{gt.c};
+T = delaunayn(pc_gt');
+
 for l = 1:L
     if isnan(est.c(l))
         adds(l) = 100;
         continue
     else
-        pc_pred = est.R(:,:,l)*shapes{est.c(l)} + est.p(:,:,l);
+        % pc_pred = est.R(:,:,l)*shapes{est.c(l)} + est.p(:,:,l);
+        pc_pred = est.R(:,:,l)*shapes{gt.c} + est.p(:,:,l);
+        % this makes it much faster
+        pc_pred = gt.R(:,:,l)'*(pc_pred - gt.p(:,:,l));
     end
-    pc_gt = gt.R(:,:,l)*shapes{gt.c} + gt.p(:,:,l);
-    
-    T = delaunayn(pc_gt');
+    % pc_gt = gt.R(:,:,l)*shapes{gt.c} + gt.p(:,:,l);
+    % 
+    % T = delaunayn(pc_gt');
     % min distance between each predicted point and the gt point cloud
     [~, dist] = dsearchn(pc_gt', T, pc_pred');
     adds(l) = mean(dist);

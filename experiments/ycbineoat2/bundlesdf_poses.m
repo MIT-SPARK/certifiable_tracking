@@ -37,7 +37,7 @@ for f = folders
     end
 
     % save as metadata
-    json = gt_dir + "TODO";
+    json = gt_dir + f;
     jsonout = json + "_bundle";
     save2json(json, jsonout, bundlePoses)
 end
@@ -63,4 +63,4 @@ function save2json(jsonin, jsonout, T_est)
     fid = fopen(jsonout, 'w');
     fprintf(fid, '%s', cocoString);
     fclose(fid);
-    end
+end

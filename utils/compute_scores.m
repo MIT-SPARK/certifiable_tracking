@@ -1,25 +1,12 @@
-function [add,adds] = compute_scores(gt, est, pcfile_gt, pcfile_est, max_dist)
+function [add,adds] = compute_scores(gt, est, pcfile_gt, pcfile_est, threshold)
 %% Compute the ADD, ADD-S score.
 % 
 % Lorenzo Shaikewitz for SPARK Lab
 
 % preliminaries
-if (isfield(est,"p"))
-L = length(est.p);
-T_gt = repmat(eye(4),[1,1,L]);
-T_est = repmat(eye(4),[1,1,L]);
-for l = 1:L
-    T_gt(1:3,1:3,l) = gt.R(:,:,l);
-    T_gt(1:3,4,l) = gt.p(:,:,l);
-
-    T_est(1:3,1:3,l) = est.R(:,:,l);
-    T_est(1:3,4,l) = est.p(:,:,l);
-end
-else
-    T_gt = gt;
-    T_est = est;
-    L = length(T_est);
-end
+T_gt = gt;
+T_est = est;
+L = length(T_est);
 
 % Read point clouds
 if isstring(pcfile_gt)
@@ -40,76 +27,57 @@ pc_gt = [pc_gt;ones(1,N_pts)];
 pc_est = [pc_est;ones(1,N_pts)];
 end
 
-%% ADD score: compute mean distance between points
-all_err = zeros(N_pts,L);
+%% step 1.A: compute ADD score for each pose estimate
+% this score is mean distance between predicted and gt point clouds
+% (including predicted/gt transforms)
 add = zeros(L,1);
 for l = 1:L
-    all_err(:,l) = vecnorm( ...
-        T_est(:, :, l)*pc_est - ...
-        T_gt( :, :, l)*pc_gt);
-    add(l) = mean(all_err(:,l),"omitmissing");
-end
-add = add(~isnan(add));
-add = VOCap(add, max_dist)*100;
+    pts_pred = T_est(:,:,l)*pc_est;
+    pts_gt = T_gt(:,:,l)*pc_gt;
 
-%% ADD-S score
+    add(l) = mean(vecnorm(pts_pred - pts_gt));
+end
+
+%% step 1.B: compute ADD-S score for each pose estimate
+% this score is mean distance computed using closest point distance
 adds = zeros(L,1);
 for l = 1:L
-    e = T_est(:,:,l)*pc_est;
-    e = e(1:3,:,:)'; % ours
-    g = T_gt( :, :, l)*pc_gt;
-    g = g(1:3,:,:)'; % ground truth
+    pts_pred = T_est(:,:,l)*pc_est;
+    pts_pred = pts_pred(1:3,:);
+    pts_gt = T_gt(:,:,l)*pc_gt;
+    pts_gt = pts_gt(1:3,:);
+    
+    T = delaunayn(pts_gt');
+    % min distance between each predicted point and the gt point cloud
+    [~, dist] = dsearchn(pts_gt', T, pts_pred');
+    adds(l) = mean(dist);
 
-    % create kd tree using ground truth data
-    model = createns(g);
-    % find the ground truth point nearest each measurement
-    idx_g = knnsearch(model,e);
-
-    % Compute the score (TODO:CHECK)
-    adds(l) = mean(vecnorm((e - g(idx_g,:))'));
-
-    % e = T_est(:, :, l)*pc_est;
-    % e = e(1:3,:,:);
-    % g = T_gt( :, :, l)*pc_gt;
-    % g = g(1:3,:,:);
-    % nn_index = KDTreeSearcher(e');
-    % [nn_dists, ~] = knnsearch(nn_index, g', 'K', 1);
-    % 
-    % adds(l) = mean(vecnorm(e(:,nn_dists) - g(:,:,:)));
-end
-adds = VOCap(adds, max_dist)*100;
+    if ~mod(l,50)
+        fprintf("%d%%\n",round(l/L*100))
+    end
 end
 
-function ap = VOCap(rec, max_dist)
-    rec = sort(rec);
-    n = length(rec);
-    if n == 0
-        ap = 0;
-        return;
-    end
-    
-    prec = (1:n)' / n;
-    if nargin >= 2
-        index = find(rec < max_dist);
-    else
-        index = 1:length(rec);
-    end
-    
-    if isempty(index)
-        ap = 0;
-        return;
-    end
-    
-    rec = rec(index);
-    prec = prec(index);
+%% Get AUC
+add = get_auc(add, threshold);
+adds = get_auc(adds, threshold);
 
-    rec = [0; rec; 0.1];
-    prec = [0; prec; prec(end)];
+end
 
-    for i = 2:length(prec)
-        prec(i) = max(prec(i), prec(i-1));
-    end
+function score = get_auc(metric, threshold)
+%% step 2: compute area under curve (AUC)
+% curve in question is accuracy-threshold curve
+% see pose-cnn figure 8
+% generate curve
+thresh = linspace(0,threshold,100); % x-axis
+accuracy = zeros(length(thresh),1); % y-axis
+for t = 1:length(thresh)
+    accuracy(t) = sum(metric < thresh(t))/length(metric);
+end
+% figure
+plot(thresh,accuracy);
 
-    diff_rec = [0; diff(rec)];
-    ap = sum(diff_rec .* prec) * 10;
+% area under curve!
+max_score = threshold*1;
+score = trapz(thresh, accuracy) / max_score;
+
 end
