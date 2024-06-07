@@ -9,7 +9,7 @@ clc; clear; close all
 
 %% Define settings for batch processing
 problem.json = "../datasets/racecar_offline/racecar_fast2.json";
-problem.L = 12; % batch size
+problem.L = 12; % CAST-L
 problem.savefile = "../datasets/racecar_offline/racecar_fullsize_test_ours.json";
 
 % Set bounds based on problem setting
@@ -21,8 +21,8 @@ problem.noiseBound_GRAPH = 0.01;
 problem.noiseBound = 0.05;
 
 problem.covar_measure_base = 1;
-problem.covar_velocity_base = Inf;%10;
-problem.covar_rotrate_base = Inf;%10;
+problem.covar_velocity_base = 10; % inf for CAST-U
+problem.covar_rotrate_base = 10; % inf for CAST-U
 
 problem.velprior = "body";       % constant body frame velocity
 problem.usecBound = false;

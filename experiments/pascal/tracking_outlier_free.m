@@ -60,65 +60,7 @@ problem.lambda = lambda;
 soln = solve_weighted_tracking(problem);
 pace = pace_raw(problem);
 
-% paceukf = pace_py_UKF(problem,pace);
-% paceekf = pace_ekf(problem,pace);
-
-% mean(vecnorm(problem.p_gt(:,:,:) - pace.p(:,:,:)))
-% mean(vecnorm(problem.p_gt(:,:,:) - paceukf.p(:,:,:)))
-% 
-% figure
-% tiledlayout(3,1)
-% nexttile
-% plot(squeeze(pace.p(1,:,:)));
-% hold on
-% plot(squeeze(paceukf.p(1,:,:)));
-% plot(squeeze(problem.p_gt(1,:,:)),'k');
-% 
-% nexttile
-% plot(squeeze(pace.p(2,:,:)));
-% hold on
-% plot(squeeze(paceukf.p(2,:,:)));
-% plot(squeeze(problem.p_gt(2,:,:)),'k');
-% 
-% nexttile
-% plot(squeeze(pace.p(3,:,:)));
-% hold on
-% plot(squeeze(paceukf.p(3,:,:)));
-% plot(squeeze(problem.p_gt(3,:,:)),'k');
-% 
-% L = length(pace.R);
-% w_pace = zeros(3,L);
-% w_gt = zeros(3,L);
-% w_ukf = zeros(3,L);
-% for l = 1:length(pace.R)
-%     axang = rotm2axang(pace.R(:,:,l));
-%     w_pace(:,l) = axang(1:3)*axang(4);
-%     axang = rotm2axang(problem.R_gt(:,:,l));
-%     w_gt(:,l) = axang(1:3)*axang(4);
-%     axang = rotm2axang(paceukf.R(:,:,l));
-%     w_ukf(:,l) = axang(1:3)*axang(4);
-% end
-% figure
-% tiledlayout(3,1)
-% nexttile
-% plot(w_pace(1,:));
-% hold on
-% plot(w_ukf(1,:));
-% plot(w_gt(1,:),'k');
-% 
-% nexttile
-% plot(w_pace(2,:));
-% hold on
-% plot(w_ukf(2,:));
-% plot(w_gt(2,:),'k');
-% 
-% nexttile
-% plot(w_pace(3,:));
-% hold on
-% plot(w_ukf(3,:));
-% plot(w_gt(3,:),'k');
-% return
-
+paceekf = pace_ekf2(problem,pace);
 
 %% Check solutions
 % eigenvalue plot

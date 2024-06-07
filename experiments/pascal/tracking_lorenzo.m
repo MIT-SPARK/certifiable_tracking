@@ -1,5 +1,5 @@
 %% Dense SDP relaxation for certifiable tracking
-%  Version with outlier rejection through lorenzo+GNC
+%  Version with outlier rejection through compatibility+GNC
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
@@ -62,12 +62,12 @@ problem.dof = 3;
 % soln_pace = pace_py_UKF(problem,true,true);
 
 % prune outliers with max weighted clique
-% problem = lorenzo_prune(problem);
+problem = lorenzo_prune(problem);
 
 % run GNC
 [inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',problem.noiseBound_GNC, 'ContinuationFactor', 1.6, 'Debug', true);
 % convert to true inliers
-% inliers = problem.priorinliers(inliers);
+inliers = problem.priorinliers(inliers);
 
 %% Check solutions
 if isequal(problem.inliers_gt,inliers)
