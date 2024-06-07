@@ -5,8 +5,9 @@
 % Lorenzo Shaikewitz for SPARK Lab
 
 % directories
-out_dir = "~/tracking/datasets/BundleSDF_data/"; % where BundleSDF puts everything out
-gt_dir = "~/tracking/datasets/YCBInEOAT/";
+json_dir = "/home/lorenzo/research/tracking/datasets/YCBInEOAT/";
+out_dir = "/home/lorenzo/research/tracking/datasets/BundleSDF_data/"; % where BundleSDF puts everything out
+gt_dir = "/home/lorenzo/research/tracking/datasets/YCBInEOAT/";
 
 % Load BundleSDF data
 folders = dir(out_dir + "out_*");
@@ -37,8 +38,10 @@ for f = folders
     end
 
     % save as metadata
-    json = gt_dir + f;
-    jsonout = json + "_bundle";
+    filename = f{1};
+    json = gt_dir + filename(5:end);
+    jsonout = json + "_bundle.json";
+    json = json + ".json";
     save2json(json, jsonout, bundlePoses)
 end
 
@@ -56,7 +59,7 @@ function save2json(jsonin, jsonout, T_est)
     data = jsondecode(str);
     
     for l = 1:length(T_est)
-        data(l).bundlesdf_pose = T_est(:,:,l);
+        data(l).cast_pose = T_est(:,:,l);
     end
     
     cocoString = jsonencode(data, "PrettyPrint",true);

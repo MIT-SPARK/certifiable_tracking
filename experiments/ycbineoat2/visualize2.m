@@ -4,8 +4,8 @@
 %
 % Lorenzo Shaikewitz for SPARK Lab
 
-videoNumber = "3";
-savename = "ycbineoat_" + videoNumber;
+videoNumber = "8";
+savename = "ycbineoat2_gt_" + videoNumber;
 load(savename);
 
 %% Reformat solutions
@@ -16,14 +16,14 @@ est = getEstimates(problems, solns);
 plotSolns(gt, est);
 
 % compute scores
-adds = true; % takes a while
+adds = false; % takes a while
 thresh = 0.1;
 figure; hold on;
 tab_new = computeScores(problems{1}, gt, teaser, est, params.video, adds, thresh)
 
 % save to json
 % problems{1}.savefile="test.json";
-save2json(est, problems{1})
+% save2json(est, problems{1})
 
 % get errors
 % est = getErrors(gt, est);
@@ -98,10 +98,11 @@ end
 %% Helper function: compute scores
 function tab = computeScores(problem, gt, teaser, est, video, adds, threshold)
 models_dir = "~/research/tracking/datasets/YCBInEOAT/models3/";
+% models_dir = "~/research/tracking/datasets/YCBInEOAT/DATA/models_centered/";
 if (problem.object == "cracker") || (problem.object == "sugar")
     pcfiles = models_dir + ["cracker.ply", "sugar.ply"];%, "jello.ply"];
 elseif (problem.object == "mustard") || (problem.object == "bleach")
-    pcfiles = models_dir + ["mustard.ply", "bleach.ply", "bleach.ply"]; % TEMP: todo, fix
+    pcfiles = models_dir + ["mustard.ply", "bleach.ply"];
 elseif (problem.object == "tomato")
     pcfiles = models_dir + ["coffee.ply", "tomato.ply", "tuna.ply"];
 end
@@ -113,7 +114,7 @@ teaser.c = gt.c*ones(length(teaser.p),1);
 score_add_ours = get_auc(add_ours, threshold);
 score_adds_ours = get_auc(adds_ours, threshold);
 
-[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, adds); % takes a while
+[add_teaser, adds_teaser] = get_adds(gt, teaser, pcfiles, false); % takes a while
 score_add_teaser = get_auc(add_teaser, threshold);
 score_adds_teaser = get_auc(adds_teaser, threshold);
 

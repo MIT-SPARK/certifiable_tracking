@@ -167,8 +167,12 @@ str = char(raw');
 fclose(fid);
 data = jsondecode(str);
 
+cam_wrt_world = [data.cam_wrt_world];
+cam_wrt_world = reshape(cam_wrt_world, [4,4,size(data,1)]);
+cam_wrt_world(1:3,4,:) = cam_wrt_world(1:3,4,:); % [mm]
 for l = 1:length(T_est)
-    data(l).pace_pose = T_est(:,:,l);
+    T = inv(cam_wrt_world(:,:,l));
+    data(l).pace_pose = T*T_est(:,:,l);
 end
 
 cocoString = jsonencode(data, "PrettyPrint",true);

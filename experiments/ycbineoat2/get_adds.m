@@ -32,7 +32,7 @@ end
 adds = zeros(L,1);
 if (calc_adds)
 pc_gt = shapes{gt.c};
-T = delaunayn(pc_gt');
+% T = delaunayn(pc_gt');
 
 for l = 1:L
     if isnan(est.c(l))
@@ -48,7 +48,8 @@ for l = 1:L
     % 
     % T = delaunayn(pc_gt');
     % min distance between each predicted point and the gt point cloud
-    [~, dist] = dsearchn(pc_gt', T, pc_pred');
+    % [~, dist] = dsearchn(pc_gt', T, pc_pred');
+    [~, dist] = knnsearch(pc_gt', pc_pred');
     adds(l) = mean(dist);
 
     if ~mod(l,50)

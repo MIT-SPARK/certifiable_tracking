@@ -10,7 +10,7 @@ clc; clear; close all
 
 %% Experiment settings
 indepVar = "noiseSigmaSqrt";
-savename = "pascalaeroplane_MLE_" + indepVar;
+savename = "pascalaeroplane_EKFGT_TEST_" + indepVar;
 lengthScale = 0.2; % smallest dimension
 domain = 0.025:0.025:0.5;  % 0:0.025:1
 Ldomain = [4,8,12]; % 2: 3:12;
@@ -58,8 +58,9 @@ problem.covar_velocity_base = problem.accelerationNoiseBoundSqrt^2;
 problem.kappa_rotrate_base = problem.rotationKappa;
 
 % for EKF
-problem.covar_measure_position = 5e-5*ones(1,3);
-problem.covar_measure_rotation = 1e-4*ones(1,3);
+% problem.covar_measure_position = 5e-2*ones(1,3);
+problem.covar_measure_position = iv/100*ones(1,3);
+problem.covar_measure_rotation = problem.covar_measure_position*2;
 
 problem.noiseBound = 3*iv*lengthScale; %3*iv for 8 reg
 
@@ -75,7 +76,12 @@ lambda = 0;
 problem.lambda = lambda;
 
 % Solve!
-pace = pace_raw(problem);
+pace = struct();
+pace.p = problem.p_gt + sqrt(problem.covar_measure_position(1))*randn(3,1,problem.L);
+for l = 1:problem.L
+    rnoise = 1*sqrt(problem.covar_measure_rotation(1))*randn(1,3);
+    pace.R(:,:,l) = problem.R_gt(:,:,l)*axang2rotm([rnoise./norm(rnoise), norm(rnoise)]);
+end
 paceekf = pace_ekf2(problem,pace); % try pace_py_ukf (issues with parfor)
 
 % Save solutions: only use last error
@@ -85,69 +91,12 @@ R_err_pace = getAngularError(problem.R_gt(:,:,end), pace.R(:,:,end));
 % position error
 p_err_ekf = norm(problem.p_gt(:,:,end) - paceekf.p(:,:,end));
 p_err_pace = norm(problem.p_gt(:,:,end) - pace.p(:,:,end));
-% shape error
-c_err_pace = norm(problem.c_gt - pace.c(:,:,end));
-% time and gap
-gap_pace = pace.gaps(end);
-time_pace = pace.times(end);
-
-R_err_ours = zeros(1,length(Ldomain));
-p_err_ours = zeros(1,length(Ldomain));
-c_err_ours = zeros(1,length(Ldomain));
-gap_ours = zeros(1,length(Ldomain));
-time_ours = zeros(1,length(Ldomain));
-for lidx = 1:length(Ldomain)
-    L = Ldomain(lidx);
-    lproblem = problem;
-    % regen only first time
-    lproblem.regen_sdp = (j == 1);
-    pid = string(feature("getpid"));
-    lproblem.sdp_filename = "sdpdata" + pid + L;
-
-    lproblem.L = L;
-    lproblem.y = problem.y(:,(end-L+1):end);
-    soln = solve_weighted_tracking(lproblem);
-
-    R_err_ours(lidx) = getAngularError(problem.R_gt(:,:,end), soln.R_est(:,:,end));
-    p_err_ours(lidx) = norm(problem.p_gt(:,:,end) - soln.p_est(:,:,end));
-    c_err_ours(lidx) = norm(problem.c_gt - soln.c_est);
-    gap_ours(lidx) = soln.gap;
-    time_ours(lidx) = soln.solvetime;
-
-    % last run: CAST-P
-    if lidx == length(Ldomain)
-        lproblem.regen_sdp = false;
-        % disable velocity smoothing
-        lproblem.covar_velocity_base = Inf;
-        lproblem.kappa_rotrate_base = 0;
-        % run!
-        soln_p = solve_weighted_tracking(lproblem);
-        R_err_castp = getAngularError(problem.R_gt(:,:,end), soln_p.R_est(:,:,end));
-        p_err_castp = norm(problem.p_gt(:,:,end) - soln_p.p_est(:,:,end));
-        c_err_castp = norm(problem.c_gt - soln_p.c_est);
-        gap_castp = soln_p.gap;
-        time_castp = soln_p.solvetime;
-    end
-end
 
 % save
-resultsIV.R_err_ours(j,:) = R_err_ours;
 resultsIV.R_err_ekf(j)  = R_err_ekf;
 resultsIV.R_err_pace(j) = R_err_pace;
-resultsIV.R_err_castp(j) = R_err_castp;
-resultsIV.p_err_ours(j,:) = p_err_ours;
 resultsIV.p_err_ekf(j)  = p_err_ekf;
 resultsIV.p_err_pace(j) = p_err_pace;
-resultsIV.p_err_castp(j) = p_err_castp;
-resultsIV.c_err_ours(j,:) = c_err_ours;
-resultsIV.c_err_pace(j) = c_err_pace;
-resultsIV.c_err_castp(j) = c_err_castp;
-resultsIV.gap_ours(j,:) = gap_ours;
-resultsIV.gap_pace(j) = gap_pace;
-resultsIV.gap_castp(j) = gap_castp;
-resultsIV.time_ours(j,:) = time_ours;
-resultsIV.time_pace(j) = time_pace;
-resultsIV.time_castp(j) = time_castp;
 end
 results{index} = resultsIV;
 end
@@ -160,14 +109,13 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % data settings
-Llist = 1;%[1,2,3];
+Llist = [1,2,3];
 displayRange = 1:length(results);
 
 % visual settings
 tile = true;
 
 settings.PACEEKF = {'x-.','DisplayName', 'PACE-EKF', 'Color', "#D95319",'LineWidth',2};
-settings.CASTP = {'x--','DisplayName', 'CAST-Unsmoothed', 'Color', "#0CA183",'LineWidth',2};
 settings.PACERAW = {'x:','DisplayName', 'PACE-RAW', 'Color', "#EDB120",'LineWidth',2};
 
 settings.OURS = {{'x-','DisplayName', 'CAST','LineWidth',2.5,'Color','338eca','MarkerSize',10};...
