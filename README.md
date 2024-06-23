@@ -1,9 +1,9 @@
 # Certifiable Tracking (MATLAB Implementation)
 This is the repository for the paper "A Certifiable Algorithm for Simultaneous Shape Estimation and Object Tracking" by Lorenzo Shaikewitz, Samuel Ubellacker, and Luca Carlone.
 
-Please reference the [Paper](TODO) and [Video](TODO).
+Please reference the [Paper](TODO) and [Video](https://youtu.be/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB).
 
-VIDEO COMING SOON.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Setup
 To run the solver, this repository has the following dependencies:
