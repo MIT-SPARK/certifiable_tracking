@@ -3,7 +3,7 @@ This is the repository for the paper "A Certifiable Algorithm for Simultaneous S
 
 Please reference the [Paper](TODO) and [Video](https://youtu.be/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB).
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Preview of video attachment](media/video_preview.png)](http://www.youtube.com/watch?v=eTIlVD9pDtc "CAST# outperforms other certifiable methods in our drone experiment.")
 
 ## Setup
 To run the solver, this repository has the following dependencies:
