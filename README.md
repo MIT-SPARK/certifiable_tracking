@@ -1,7 +1,7 @@
 # Certifiable Tracking (MATLAB Implementation)
 This is the repository for the paper "A Certifiable Algorithm for Simultaneous Shape Estimation and Object Tracking" by Lorenzo Shaikewitz, Samuel Ubellacker, and Luca Carlone.
 
-Please reference the [Paper](TODO) and [Video](https://youtu.be/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB).
+Please reference the [Paper](https://arxiv.org/abs/2406.16837) and [Video](https://youtu.be/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB).
 
 [![Preview of video attachment](media/video_preview.png)](http://www.youtube.com/watch?v=eTIlVD9pDtc "CAST# outperforms other certifiable methods in our drone experiment.")
 
