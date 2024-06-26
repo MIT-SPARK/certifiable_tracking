@@ -67,4 +67,14 @@ We also provide mat archives of each run in Google Drive. To visualize these, lo
 General purpose scripts are in the `visualization`, `utils`, `solvers`, and `outlier_rejection` folders. Within the `experiments` folder are scripts specialized to individual experiments. In general, scripts that begin with "tracking" are single-batch test scripts, while scripts that begin with "EXP" are full experiments.
 
 ## Bibtex
-COMING SOON
+```
+@misc{Shaikewitz24-trackingCAST,
+      title={A Certifiable Algorithm for Simultaneous Shape Estimation and Object Tracking}, 
+      author={Lorenzo Shaikewitz and Samuel Ubellacker and Luca Carlone},
+      year={2024},
+      eprint={2406.16837},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO}
+      url={https://arxiv.org/abs/2406.16837}, 
+}
+```
