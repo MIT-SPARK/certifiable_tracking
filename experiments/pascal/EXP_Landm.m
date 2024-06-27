@@ -160,7 +160,7 @@ load("../datasets/results/" + savename + ".mat","results")
 
 %% Display Results
 % data settings
-Llist = 1;%[1,2,3];
+Llist = [1,2,3];
 displayRange = 1:length(results);
 
 % visual settings
