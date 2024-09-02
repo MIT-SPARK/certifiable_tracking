@@ -58,7 +58,7 @@ problem.lambda = lambda;
 % problem = lorenzo_prune(problem);
 
 % run GNC
-[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',barc2,'ContinuationFactor',1.4,'MaxIterations',1e2);
+[inliers, info] = gnc2(problem, @solver_for_gnc,'barc2',barc2,'ContinuationFactor',1.4,'MaxIterations',1e2,'Debug',true);
 
 % convert to true inliers
 % inliers = problem.priorinliers(inliers);

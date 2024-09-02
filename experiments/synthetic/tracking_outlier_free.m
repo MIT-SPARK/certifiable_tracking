@@ -52,7 +52,7 @@ soln = solve_weighted_tracking(problem);
 
 pace = pace_raw(problem);
 % paceukf = pace_py_UKF(problem,pace);
-paceekf = pace_ekf2(problem,pace);
+% paceekf = pace_ekf2(problem,pace);
 
 
 %% Check solutions
