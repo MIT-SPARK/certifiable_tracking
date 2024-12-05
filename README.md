@@ -1,7 +1,7 @@
 # Certifiable Tracking (MATLAB Implementation)
 This is the repository for the paper "A Certifiable Algorithm for Simultaneous Shape Estimation and Object Tracking" by Lorenzo Shaikewitz, Samuel Ubellacker, and Luca Carlone.
 
-Please reference the [Paper](https://arxiv.org/abs/2406.16837) and [Video](https://youtu.be/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB).
+Please reference the [RAL paper](https://ieeexplore.ieee.org/document/10756720) ([arXiv version](https://arxiv.org/abs/2406.16837)) and [Video](https://youtu.be/eTIlVD9pDtc?si=FfQ1spGXXVddWQFB).
 
 [![Preview of video attachment](media/video_preview.png)](http://www.youtube.com/watch?v=eTIlVD9pDtc "CAST# outperforms other certifiable methods in our drone experiment.")
 
@@ -69,12 +69,14 @@ General purpose scripts are in the `visualization`, `utils`, `solvers`, and `out
 ## Bibtex
 ```
 @misc{Shaikewitz24-trackingCAST,
-      title={A Certifiable Algorithm for Simultaneous Shape Estimation and Object Tracking}, 
-      author={Lorenzo Shaikewitz and Samuel Ubellacker and Luca Carlone},
+      author={Shaikewitz, Lorenzo and Ubellacker, Samuel and Carlone, Luca},
+      journal={IEEE Robotics and Automation Letters},
+      title={A Certifiable Algorithm for Simultaneous Shape Estimation and Object Tracking},
       year={2024},
-      eprint={2406.16837},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO}
-      url={https://arxiv.org/abs/2406.16837}, 
+      volume={9},
+      number={12},
+      pages={11873-11880},
+      keywords={Shape;Estimation;Three-dimensional displays;Solid modeling;Active shape model;Shape measurement;Noise;Libraries;Computational modeling;Target tracking;active shape model;certifiable optimization;pose estimation;robot sensing systems;RGB-D perception;visual tracking;shape estimation},
+      doi={10.1109/LRA.2024.3501684}}
 }
 ```
