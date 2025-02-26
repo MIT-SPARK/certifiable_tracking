@@ -11,7 +11,7 @@ rng("default")
 %% Generate random tracking problem
 problem.N_VAR = 10; % nr of keypoints
 problem.K = 3; % nr of shapes
-problem.L = 3; % nr of keyframes in horizon
+problem.L = 8; % nr of keyframes in horizon
 
 problem.outlierRatio = 0.0; % TODO: no support for outliers
 problem.noiseSigmaSqrt = 0.1; % [m]

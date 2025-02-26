@@ -128,7 +128,7 @@ for l = 1:L
             R_gt(:,:,l+1) = R * dR_gt(:,:,l);
         elseif strcmp(problem.velprior, "world")
             R_gt(:,:,l+1) = R * dR_gt(:,:,l);
-            p_gt(:,:,l+1) = p + v_gt(:,:,l) * dt;
+            p_gt(:,:,l+1) = R_gt(:,:,l+1)*(R'*p + v_gt(:,:,l) * dt);
         elseif strcmp(problem.velprior, "grav-world")
             error("Selected prior is not implemented")
         else

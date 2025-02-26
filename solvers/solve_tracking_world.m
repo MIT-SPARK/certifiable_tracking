@@ -175,28 +175,29 @@ function soln = solve_tracking_world(problem)
     eye9LR = [eye(9*(L-2)), zeros(9*(L-2),9)];
     
     % POSTION AND VELOCITY ELIMINATION
-    Ds = zeros(3*(L-1), 3*L)
+    Ds = zeros(3*(L-1), 3*L);
     for l = 1:L-1
-        Ds(3*(l-1)+1:3*l, 3*(l-1)+1:3*(l+1)) = [-eye(3) eye(3)]
+        Ds(3*(l-1)+1:3*l, 3*(l-1)+1:3*(l+1)) = [-eye(3) eye(3)];
     end
-    Hsv = [2*As   zeros(size(As,1),L-1) Ds';
-           zeros(size(As))  2*Av'*Av  -dt*eye(L-1);
-           Ds    -dt*eye(L-1)   zeros(L-1,L-1)];
-    Hsv_inv = inv(Hsv_inv)
-    Dsr = Hsv_inv(1:L, 1:L)*2*Ar
-    ds = Hsv_inv(1:L, 1:L)*2*Ag
-    Dvr = Hsv_inv(L+1:2*L,1:L)*2*Ar
-    dv = Hsv_inv(L+1:2*L, 1:L)*2*Ag
+    Hsv = [2*(As'*As)   zeros(size(As,2),3*(L-1))  Ds';
+           zeros(size(Av,2),size(As,2))  2*(Av'*Av)  -dt*eye(3*(L-1));
+           Ds    -dt*eye(3*(L-1))   zeros(3*(L-1),3*(L-1))];
+    Hsv_inv = inv(Hsv);
+    Dsr = 2*Hsv_inv(1:3*L, 1:3*L)*-As'*Ar;
+    ds = 2*Hsv_inv(1:3*L, 1:3*L)*-As'*Ag;
+    Dvr = 2*Hsv_inv(3*L+1:3*L + 3*(L-1),1:3*L)*-As'*Ar;
+    dv = 2*Hsv_inv(3*L+1:3*L + 3*(L-1), 1:3*L)*-As'*Ag;
 
     Ad = diag(dwd)*(eye9LL - eye9LR);
     
     % ALL TOGETHER
     Q = zeros(size(Ag,1) + size(Ad,1),d+1);
     % measurements
-    Q(1:size(Ag,1),1:(1+9*L)) = ...
-        [Ag + As*ds + Av*dv, Ar + As*Dsr + Av*Dsv];
+    Q(1:size(Ag,1)+size(Av,1),1:(1+9*L)) = ...
+        [Ag + As*ds, Ar + As*Dsr;
+         Av*dv, Av*Dvr];
     % rotation rate
-    Q((size(Ag,1) + 1):(size(Ag,1)+size(Ad,1)),...
+    Q((size(Ag,1)+size(Av,1) + 1):(size(Ag,1)+size(Av,1)+size(Ad,1)),...
       (1+9*L+1):(1+9*L+9*(L-1))) = ...
         Ad;
     prob_obj = [1;x]'*(Q'*Q)*[1;x];
@@ -300,9 +301,9 @@ function soln = solve_tracking_world(problem)
     dRs = projectRList(drs);
     
     % s_est = reshape(full(dmsubs(s,x,x_est)),[3,1,L]);
-    s_est = Dsr*reshape(Rs,9*L,1,1) + ds
+    s_est = reshape(Dsr*reshape(Rs,9*L,1,1) + ds, [3,1,L]);
     % v_est = reshape(full(dmsubs(v,x,x_est)),[3,1,L-1]);
-    v_est = Dvr*reshape(Rs,9*L,1,1) + dv
+    v_est = reshape(Dvr*reshape(Rs,9*L,1,1) + dv, [3,1,L-1]);
     % c_est = full(dmsubs(c,x,x_est));
     c_est = Cr*reshape(Rs,9*L,1,1) - Cs*reshape(s_est,3*L,1,1) + gbar;
     % c = Cr*r - Cs*s + gbar;
@@ -327,7 +328,7 @@ function soln = solve_tracking_world(problem)
     
     % compute gap
     % obj_est = dmsubs(prob_obj,x,x_proj); % slow
-    obj_est = x_proj'*(Q'*Q)*x_proj
+    obj_est = x_proj'*(Q'*Q)*x_proj;
     gap = (obj_est - obj(2)) / obj(2);
     gap_stable = (obj_est - obj(2)) / (obj(2)+1);
     

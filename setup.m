@@ -5,15 +5,15 @@ clc; clear; close all; restoredefaultpath
 
 %% Select experiment
 % see 'experiments' folder
-experiment = "synthetic";
+experiment = "racecar_offline";
 
 %% Change paths here
 certifiablyrobustperceptionpath = "../CertifiablyRobustPerception";
 gncpath = "../GNC-and-ADAPT"; % optional if no outliers
-mosekpath   = '/opt/mosek/10.1/toolbox/r2017a';
+mosekpath   = '/opt/mosek/11.0/toolbox/r2019b';
 sdpnalpath  = '../SDPNALv1.0';
 coptpath = '/opt/copt71';
-pyvenvpath = '~/research/tracking/trackvenv/bin/python3';
+pyvenvpath = '~/tracking/trackvenv/bin/python3';
 
 if (experiment == "pascal")
     cadpath = "../datasets/pascal3d";
