@@ -45,7 +45,7 @@ Please download the [PASCAL3D+ dataset](https://cvgl.stanford.edu/projects/pasca
 - [EKF_Landm](experiments/pascal/EXP_Landm.m) runs the measurement noise experiment.
 - [EKF_Landp](experiments/pascal/EXP_Landp.m) runs the process noise experiment.
 - [EKF_outlier_ablation](experiments/pascal/EKF_outlier_ablation.m) runs the outlier ratio experiment.
-- [EKF_EKF](experiments/pascal/EXP_Landm.m) runs the ground truth EKF comparison.
+- [EXP_EKF](experiments/pascal/EXP_EKF.m) runs the ground truth EKF comparison.
 
 Note that your results may not exactly match the results from our paper due to the use of random numbers. MAT archives used to generate the data in our paper are available on [Google Drive](https://drive.google.com/drive/folders/1K9kGrST9X2znvUe3DfT6o00OMwAA55e3?usp=sharing).
 
