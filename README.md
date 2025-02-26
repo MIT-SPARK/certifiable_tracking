@@ -63,8 +63,8 @@ Please download the racecar data from [Google Drive](https://drive.google.com/dr
 
 We also provide mat archives of each run in Google Drive. To visualize these, load the data and skip the `solve for each batch` section of the script.
 
-## Notes on Organization
-General purpose scripts are in the `visualization`, `utils`, `solvers`, and `outlier_rejection` folders. Within the `experiments` folder are scripts specialized to individual experiments. In general, scripts that begin with "tracking" are single-batch test scripts, while scripts that begin with "EXP" are full experiments.
+## Post-Publication Update: World Frame Velocities
+If you are interested in using CAST, I suggest trying the `problem.velprior="world"`. If we use a world-frame velocity update prior instead of body-frame velocity we get a simpler motion model where position and velocity can be marginalized out. This leads to a significant speedup and limited reduction in accuracy. Thanks to Zac Manchester for suggesting the approach.
 
 ## Bibtex
 ```
