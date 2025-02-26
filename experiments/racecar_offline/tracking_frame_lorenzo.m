@@ -24,7 +24,7 @@ problem.covar_measure_base = 1;
 problem.covar_velocity_base = 10; % inf for CAST-U
 problem.covar_rotrate_base = 10; % inf for CAST-U
 
-problem.velprior = "world";       % constant body frame velocity
+problem.velprior = "body";       % constant body frame velocity
 problem.usecBound = false;
 
 % add shape, measurements, outliers
